@@ -46,6 +46,21 @@ const I18N = {
     markets_label: 'Mercati',
     markets_title: 'Dove operiamo',
     partners_label: 'Alcune cantine',
+    kpi_label: 'Mercati & KPI',
+    kpi_rows: [
+      ['100+', 'Cantine pronte'],
+      ['20+', 'Buyer qualificati'],
+      ['UE, ASIA, USA, UK', 'Mercati coperti'],
+    ],
+    band_buyer_label: 'Percorso Buyer',
+    band_buyer_title: 'Scopri cantine su misura',
+    band_buyer_desc:
+      'Raccontaci il tuo portafoglio, gli stili e i prezzi: creiamo una shortlist e spediamo il tasting kit.',
+    band_wineries_label: 'Percorso Cantine',
+    band_wineries_title: 'Entra in nuovi mercati',
+    band_wineries_desc:
+      'Buyer qualificati, compliance integrata e spedizioni ottimizzate. Meno attrito, più ordini.',
+    how_it_works: 'Come funziona',
   },
   en: {
     hero_kicker: 'The shortcut between producers and buyers',
@@ -78,25 +93,34 @@ const I18N = {
     markets_label: 'Markets',
     markets_title: 'Where we operate',
     partners_label: 'Selected partners',
+    kpi_label: 'Markets & KPIs',
+    kpi_rows: [
+      ['100+', 'Wineries ready'],
+      ['20+', 'Qualified buyers'],
+      ['EU, ASIA, USA, UK', 'Markets covered'],
+    ],
+    band_buyer_label: 'Buyer Path',
+    band_buyer_title: 'Discover tailored wineries',
+    band_buyer_desc:
+      'Tell us your portfolio, styles and price points: we build a shortlist and ship the tasting kit.',
+    band_wineries_label: 'Wineries Path',
+    band_wineries_title: 'Enter new markets',
+    band_wineries_desc:
+      'Qualified buyers, built-in compliance and optimized shipping. Less friction, more orders.',
+    how_it_works: 'How it works',
   },
 } as const;
 
 type Lang = 'it' | 'en';
-
 type RootStyle = React.CSSProperties & Record<'--wc', string>;
 
 /* ===================== DEV TESTS (run only in dev) ===================== */
 function runDevTests() {
   if (process.env.NODE_ENV === 'production') return;
-  // 1) Lang keys present
   console.assert(I18N.it && I18N.en, '[TEST] I18N has it & en');
-  // 2) Buyers/Wineries shape parity
-  const keys = ['buyers', 'wineries'] as const;
-  keys.forEach((k) => {
-    console.assert(Array.isArray(I18N.it[k].points), `[TEST] it.${k}.points is array`);
-    console.assert(Array.isArray(I18N.en[k].points), `[TEST] en.${k}.points is array`);
-    console.assert(I18N.it[k].points.length > 0, `[TEST] it.${k}.points non-empty`);
-    console.assert(I18N.en[k].points.length > 0, `[TEST] en.${k}.points non-empty`);
+  (['buyers', 'wineries'] as const).forEach((k) => {
+    console.assert(Array.isArray(I18N.it[k].points), `[TEST] it.${k}.points array`);
+    console.assert(Array.isArray(I18N.en[k].points), `[TEST] en.${k}.points array`);
   });
 }
 
@@ -105,17 +129,16 @@ export default function WineConnectHome() {
   const [lang, setLang] = useState<Lang>('it');
   const t = I18N[lang];
 
-  // Mercati (include UK)
-  const markets = lang === 'it' ? ['USA', 'Asia', 'UE', 'UK'] : ['USA', 'Asia', 'EU', 'UK'];
-
-  // Loghi partner (metti i file in /public/partners/ e aggiungi i path qui)
-  const partners: string[] = [
-    // '/partners/cantina-rossi.png', '/partners/cantina-bianchi.png'
-  ];
-
   useEffect(() => {
     runDevTests();
   }, []);
+
+  const markets = lang === 'it' ? ['UE', 'Asia', 'USA', 'UK'] : ['EU', 'Asia', 'USA', 'UK'];
+
+  // opzionale: popola se carichi loghi in /public/partners/
+  const partners: string[] = [
+    // '/partners/cantina-rossi.png', '/partners/cantina-bianchi.png'
+  ];
 
   const rootStyle: RootStyle = {
     '--wc': WC_PINK,
@@ -233,7 +256,7 @@ export default function WineConnectHome() {
                 </div>
               </div>
 
-              {/* LOGO (no motion.picture to avoid DOM function errors) */}
+              {/* LOGO (no motion.picture) */}
               <motion.div initial={{ opacity: 0, scale: 0.95 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }} transition={{ duration: 0.6 }} className="relative w-28 h-28 md:w-36 md:h-36 grid place-items-center">
                 <span
                   aria-hidden
@@ -272,6 +295,21 @@ export default function WineConnectHome() {
         </div>
       </section>
 
+      {/* ===== KPI ===== */}
+      <section className="py-8">
+        <div className="mx-auto max-w-[1200px] px-5">
+          <div className="text-[11px] tracking-wider uppercase text-white/60">{t.kpi_label}</div>
+          <div className="mt-3 grid grid-cols-3 gap-3 text-center">
+            {t.kpi_rows.map(([n, l], i) => (
+              <motion.div key={i} initial={{ y: 8, opacity: 0 }} whileInView={{ y: 0, opacity: 1 }} viewport={{ once: true }} transition={{ delay: i * 0.05 }}>
+                <div className="text-2xl font-extrabold">{n}</div>
+                <div className="text-xs text-white/70">{l}</div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* ===== MERCATI ===== */}
       <section className="py-10">
         <div className="mx-auto max-w-[1200px] px-5">
@@ -301,23 +339,55 @@ export default function WineConnectHome() {
         </div>
       </section>
 
-      {/* ===== RETE ITALIA (minimal map) ===== */}
+      {/* ===== SEZIONI SOTTO I MERCATI ===== */}
       <section className="py-12">
-        <div className="mx-auto max-w-[1200px] px-5">
-          <div className="text-[11px] tracking-wider uppercase text-white/60">{lang === 'it' ? 'La nostra rete' : 'Our network'}</div>
-          <h2 className="mt-1 text-[26px] sm:text-[30px] md:text-[36px] font-black">
-            {lang === 'it' ? 'Copertura in Italia' : 'Coverage across Italy'}
-          </h2>
-
-          <div className="mt-6 rounded-2xl border border-white/10 bg-white/[0.03] p-4 md:p-6">
-            <div className="relative w-full aspect-[16/9]">
-              <ItalyMapMinimal logoSrc={LOGO_PNG} accent={WC_PINK} />
+        <div className="mx-auto max-w-[1200px] px-5 grid gap-6 md:grid-cols-2">
+          {/* Buyer band */}
+          <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-6">
+            <div className="text-sm uppercase tracking-wider text-white/60">
+              {t.band_buyer_label}
             </div>
-            <p className="mt-3 text-white/70 text-sm">
-              {lang === 'it'
-                ? 'Rappresentazione stilizzata: segnaposti WC indicano la nostra presenza operativa sul territorio.'
-                : 'Stylized representation: WC markers illustrate our operational footprint across the country.'}
-            </p>
+            <h3 className="mt-1 text-2xl font-bold">{t.band_buyer_title}</h3>
+            <p className="mt-2 text-white/75 text-[15px]">{t.band_buyer_desc}</p>
+            <div className="mt-4 flex flex-wrap gap-3">
+              <a
+                href="#buyers"
+                className="inline-flex items-center justify-center rounded-full bg-[color:var(--wc)] px-5 py-2.5 text-sm font-bold text-[#0f1720] shadow hover:translate-y-[-1px] transition"
+              >
+                {t.buyers.cta1}
+              </a>
+              <a
+                href="#funziona"
+                className="inline-flex items-center justify-center rounded-full border px-5 py-2.5 text-sm font-semibold hover:bg-white/5"
+                style={{ borderColor: `${WC_PINK}55` }}
+              >
+                {t.how_it_works}
+              </a>
+            </div>
+          </div>
+
+          {/* Wineries band */}
+          <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-6 text-right">
+            <div className="text-sm uppercase tracking-wider text-white/60">
+              {t.band_wineries_label}
+            </div>
+            <h3 className="mt-1 text-2xl font-bold">{t.band_wineries_title}</h3>
+            <p className="mt-2 text-white/75 text-[15px]">{t.band_wineries_desc}</p>
+            <div className="mt-4 flex flex-wrap gap-3 justify-end">
+              <a
+                href="#wineries"
+                className="inline-flex items-center justify-center rounded-full border px-5 py-2.5 text-sm font-semibold hover:bg-white/5"
+                style={{ borderColor: `${WC_PINK}55` }}
+              >
+                {t.wineries.cta1}
+              </a>
+              <a
+                href="#funziona"
+                className="inline-flex items-center justify-center rounded-full bg-[color:var(--wc)] px-5 py-2.5 text-sm font-bold text-[#0f1720] shadow hover:translate-y-[-1px] transition"
+              >
+                {t.how_it_works}
+              </a>
+            </div>
           </div>
         </div>
       </section>
@@ -332,81 +402,51 @@ export default function WineConnectHome() {
             </picture>
             <span className="sr-only">Wine Connect</span>
           </a>
-          <small className="text-white/80 leading-tight text-center sm:text-right">© {new Date().getFullYear()} Wine Connect — SPST · VAT IT03218840647</small>
+          <small className="text-white/80 leading-tight text-center sm:text-right">
+            © {new Date().getFullYear()} Wine Connect — SPST · VAT IT03218840647
+          </small>
         </div>
       </footer>
     </main>
   );
 }
 
-/* ===================== MAP COMPONENT ===================== */
-function ItalyMapMinimal({ logoSrc, accent }) {
-  // Positions (viewBox 0..100) to roughly cover the peninsula + Sicily + Sardinia
-  const dots = [
-    { x: 20, y: 22 }, // Torino area
-    { x: 35, y: 18 }, // Milano
-    { x: 48, y: 22 }, // Verona
-    { x: 62, y: 26 }, // Venezia
-    { x: 54, y: 32 }, // Bologna
-    { x: 44, y: 34 }, // Parma/Modena
-    { x: 58, y: 40 }, // Firenze
-    { x: 54, y: 46 }, // Siena
-    { x: 64, y: 48 }, // Perugia
-    { x: 58, y: 54 }, // Roma
-    { x: 62, y: 62 }, // Napoli
-    { x: 70, y: 72 }, // Calabria
-    { x: 80, y: 82 }, // Sicilia est
-    { x: 72, y: 84 }, // Sicilia ovest
-    { x: 18, y: 60 }, // Sardegna nord
-    { x: 22, y: 72 }, // Sardegna sud
-  ];
-
-  return (
-    <svg viewBox="0 0 100 100" className="absolute inset-0 w-full h-full">
-      {/* Glow background */}
-      <defs>
-        <radialGradient id="wcGlow" cx="50%" cy="50%" r="50%">
-          <stop offset="0%" stopColor={accent} stopOpacity="0.12" />
-          <stop offset="100%" stopColor={accent} stopOpacity="0" />
-        </radialGradient>
-      </defs>
-      <rect x="0" y="0" width="100" height="100" fill="url(#wcGlow)" />
-
-      {/* Italy outline (minimal, stylized) */}
-      <g fill="none" stroke="#fff" strokeOpacity="0.9" strokeWidth="0.8">
-        {/* Peninsula (very simplified polyline) */}
-        <path d="M28 18 L44 16 L60 22 L64 28 L56 34 L60 40 L56 46 L60 52 L66 58 L64 66 L70 74 L78 82" />
-        {/* Sicily */}
-        <path d="M72 86 L84 84 L80 90 L70 88 Z" />
-        {/* Sardinia */}
-        <path d="M18 58 L24 60 L22 76 L16 72 Z" />
-      </g>
-
-      {/* Markers: WC logos */}
-      {dots.map((d, i) => (
-        <g key={i} transform={`translate(${d.x} ${d.y})`}>
-          <circle cx="0" cy="0" r="3.2" fill="rgba(255,255,255,0.06)" />
-          <image href={logoSrc} x={-2.6} y={-2.6} width="5.2" height="5.2" style={{ imageRendering: 'crisp-edges' }} opacity="0.95" />
-        </g>
-      ))}
-    </svg>
-  );
-}
-
 /* ===================== UI helpers ===================== */
-function Header({ kicker, title, gradient = false }) {
+function Header({
+  kicker,
+  title,
+  gradient = false,
+}: {
+  kicker: string;
+  title: string;
+  gradient?: boolean;
+}) {
   return (
     <div className="pb-5 text-center md:text-left">
       <div className="text-[11px] tracking-wider uppercase text-white/60">{kicker}</div>
       <h2 className="relative text-[26px] sm:text-[30px] md:text-[36px] font-black mt-1">
-        <span className={gradient ? 'bg-clip-text text-transparent' : ''} style={gradient ? { backgroundImage: `linear-gradient(90deg, ${WC_PINK}, #fff)` } : undefined}>{title}</span>
+        <span
+          className={gradient ? 'bg-clip-text text-transparent' : ''}
+          style={gradient ? { backgroundImage: `linear-gradient(90deg, ${WC_PINK}, #fff)` } : undefined}
+        >
+          {title}
+        </span>
       </h2>
-      <div className="mt-2 h-[3px] w-24 rounded-full" style={{ backgroundImage: `linear-gradient(90deg, ${WC_PINK}, transparent)` }} />
+      <div
+        className="mt-2 h-[3px] w-24 rounded-full"
+        style={{ backgroundImage: `linear-gradient(90deg, ${WC_PINK}, transparent)` }}
+      />
     </div>
   );
 }
 
-function Field({ label, children }) {
+function Field({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
   return (
     <label className="group grid gap-1">
       <div className="text-[11px] text-white/60">{label}</div>
