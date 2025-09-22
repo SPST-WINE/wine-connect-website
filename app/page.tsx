@@ -297,54 +297,126 @@ export default function WineConnectHome() {
         </div>
       </section>
 
-      {/* ===== CARD UNICA: MERCATI+KPI (SX) — FULL COMPLIANCE (DX) ===== */}
-      <section className="py-8">
-        <div className="mx-auto max-w-[1200px] px-5">
-          <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 md:p-6">
-            <div className="grid gap-6 md:grid-cols-2">
-              {/* SX: Mercati tag + KPI */}
-              <div>
-                <div className="text-[11px] tracking-wider uppercase text-white/60">{t.kpi_label}</div>
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {t.markets_tags.map((m) => (
-                    <span key={m} className="px-3 py-1 rounded-full border border-white/10 bg-white/[0.04] text-sm">
-                      {m}
-                    </span>
-                  ))}
-                </div>
-                <div className="mt-4 grid grid-cols-2 gap-3">
-                  {t.kpi_rows.map(([n, l], i) => (
-                    <motion.div key={i} initial={{ y: 8, opacity: 0 }} whileInView={{ y: 0, opacity: 1 }} viewport={{ once: true }} transition={{ duration: 0.35, delay: i * 0.05 }} className="rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-center">
-                      <div className="text-xl font-extrabold">{n}</div>
-                      <div className="text-xs text-white/70">{l}</div>
-                    </motion.div>
-                  ))}
-                </div>
-              </div>
+     {/* ===== MERCATI & KPI  +  EXPORT FULL COMPLIANCE (TWIN CARDS) ===== */}
+<section className="py-10">
+  <div className="mx-auto max-w-[1200px] px-5">
+    <div className="grid gap-4 md:grid-cols-2">
+      {/* --- LEFT: Markets & KPIs --- */}
+      <div className="h-full">
+        <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 md:p-6 h-full flex flex-col">
+          {/* header */}
+          <div>
+            <div className="text-[11px] tracking-wider uppercase text-white/60">
+              {lang === 'it' ? 'Mercati & KPI' : 'Markets & KPIs'}
+            </div>
+            <h3 className="mt-1 text-xl md:text-2xl font-extrabold">
+              {lang === 'it' ? 'Copertura e numeri' : 'Coverage & numbers'}
+            </h3>
+          </div>
 
-              {/* DX: Export full compliance */}
-              <div className="md:text-right">
-                <div className="text-[11px] tracking-wider uppercase text-white/60">{t.compliance_title}</div>
-                <h3 className="mt-1 text-2xl font-bold">SPST × Wine Connect</h3>
-                <ul className="mt-3 space-y-2 text-[15px] text-white/80">
-                  {t.compliance_points.map((p, i) => (
-                    <li key={i} className="flex items-start gap-2 md:justify-end">
-                      <span className="hidden md:inline">{p}</span>
-                      <span className="md:hidden">{p}</span>
-                      <span aria-hidden className="mt-2 inline-block h-1.5 w-1.5 rounded-full bg-[color:var(--wc)] md:order-first md:ml-2" />
-                    </li>
-                  ))}
-                </ul>
-                <div className="mt-4 flex flex-wrap gap-3 md:justify-end">
-                  <a href="#funziona" className="inline-flex items-center justify-center rounded-full border px-5 py-2.5 text-sm font-semibold hover:bg-white/5" style={{ borderColor: `${WC_PINK}55` }}>
-                    {t.how_it_works}
-                  </a>
-                </div>
-              </div>
+          {/* body */}
+          <div className="mt-4 flex-1 flex flex-col gap-4">
+            {/* Markets tags */}
+            <div className="flex flex-wrap gap-2">
+              {(lang === 'it' ? ['UE', 'Asia', 'USA', 'UK'] : ['EU', 'Asia', 'USA', 'UK']).map((m) => (
+                <span
+                  key={m}
+                  className="px-3 py-1 rounded-full border border-white/10 bg-white/[0.04] text-sm"
+                >
+                  {m}
+                </span>
+              ))}
+            </div>
+
+            {/* KPI pills */}
+            <div className="grid grid-cols-2 gap-3">
+              {[
+                { n: '100+', l: lang === 'it' ? 'Cantine pronte' : 'Wineries ready' },
+                { n: '20+',  l: lang === 'it' ? 'Buyer qualificati' : 'Qualified buyers' },
+              ].map((k, i) => (
+                <motion.div
+                  key={i}
+                  initial={{ y: 8, opacity: 0 }}
+                  whileInView={{ y: 0, opacity: 1 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.35, delay: i * 0.04 }}
+                  className="rounded-xl border border-white/10 bg-white/[0.03] px-4 py-4 text-center"
+                >
+                  <div className="text-2xl font-extrabold">{k.n}</div>
+                  <div className="text-xs text-white/70">{k.l}</div>
+                </motion.div>
+              ))}
             </div>
           </div>
+
+          {/* footer / CTA */}
+          <div className="mt-5 pt-4 border-t border-white/10">
+            <a
+              href="#funziona"
+              className="inline-flex items-center justify-center rounded-full border px-5 py-2.5 text-sm font-semibold hover:bg-white/5"
+              style={{ borderColor: `${WC_PINK}55` }}
+            >
+              {lang === 'it' ? 'Come funziona' : 'How it works'}
+            </a>
+          </div>
         </div>
-      </section>
+      </div>
+
+      {/* --- RIGHT: Export full compliance --- */}
+      <div className="h-full">
+        <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 md:p-6 h-full flex flex-col md:text-right">
+          {/* header */}
+          <div>
+            <div className="text-[11px] tracking-wider uppercase text-white/60">
+              {lang === 'it' ? 'Export full compliance' : 'Export full compliance'}
+            </div>
+            <h3 className="mt-1 text-xl md:text-2xl font-extrabold">SPST × Wine Connect</h3>
+          </div>
+
+          {/* body */}
+          <div className="mt-4 flex-1">
+            <ul className="space-y-2 text-[15px] text-white/80">
+              {(lang === 'it'
+                ? [
+                    'Accise, COLA, e-DAS, HS Code',
+                    'Dazi & documenti senza sorprese',
+                    'Spedizioni express o pallet',
+                    'Tracking sempre disponibile',
+                  ]
+                : [
+                    'Excise, COLA, e-DAS, HS codes',
+                    'Duties & paperwork with no surprises',
+                    'Express or pallet shipments',
+                    'Live tracking always available',
+                  ]
+              ).map((p, i) => (
+                <li key={i} className="flex items-start gap-2 md:justify-end">
+                  {/* bullet speculare: a sinistra su mobile, a destra su desktop */}
+                  <span
+                    aria-hidden
+                    className="mt-2 inline-block h-1.5 w-1.5 rounded-full bg-[color:var(--wc)] md:order-last md:ml-2"
+                  />
+                  <span>{p}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* footer / CTA */}
+          <div className="mt-5 pt-4 border-t border-white/10 md:text-right">
+            <a
+              href="#funziona"
+              className="inline-flex items-center justify-center rounded-full border px-5 py-2.5 text-sm font-semibold hover:bg-white/5"
+              style={{ borderColor: `${WC_PINK}55` }}
+            >
+              {lang === 'it' ? 'Come funziona' : 'How it works'}
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
 
       {/* ===== PERCHÉ WINE CONNECT ===== */}
       <section className="py-12">
