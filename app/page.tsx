@@ -301,6 +301,27 @@ export default function WineConnectHome() {
         </div>
       </section>
 
+      {/* ===== RETE ITALIA (minimal map) ===== */}
+      <section className="py-12">
+        <div className="mx-auto max-w-[1200px] px-5">
+          <div className="text-[11px] tracking-wider uppercase text-white/60">{lang === 'it' ? 'La nostra rete' : 'Our network'}</div>
+          <h2 className="mt-1 text-[26px] sm:text-[30px] md:text-[36px] font-black">
+            {lang === 'it' ? 'Copertura in Italia' : 'Coverage across Italy'}
+          </h2>
+
+          <div className="mt-6 rounded-2xl border border-white/10 bg-white/[0.03] p-4 md:p-6">
+            <div className="relative w-full aspect-[16/9]">
+              <ItalyMapMinimal logoSrc={LOGO_PNG} accent={WC_PINK} />
+            </div>
+            <p className="mt-3 text-white/70 text-sm">
+              {lang === 'it'
+                ? 'Rappresentazione stilizzata: segnaposti WC indicano la nostra presenza operativa sul territorio.'
+                : 'Stylized representation: WC markers illustrate our operational footprint across the country.'}
+            </p>
+          </div>
+        </div>
+      </section>
+
       {/* ===== FOOTER ===== */}
       <footer className="py-8">
         <div className="mx-auto max-w-[1200px] px-5 flex flex-col sm:flex-row items-center justify-between gap-3">
@@ -315,5 +336,83 @@ export default function WineConnectHome() {
         </div>
       </footer>
     </main>
+  );
+}
+
+/* ===================== MAP COMPONENT ===================== */
+function ItalyMapMinimal({ logoSrc, accent }) {
+  // Positions (viewBox 0..100) to roughly cover the peninsula + Sicily + Sardinia
+  const dots = [
+    { x: 20, y: 22 }, // Torino area
+    { x: 35, y: 18 }, // Milano
+    { x: 48, y: 22 }, // Verona
+    { x: 62, y: 26 }, // Venezia
+    { x: 54, y: 32 }, // Bologna
+    { x: 44, y: 34 }, // Parma/Modena
+    { x: 58, y: 40 }, // Firenze
+    { x: 54, y: 46 }, // Siena
+    { x: 64, y: 48 }, // Perugia
+    { x: 58, y: 54 }, // Roma
+    { x: 62, y: 62 }, // Napoli
+    { x: 70, y: 72 }, // Calabria
+    { x: 80, y: 82 }, // Sicilia est
+    { x: 72, y: 84 }, // Sicilia ovest
+    { x: 18, y: 60 }, // Sardegna nord
+    { x: 22, y: 72 }, // Sardegna sud
+  ];
+
+  return (
+    <svg viewBox="0 0 100 100" className="absolute inset-0 w-full h-full">
+      {/* Glow background */}
+      <defs>
+        <radialGradient id="wcGlow" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stopColor={accent} stopOpacity="0.12" />
+          <stop offset="100%" stopColor={accent} stopOpacity="0" />
+        </radialGradient>
+      </defs>
+      <rect x="0" y="0" width="100" height="100" fill="url(#wcGlow)" />
+
+      {/* Italy outline (minimal, stylized) */}
+      <g fill="none" stroke="#fff" strokeOpacity="0.9" strokeWidth="0.8">
+        {/* Peninsula (very simplified polyline) */}
+        <path d="M28 18 L44 16 L60 22 L64 28 L56 34 L60 40 L56 46 L60 52 L66 58 L64 66 L70 74 L78 82" />
+        {/* Sicily */}
+        <path d="M72 86 L84 84 L80 90 L70 88 Z" />
+        {/* Sardinia */}
+        <path d="M18 58 L24 60 L22 76 L16 72 Z" />
+      </g>
+
+      {/* Markers: WC logos */}
+      {dots.map((d, i) => (
+        <g key={i} transform={`translate(${d.x} ${d.y})`}>
+          <circle cx="0" cy="0" r="3.2" fill="rgba(255,255,255,0.06)" />
+          <image href={logoSrc} x={-2.6} y={-2.6} width="5.2" height="5.2" style={{ imageRendering: 'crisp-edges' }} opacity="0.95" />
+        </g>
+      ))}
+    </svg>
+  );
+}
+
+/* ===================== UI helpers ===================== */
+function Header({ kicker, title, gradient = false }) {
+  return (
+    <div className="pb-5 text-center md:text-left">
+      <div className="text-[11px] tracking-wider uppercase text-white/60">{kicker}</div>
+      <h2 className="relative text-[26px] sm:text-[30px] md:text-[36px] font-black mt-1">
+        <span className={gradient ? 'bg-clip-text text-transparent' : ''} style={gradient ? { backgroundImage: `linear-gradient(90deg, ${WC_PINK}, #fff)` } : undefined}>{title}</span>
+      </h2>
+      <div className="mt-2 h-[3px] w-24 rounded-full" style={{ backgroundImage: `linear-gradient(90deg, ${WC_PINK}, transparent)` }} />
+    </div>
+  );
+}
+
+function Field({ label, children }) {
+  return (
+    <label className="group grid gap-1">
+      <div className="text-[11px] text-white/60">{label}</div>
+      <div className="flex items-center gap-2 rounded-xl px-3 py-3 bg-black/30 border border-white/10 ring-0 focus-within:ring-1 focus-within:ring-white/30">
+        {children}
+      </div>
+    </label>
   );
 }
