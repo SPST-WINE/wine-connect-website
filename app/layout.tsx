@@ -1,4 +1,7 @@
 // app/layout.tsx
+import './globals.css';
+
+
 export const metadata = {
   title: 'Wine Connect',
   description: 'Matchmaking cantine ↔ buyer · by SPST',
