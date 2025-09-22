@@ -357,7 +357,7 @@ export default function WineConnectHome() {
 
       {/* ===== CONTATTI ===== */}
       <section id="contatti" className="py-12">
-        <div className="mx-auto max-w-[820px] px-5">
+        <div className="mx-auto max-w-[1200px] px-5">{/* <- allargato */}
           <Header kicker={t.contact.kicker} title={t.contact.title} />
           <form
             onSubmit={(e) => {
@@ -406,40 +406,53 @@ export default function WineConnectHome() {
 }
 
 /* ===================== TWIN CARDS ===================== */
-function SquareChip({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="h-8 min-w-[3.5rem] px-2 grid place-items-center rounded-lg border border-white/10 bg-white/[0.04] text-sm font-semibold">
-      {children}
-    </div>
-  );
-}
-
 function KPIBlock({
   chips,
   value,
   label,
   align = 'left',
 }: {
-  chips: ReadonlyArray<string>; // <-- FIX: accetta anche tuple readonly da i18n
+  chips: ReadonlyArray<string>; // accetta tuple readonly dall’i18n
   value: string;
   label: string;
   align?: 'left' | 'right';
 }) {
-  const content = (
-    <>
-      <div className="flex gap-2">
-        {chips.map((c) => (
-          <SquareChip key={c}>{c}</SquareChip>
-        ))}
-      </div>
-      <div className="mt-3 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-4 text-center">
-        <div className="text-2xl font-extrabold">{value}</div>
-        <div className="text-xs text-white/70">{label}</div>
-      </div>
-    </>
+  // layout orizzontale con altezza condivisa: i 2 chip “raddoppiano” l’altezza
+  // così le 4 card (UE/USA/UK/ASIA) risultano lunghe quanto i due blocchi KPI.
+  const ChipsCol = (
+    <div className="grid grid-rows-2 gap-2 min-h-[150px]">
+      {chips.map((c) => (
+        <div
+          key={c}
+          className="rounded-xl border border-white/10 bg-white/[0.04] px-3 text-sm font-semibold grid place-items-center"
+        >
+          {c}
+        </div>
+      ))}
+    </div>
   );
 
-  return <div className={align === 'right' ? 'text-right' : ''}>{content}</div>;
+  const StatCol = (
+    <div className="rounded-xl border border-white/10 bg-white/[0.03] px-4 py-4 h-full grid place-items-center text-center min-h-[150px]">
+      <div>
+        <div className="text-2xl font-extrabold leading-none">{value}</div>
+        <div className="text-xs text-white/70 mt-1">{label}</div>
+      </div>
+    </div>
+  );
+
+  return (
+    <div
+      className={`grid gap-3 md:grid-cols-2 items-stretch ${
+        align === 'right' ? 'md:[direction:rtl]' : ''
+      }`}
+      style={align === 'right' ? ({ direction: 'rtl' } as React.CSSProperties) : undefined}
+    >
+      {/* NB: usiamo direction RTL per invertire le colonne su desktop, mantenendo l’ordine DOM */}
+      {ChipsCol}
+      {StatCol}
+    </div>
+  );
 }
 
 function TwinCardLeft({ lang }: { lang: Lang }) {
@@ -486,12 +499,12 @@ function TwinCardRight({ lang }: { lang: Lang }) {
           <h3 className="mt-1 text-xl md:text-2xl font-extrabold">{t.title}</h3>
         </div>
 
-        {/* body: 4 quadrati */}
+        {/* body: 4 quadrati “doppi” in altezza rispetto alla pill classica */}
         <div className="mt-4 grid grid-cols-2 gap-3 flex-1">
           {items.map((label, i) => (
             <div
               key={i}
-              className="rounded-xl border border-white/10 bg-white/[0.03] p-3 text-sm flex items-center justify-center text-center"
+              className="rounded-xl border border-white/10 bg-white/[0.03] p-3 text-sm grid place-items-center text-center min-h-[150px]"
             >
               {label}
             </div>
@@ -513,40 +526,8 @@ function TwinCardRight({ lang }: { lang: Lang }) {
   );
 }
 
-/* ===================== MAP COMPONENT ===================== */
-function ItalyMapMinimal({ logoSrc, accent }: { logoSrc: string; accent: string }) {
-  const dots = [
-    { x: 20, y: 22 }, { x: 35, y: 18 }, { x: 48, y: 22 }, { x: 62, y: 26 },
-    { x: 54, y: 32 }, { x: 44, y: 34 }, { x: 58, y: 40 }, { x: 54, y: 46 },
-    { x: 64, y: 48 }, { x: 58, y: 54 }, { x: 62, y: 62 }, { x: 70, y: 72 },
-    { x: 80, y: 82 }, { x: 72, y: 84 }, { x: 18, y: 60 }, { x: 22, y: 72 },
-  ];
-
-  return (
-    <svg viewBox="0 0 100 100" className="absolute inset-0 w-full h-full">
-      <defs>
-        <radialGradient id="wcGlow" cx="50%" cy="50%" r="50%">
-          <stop offset="0%" stopColor={accent} stopOpacity="0.12" />
-          <stop offset="100%" stopColor={accent} stopOpacity="0" />
-        </radialGradient>
-      </defs>
-      <rect x="0" y="0" width="100" height="100" fill="url(#wcGlow)" />
-      <g fill="none" stroke="#fff" strokeOpacity="0.9" strokeWidth="0.8">
-        <path d="M28 18 L44 16 L60 22 L64 28 L56 34 L60 40 L56 46 L60 52 L66 58 L64 66 L70 74 L78 82" />
-        <path d="M72 86 L84 84 L80 90 L70 88 Z" />
-        <path d="M18 58 L24 60 L22 76 L16 72 Z" />
-      </g>
-      {dots.map((d, i) => (
-        <g key={i} transform={`translate(${d.x} ${d.y})`}>
-          <circle cx="0" cy="0" r="3.2" fill="rgba(255,255,255,0.06)" />
-          <image href={logoSrc} x={-2.6} y={-2.6} width="5.2" height="5.2" style={{ imageRendering: 'crisp-edges' }} opacity="0.95" />
-        </g>
-      ))}
-    </svg>
-  );
-}
-
 /* ===================== UI helpers ===================== */
+
 function Header({ kicker, title, gradient = false }: { kicker: string; title: string; gradient?: boolean }) {
   return (
     <div className="pb-5 text-center md:text-left">
