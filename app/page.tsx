@@ -16,7 +16,7 @@ const LOGO_SVG = '/wc-logo.svg'; // opzionale (se presente)
 /* ===================== I18N ===================== */
 const I18N = {
   it: {
-    hero_kicker: 'La scorciatoia tra chi produce e chi compra',
+    hero_kicker: "L’hub tra chi produce e chi compra",
     hero_title_a: 'Matchmaking su misura.',
     hero_title_b: 'Documenti e spedizioni già integrati.',
     hero_desc:
@@ -43,27 +43,30 @@ const I18N = {
       cta1: 'Wine Connect for Wineries',
       cta2: 'Come funziona',
     },
-    markets_label: 'Mercati',
-    markets_title: 'Dove operiamo',
-    partners_label: 'Alcune cantine',
     kpi_label: 'Mercati & KPI',
+    markets_tags: ['UE', 'Asia', 'USA', 'UK'],
     kpi_rows: [
       ['100+', 'Cantine pronte'],
       ['20+', 'Buyer qualificati'],
-      ['UE, ASIA, USA, UK', 'Mercati coperti'],
     ],
-    band_buyer_label: 'Percorso Buyer',
-    band_buyer_title: 'Scopri cantine su misura',
-    band_buyer_desc:
-      'Raccontaci il tuo portafoglio, gli stili e i prezzi: creiamo una shortlist e spediamo il tasting kit.',
-    band_wineries_label: 'Percorso Cantine',
-    band_wineries_title: 'Entra in nuovi mercati',
-    band_wineries_desc:
-      'Buyer qualificati, compliance integrata e spedizioni ottimizzate. Meno attrito, più ordini.',
+    compliance_title: 'Export full compliance',
+    compliance_points: [
+      'Accise, COLA, e-DAS, HS Code',
+      'Dazi & documenti senza sorprese',
+      'Spedizioni express o pallet',
+      'Tracking e un’unica fattura',
+    ],
+    why_kicker: 'Perché Wine Connect',
+    why_rows: [
+      ['Matching intelligente', 'Allineiamo stile, terroir, riconoscimenti e target FOB per shortlist rilevanti.'],
+      ['Pagamenti regolari', 'Processi chiari: conferme d’ordine, fatture e verifiche per flussi senza attriti.'],
+      ['Logistica & compliance', 'Dogana integrata e rotte ottimizzate. Dati e tracking sempre disponibili.'],
+    ],
     how_it_works: 'Come funziona',
+    partners_label: 'Alcune cantine',
   },
   en: {
-    hero_kicker: 'The shortcut between producers and buyers',
+    hero_kicker: 'The hub between producers and buyers',
     hero_title_a: 'Tailored matchmaking.',
     hero_title_b: 'Docs and shipping built-in.',
     hero_desc:
@@ -90,24 +93,27 @@ const I18N = {
       cta1: 'Wine Connect for Wineries',
       cta2: 'How it works',
     },
-    markets_label: 'Markets',
-    markets_title: 'Where we operate',
-    partners_label: 'Selected partners',
     kpi_label: 'Markets & KPIs',
+    markets_tags: ['EU', 'Asia', 'USA', 'UK'],
     kpi_rows: [
       ['100+', 'Wineries ready'],
       ['20+', 'Qualified buyers'],
-      ['EU, ASIA, USA, UK', 'Markets covered'],
     ],
-    band_buyer_label: 'Buyer Path',
-    band_buyer_title: 'Discover tailored wineries',
-    band_buyer_desc:
-      'Tell us your portfolio, styles and price points: we build a shortlist and ship the tasting kit.',
-    band_wineries_label: 'Wineries Path',
-    band_wineries_title: 'Enter new markets',
-    band_wineries_desc:
-      'Qualified buyers, built-in compliance and optimized shipping. Less friction, more orders.',
+    compliance_title: 'Export full compliance',
+    compliance_points: [
+      'Excise, COLA, e-DAS, HS codes',
+      'Duties & paperwork, no surprises',
+      'Express or pallet shipments',
+      'Live tracking & single invoice',
+    ],
+    why_kicker: 'Why Wine Connect',
+    why_rows: [
+      ['Smart matching', 'We align style, terroir, awards and target FOB to build relevant shortlists.'],
+      ['Regular payments', 'Clear processes: order confirmations, invoicing and checks for smooth flows.'],
+      ['Logistics & compliance', 'Integrated customs and optimized routes. Data and tracking always on.'],
+    ],
     how_it_works: 'How it works',
+    partners_label: 'Selected partners',
   },
 } as const;
 
@@ -132,8 +138,6 @@ export default function WineConnectHome() {
   useEffect(() => {
     runDevTests();
   }, []);
-
-  const markets = lang === 'it' ? ['UE', 'Asia', 'USA', 'UK'] : ['EU', 'Asia', 'USA', 'UK'];
 
   // opzionale: popola se carichi loghi in /public/partners/
   const partners: string[] = [
@@ -237,7 +241,6 @@ export default function WineConnectHome() {
 
             {/* center: logo with static blue badge */}
             <div className="relative grid place-items-center">
-              {/* blue badge */}
               <div aria-hidden className="absolute inset-0 -z-10 grid place-items-center">
                 <div
                   className="relative w-36 h-36 md:w-48 md:h-48 rounded-full"
@@ -256,7 +259,6 @@ export default function WineConnectHome() {
                 </div>
               </div>
 
-              {/* LOGO (no motion.picture) */}
               <motion.div initial={{ opacity: 0, scale: 0.95 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }} transition={{ duration: 0.6 }} className="relative w-28 h-28 md:w-36 md:h-36 grid place-items-center">
                 <span
                   aria-hidden
@@ -295,102 +297,93 @@ export default function WineConnectHome() {
         </div>
       </section>
 
-      {/* ===== KPI ===== */}
+      {/* ===== CARD UNICA: MERCATI+KPI (SX) — FULL COMPLIANCE (DX) ===== */}
       <section className="py-8">
         <div className="mx-auto max-w-[1200px] px-5">
-          <div className="text-[11px] tracking-wider uppercase text-white/60">{t.kpi_label}</div>
-          <div className="mt-3 grid grid-cols-3 gap-3 text-center">
-            {t.kpi_rows.map(([n, l], i) => (
-              <motion.div key={i} initial={{ y: 8, opacity: 0 }} whileInView={{ y: 0, opacity: 1 }} viewport={{ once: true }} transition={{ delay: i * 0.05 }}>
-                <div className="text-2xl font-extrabold">{n}</div>
-                <div className="text-xs text-white/70">{l}</div>
+          <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 md:p-6">
+            <div className="grid gap-6 md:grid-cols-2">
+              {/* SX: Mercati tag + KPI */}
+              <div>
+                <div className="text-[11px] tracking-wider uppercase text-white/60">{t.kpi_label}</div>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {t.markets_tags.map((m) => (
+                    <span key={m} className="px-3 py-1 rounded-full border border-white/10 bg-white/[0.04] text-sm">
+                      {m}
+                    </span>
+                  ))}
+                </div>
+                <div className="mt-4 grid grid-cols-2 gap-3">
+                  {t.kpi_rows.map(([n, l], i) => (
+                    <motion.div key={i} initial={{ y: 8, opacity: 0 }} whileInView={{ y: 0, opacity: 1 }} viewport={{ once: true }} transition={{ duration: 0.35, delay: i * 0.05 }} className="rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-center">
+                      <div className="text-xl font-extrabold">{n}</div>
+                      <div className="text-xs text-white/70">{l}</div>
+                    </motion.div>
+                  ))}
+                </div>
+              </div>
+
+              {/* DX: Export full compliance */}
+              <div className="md:text-right">
+                <div className="text-[11px] tracking-wider uppercase text-white/60">{t.compliance_title}</div>
+                <h3 className="mt-1 text-2xl font-bold">SPST × Wine Connect</h3>
+                <ul className="mt-3 space-y-2 text-[15px] text-white/80">
+                  {t.compliance_points.map((p, i) => (
+                    <li key={i} className="flex items-start gap-2 md:justify-end">
+                      <span className="hidden md:inline">{p}</span>
+                      <span className="md:hidden">{p}</span>
+                      <span aria-hidden className="mt-2 inline-block h-1.5 w-1.5 rounded-full bg-[color:var(--wc)] md:order-first md:ml-2" />
+                    </li>
+                  ))}
+                </ul>
+                <div className="mt-4 flex flex-wrap gap-3 md:justify-end">
+                  <a href="#funziona" className="inline-flex items-center justify-center rounded-full border px-5 py-2.5 text-sm font-semibold hover:bg-white/5" style={{ borderColor: `${WC_PINK}55` }}>
+                    {t.how_it_works}
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ===== PERCHÉ WINE CONNECT ===== */}
+      <section className="py-12">
+        <div className="mx-auto max-w-[1200px] px-5">
+          <div className="text-[11px] tracking-wider uppercase text-white/60">{t.why_kicker}</div>
+          <h2 className="mt-1 text-[26px] sm:text-[30px] md:text-[36px] font-black">Operatività, non promesse</h2>
+          <div className="mt-5 grid gap-4 md:grid-cols-3">
+            {t.why_rows.map(([title, desc], i) => (
+              <motion.div
+                key={i}
+                initial={{ y: 18, opacity: 0 }}
+                whileInView={{ y: 0, opacity: 1 }}
+                viewport={{ once: true, amount: 0.6 }}
+                transition={{ duration: 0.4, delay: i * 0.05 }}
+                className="rounded-2xl p-5 border border-white/10 bg-white/[0.03]"
+              >
+                <h3 className="text-white font-extrabold text-[1.1rem]">{title}</h3>
+                <p className="text-white/80 text-[0.98rem] mt-1">{desc}</p>
               </motion.div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ===== MERCATI ===== */}
-      <section className="py-10">
-        <div className="mx-auto max-w-[1200px] px-5">
-          <div className="text-[11px] tracking-wider uppercase text-white/60">{t.markets_label}</div>
-          <h2 className="mt-1 text-[26px] sm:text-[30px] md:text-[36px] font-black">{t.markets_title}</h2>
-          <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-3">
-            {markets.map((m) => (
-              <div key={m} className="rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-center font-semibold">
-                {m}
-              </div>
-            ))}
-          </div>
-
-          {/* Partner logos (opzionale) */}
-          {partners.length > 0 && (
-            <div className="mt-8">
-              <div className="text-[11px] tracking-wider uppercase text-white/60">{t.partners_label}</div>
-              <div className="mt-3 grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-4 items-center">
-                {partners.map((src) => (
-                  <div key={src} className="h-14 grid place-items-center rounded-lg bg-white/[0.02] border border-white/10 p-2">
-                    <img src={src} alt="Partner" className="max-h-10 w-auto object-contain opacity-90" />
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-      </section>
-
-      {/* ===== SEZIONI SOTTO I MERCATI ===== */}
-      <section className="py-12">
-        <div className="mx-auto max-w-[1200px] px-5 grid gap-6 md:grid-cols-2">
-          {/* Buyer band */}
-          <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-6">
-            <div className="text-sm uppercase tracking-wider text-white/60">
-              {t.band_buyer_label}
-            </div>
-            <h3 className="mt-1 text-2xl font-bold">{t.band_buyer_title}</h3>
-            <p className="mt-2 text-white/75 text-[15px]">{t.band_buyer_desc}</p>
-            <div className="mt-4 flex flex-wrap gap-3">
-              <a
-                href="#buyers"
-                className="inline-flex items-center justify-center rounded-full bg-[color:var(--wc)] px-5 py-2.5 text-sm font-bold text-[#0f1720] shadow hover:translate-y-[-1px] transition"
-              >
-                {t.buyers.cta1}
-              </a>
-              <a
-                href="#funziona"
-                className="inline-flex items-center justify-center rounded-full border px-5 py-2.5 text-sm font-semibold hover:bg-white/5"
-                style={{ borderColor: `${WC_PINK}55` }}
-              >
-                {t.how_it_works}
-              </a>
+      {/* ===== PARTNER (opzionale) ===== */}
+      {partners.length > 0 && (
+        <section className="py-10">
+          <div className="mx-auto max-w-[1200px] px-5">
+            <div className="text-[11px] tracking-wider uppercase text-white/60">{t.partners_label}</div>
+            <div className="mt-3 grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-4 items-center">
+              {partners.map((src) => (
+                <div key={src} className="h-14 grid place-items-center rounded-lg bg-white/[0.02] border border-white/10 p-2">
+                  <img src={src} alt="Partner" className="max-h-10 w-auto object-contain opacity-90" />
+                </div>
+              ))}
             </div>
           </div>
-
-          {/* Wineries band */}
-          <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-6 text-right">
-            <div className="text-sm uppercase tracking-wider text-white/60">
-              {t.band_wineries_label}
-            </div>
-            <h3 className="mt-1 text-2xl font-bold">{t.band_wineries_title}</h3>
-            <p className="mt-2 text-white/75 text-[15px]">{t.band_wineries_desc}</p>
-            <div className="mt-4 flex flex-wrap gap-3 justify-end">
-              <a
-                href="#wineries"
-                className="inline-flex items-center justify-center rounded-full border px-5 py-2.5 text-sm font-semibold hover:bg-white/5"
-                style={{ borderColor: `${WC_PINK}55` }}
-              >
-                {t.wineries.cta1}
-              </a>
-              <a
-                href="#funziona"
-                className="inline-flex items-center justify-center rounded-full bg-[color:var(--wc)] px-5 py-2.5 text-sm font-bold text-[#0f1720] shadow hover:translate-y-[-1px] transition"
-              >
-                {t.how_it_works}
-              </a>
-            </div>
-          </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* ===== FOOTER ===== */}
       <footer className="py-8">
@@ -411,42 +404,8 @@ export default function WineConnectHome() {
   );
 }
 
-/* ===================== UI helpers ===================== */
-function Header({
-  kicker,
-  title,
-  gradient = false,
-}: {
-  kicker: string;
-  title: string;
-  gradient?: boolean;
-}) {
-  return (
-    <div className="pb-5 text-center md:text-left">
-      <div className="text-[11px] tracking-wider uppercase text-white/60">{kicker}</div>
-      <h2 className="relative text-[26px] sm:text-[30px] md:text-[36px] font-black mt-1">
-        <span
-          className={gradient ? 'bg-clip-text text-transparent' : ''}
-          style={gradient ? { backgroundImage: `linear-gradient(90deg, ${WC_PINK}, #fff)` } : undefined}
-        >
-          {title}
-        </span>
-      </h2>
-      <div
-        className="mt-2 h-[3px] w-24 rounded-full"
-        style={{ backgroundImage: `linear-gradient(90deg, ${WC_PINK}, transparent)` }}
-      />
-    </div>
-  );
-}
-
-function Field({
-  label,
-  children,
-}: {
-  label: string;
-  children: React.ReactNode;
-}) {
+/* ===================== (Facoltativo) UI helpers riutilizzabili ===================== */
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <label className="group grid gap-1">
       <div className="text-[11px] text-white/60">{label}</div>
