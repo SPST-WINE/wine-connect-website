@@ -3,14 +3,12 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Languages } from 'lucide-react';
+import Image from 'next/image';
+import logoPng from '@/public/wc-logo.png'; // <-- import static, niente 404
 
 /* ===================== THEME ===================== */
 const WC_BLUE_SOFT = '#1c3e5e';
 const WC_PINK = '#E33955';
-
-/* Logo files in /public */
-const LOGO_SVG = '/wc-logo.svg';
-const LOGO_PNG = '/wc-logo.png';
 
 /* ===================== I18N ===================== */
 const I18N = {
@@ -85,7 +83,6 @@ export default function Home() {
     console.assert(['it', 'en'].includes(lang), '[WC] lang key valid');
   }, [lang]);
 
-  // Fix TS per custom CSS var
   const rootStyle: RootStyle = {
     '--wc': WC_PINK,
     background:
@@ -97,14 +94,20 @@ export default function Home() {
       className="font-sans text-slate-100 selection:bg-[color:var(--wc)]/30"
       style={rootStyle}
     >
-      {/* ===== Header ===== */}
+      {/* ===== HEADER ===== */}
       <header className="sticky top-0 z-50 border-b border-white/10 bg-black/30 backdrop-blur supports-[backdrop-filter]:bg-black/20">
         <div className="mx-auto max-w-[1200px] px-5 h-16 flex items-center justify-between gap-4">
           <a href="#" className="flex items-center gap-2 text-white font-extrabold">
-            <picture>
-              <source srcSet={LOGO_SVG} type="image/svg+xml" />
-              <img src={LOGO_PNG} alt="Wine Connect" className="h-8 w-auto object-contain" />
-            </picture>
+            {/* Logo con import static: non può fallire */}
+            <Image
+              src={logoPng}
+              alt="Wine Connect"
+              className="h-8 w-auto object-contain"
+              priority
+              // width/height necessari per <Image>
+              width={128}
+              height={32}
+            />
             <span className="hidden sm:inline">Wine Connect</span>
           </a>
           <button
@@ -196,10 +199,14 @@ export default function Home() {
           {/* CENTER: Logo */}
           <div className="relative grid place-items-center">
             <div className="relative w-28 h-28 md:w-36 md:h-36 rounded-2xl border border-white/10 bg-black/40 backdrop-blur grid place-items-center shadow-[0_8px_40px_rgba(227,57,85,.25)]">
-              <picture>
-                <source srcSet={LOGO_SVG} type="image/svg+xml" />
-                <img src={LOGO_PNG} alt="Wine Connect" className="w-20 md:w-24 h-auto object-contain" />
-              </picture>
+              <Image
+                src={logoPng}
+                alt="Wine Connect"
+                width={128}
+                height={128}
+                className="w-20 md:w-24 h-auto object-contain"
+                priority
+              />
             </div>
           </div>
 
