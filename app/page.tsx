@@ -16,7 +16,7 @@ const LOGO_SVG = '/wc-logo.svg'; // opzionale (se presente)
 /* ===================== I18N ===================== */
 const I18N = {
   it: {
-    hero_kicker: 'L’hub tra chi produce e chi compra',
+    hero_kicker: "L’hub tra chi produce e chi compra",
     hero_title_a: 'Matchmaking su misura.',
     hero_title_b: 'Documenti e spedizioni già integrati.',
     hero_desc:
@@ -49,8 +49,7 @@ const I18N = {
       wines: 'Cantine pronte',
       buyers: 'Buyer qualificati',
       how: 'Come funziona',
-      chipsTopLeft: ['UE', 'USA'],
-      chipsTopRight: ['UK', 'Asia'],
+      chipsTopLeft: ['USA', 'ASIA', 'UK', 'UE'] as const, // readonly
     },
     twin_right: {
       kicker: 'Export full compliance',
@@ -117,8 +116,7 @@ const I18N = {
       wines: 'Wineries ready',
       buyers: 'Qualified buyers',
       how: 'How it works',
-      chipsTopLeft: ['EU', 'USA'],
-      chipsTopRight: ['UK', 'Asia'],
+      chipsTopLeft: ['USA', 'ASIA', 'UK', 'EU'] as const, // readonly
     },
     twin_right: {
       kicker: 'Export full compliance',
@@ -319,15 +317,11 @@ export default function WineConnectHome() {
         </div>
       </section>
 
-      {/* ===== TWIN CARDS: MERCATI & KPI + EXPORT FULL COMPLIANCE ===== */}
+      {/* ===== TWIN: MERCATI & KPI (sx) + EXPORT FULL COMPLIANCE (dx) ===== */}
       <section className="py-10">
-        <div className="mx-auto max-w-[1200px] px-5">
-          <div className="grid gap-4 md:grid-cols-2">
-            {/* LEFT */}
-            <TwinCardLeft lang={lang} />
-            {/* RIGHT */}
-            <TwinCardRight lang={lang} />
-          </div>
+        <div className="mx-auto max-w-[1200px] px-5 grid gap-4 md:grid-cols-2">
+          <TwinCardLeft lang={lang} />
+          <TwinCardRight lang={lang} />
         </div>
       </section>
 
@@ -357,7 +351,7 @@ export default function WineConnectHome() {
 
       {/* ===== CONTATTI ===== */}
       <section id="contatti" className="py-12">
-        <div className="mx-auto max-w-[1200px] px-5">{/* <- allargato */}
+        <div className="mx-auto max-w-[1200px] px-5">
           <Header kicker={t.contact.kicker} title={t.contact.title} />
           <form
             onSubmit={(e) => {
@@ -406,82 +400,90 @@ export default function WineConnectHome() {
 }
 
 /* ===================== TWIN CARDS ===================== */
+function SquareChip({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="h-9 min-w-[3.5rem] px-2 grid place-items-center rounded-lg border border-white/10 bg-white/[0.04] text-sm font-semibold">
+      {children}
+    </div>
+  );
+}
+
 function KPIBlock({
   chips,
   value,
   label,
   align = 'left',
 }: {
-  chips: ReadonlyArray<string>; // accetta tuple readonly dall’i18n
+  chips: readonly string[]; // accepts readonly to avoid TS error with const arrays
   value: string;
   label: string;
   align?: 'left' | 'right';
 }) {
-  // layout orizzontale con altezza condivisa: i 2 chip “raddoppiano” l’altezza
-  // così le 4 card (UE/USA/UK/ASIA) risultano lunghe quanto i due blocchi KPI.
-  const ChipsCol = (
-    <div className="grid grid-rows-2 gap-2 min-h-[150px]">
-      {chips.map((c) => (
-        <div
-          key={c}
-          className="rounded-xl border border-white/10 bg-white/[0.04] px-3 text-sm font-semibold grid place-items-center"
-        >
-          {c}
-        </div>
-      ))}
-    </div>
-  );
-
-  const StatCol = (
-    <div className="rounded-xl border border-white/10 bg-white/[0.03] px-4 py-4 h-full grid place-items-center text-center min-h-[150px]">
-      <div>
-        <div className="text-2xl font-extrabold leading-none">{value}</div>
-        <div className="text-xs text-white/70 mt-1">{label}</div>
+  const content = (
+    <>
+      <div className={`grid gap-2 ${align === 'right' ? 'justify-end' : 'justify-start'} grid-cols-2 md:grid-cols-4`}>
+        {chips.map((c) => (
+          <SquareChip key={c}>{c}</SquareChip>
+        ))}
       </div>
-    </div>
+      <div className="mt-3 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-6 text-center">
+        <div className="text-3xl font-extrabold">{value}</div>
+        <div className="text-xs text-white/70">{label}</div>
+      </div>
+    </>
   );
 
-  return (
-    <div
-      className={`grid gap-3 md:grid-cols-2 items-stretch ${
-        align === 'right' ? 'md:[direction:rtl]' : ''
-      }`}
-      style={align === 'right' ? ({ direction: 'rtl' } as React.CSSProperties) : undefined}
-    >
-      {/* NB: usiamo direction RTL per invertire le colonne su desktop, mantenendo l’ordine DOM */}
-      {ChipsCol}
-      {StatCol}
-    </div>
-  );
+  return <div className={align === 'right' ? 'text-right' : ''}>{content}</div>;
 }
 
 function TwinCardLeft({ lang }: { lang: Lang }) {
   const t = I18N[lang].twin_left;
+
   return (
-    <div className="h-full">
-      <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 md:p-6 h-full flex flex-col">
-        {/* header */}
-        <div>
-          <div className="text-[11px] tracking-wider uppercase text-white/60">{t.kicker}</div>
-          <h3 className="mt-1 text-xl md:text-2xl font-extrabold">{t.title}</h3>
+    <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 md:p-6 h-full flex flex-col">
+      {/* header */}
+      <div>
+        <div className="text-[11px] tracking-wider uppercase text-white/60">{t.kicker}</div>
+        <h3 className="mt-1 text-xl md:text-2xl font-extrabold">{t.title}</h3>
+      </div>
+
+      {/* body */}
+      <div className="mt-4 grid gap-4">
+        {/* RIGA 1: 50/50 Buyer - Cantine */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          {/* Buyer (20+) */}
+          <div className="rounded-xl border border-white/10 bg-white/[0.03] px-4 py-6 grid place-items-center text-center min-h-[140px]">
+            <div>
+              <div className="text-3xl font-extrabold leading-none">20+</div>
+              <div className="text-xs text-white/70 mt-1">
+                {lang === 'it' ? 'Buyer qualificati' : 'Qualified buyers'}
+              </div>
+            </div>
+          </div>
+          {/* Cantine (100+) */}
+          <div className="rounded-xl border border-white/10 bg-white/[0.03] px-4 py-6 grid place-items-center text-center min-h-[140px]">
+            <div>
+              <div className="text-3xl font-extrabold leading-none">100+</div>
+              <div className="text-xs text-white/70 mt-1">
+                {t.wines}
+              </div>
+            </div>
+          </div>
         </div>
 
-        {/* body */}
-        <div className="mt-4 grid gap-4 md:grid-cols-2 flex-1">
-          <KPIBlock chips={t.chipsTopLeft} value="100+" label={t.wines} />
-          <KPIBlock chips={t.chipsTopRight} value="20+" label={t.buyers} align="right" />
-        </div>
+        {/* RIGA 2: 25/25/25/25 chips */}
+        <KPIBlock chips={t.chipsTopLeft} value="" label="" />
+      </div>
 
-        {/* footer / CTA */}
-        <div className="mt-5 pt-4 border-t border-white/10">
-          <a
-            href="#funziona"
-            className="inline-flex items-center justify-center rounded-full border px-5 py-2.5 text-sm font-semibold hover:bg-white/5"
-            style={{ borderColor: `${WC_PINK}55` }}
-          >
-            {t.how}
-          </a>
-        </div>
+      {/* footer / CTA */}
+      <div className="mt-5 pt-4 border-t border-white/10">
+        <a
+          href="#funziona"
+          className="inline-flex items-center justify-center rounded-full border px-5 py-2.5 text-sm font-semibold hover:bg-white/5"
+          style={{ borderColor: `${WC_PINK}55` }}
+        >
+          {t.how}
+        </a>
       </div>
     </div>
   );
@@ -491,36 +493,34 @@ function TwinCardRight({ lang }: { lang: Lang }) {
   const t = I18N[lang].twin_right;
   const items = t.squares;
   return (
-    <div className="h-full">
-      <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 md:p-6 h-full flex flex-col md:text-right">
-        {/* header */}
-        <div>
-          <div className="text-[11px] tracking-wider uppercase text-white/60">{t.kicker}</div>
-          <h3 className="mt-1 text-xl md:text-2xl font-extrabold">{t.title}</h3>
-        </div>
+    <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 md:p-6 h-full flex flex-col md:text-right">
+      {/* header */}
+      <div>
+        <div className="text-[11px] tracking-wider uppercase text-white/60">{t.kicker}</div>
+        <h3 className="mt-1 text-xl md:text-2xl font-extrabold">{t.title}</h3>
+      </div>
 
-        {/* body: 4 quadrati “doppi” in altezza rispetto alla pill classica */}
-        <div className="mt-4 grid grid-cols-2 gap-3 flex-1">
-          {items.map((label, i) => (
-            <div
-              key={i}
-              className="rounded-xl border border-white/10 bg-white/[0.03] p-3 text-sm grid place-items-center text-center min-h-[150px]"
-            >
-              {label}
-            </div>
-          ))}
-        </div>
-
-        {/* footer / CTA */}
-        <div className="mt-5 pt-4 border-t border-white/10 md:text-right">
-          <a
-            href="#funziona"
-            className="inline-flex items-center justify-center rounded-full border px-5 py-2.5 text-sm font-semibold hover:bg-white/5"
-            style={{ borderColor: `${WC_PINK}55` }}
+      {/* body: 4 quadrati */}
+      <div className="mt-4 grid grid-cols-2 gap-3 flex-1">
+        {items.map((label, i) => (
+          <div
+            key={i}
+            className="rounded-xl border border-white/10 bg-white/[0.03] p-3 text-sm flex items-center justify-center text-center min-h-[80px]"
           >
-            {t.how}
-          </a>
-        </div>
+            {label}
+          </div>
+        ))}
+      </div>
+
+      {/* footer / CTA */}
+      <div className="mt-5 pt-4 border-t border-white/10 md:text-right">
+        <a
+          href="#funziona"
+          className="inline-flex items-center justify-center rounded-full border px-5 py-2.5 text-sm font-semibold hover:bg-white/5"
+          style={{ borderColor: `${WC_PINK}55` }}
+        >
+          {t.how}
+        </a>
       </div>
     </div>
   );
