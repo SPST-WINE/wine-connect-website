@@ -408,35 +408,43 @@ function SquareChip({ children }: { children: React.ReactNode }) {
   );
 }
 
+/** Box KPI con pilloline opzionale: il box numerico appare solo se value/label sono valorizzati */
 function KPIBlock({
   chips,
   value,
   label,
   align = 'left',
 }: {
-  chips: readonly string[]; // accepts readonly to avoid TS error with const arrays
-  value: string;
-  label: string;
+  chips?: readonly string[];
+  value?: string;
+  label?: string;
   align?: 'left' | 'right';
 }) {
-  const content = (
-    <>
-      <div className={`grid gap-2 ${align === 'right' ? 'justify-end' : 'justify-start'} grid-cols-2 md:grid-cols-4`}>
-        {chips.map((c) => (
-          <SquareChip key={c}>{c}</SquareChip>
-        ))}
-      </div>
-      <div className="mt-3 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-6 text-center">
-        <div className="text-3xl font-extrabold">{value}</div>
-        <div className="text-xs text-white/70">{label}</div>
-      </div>
-    </>
-  );
+  return (
+    <div className={align === 'right' ? 'text-right' : ''}>
+      {chips && chips.length > 0 && (
+        <div
+          className={`grid gap-2 ${
+            align === 'right' ? 'justify-end' : 'justify-start'
+          } grid-cols-2 md:grid-cols-4`}
+        >
+          {chips.map((c) => (
+            <SquareChip key={c}>{c}</SquareChip>
+          ))}
+        </div>
+      )}
 
-  return <div className={align === 'right' ? 'text-right' : ''}>{content}</div>;
+      {value && label && (
+        <div className="mt-3 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-6 text-center">
+          <div className="text-3xl font-extrabold">{value}</div>
+          <div className="text-xs text-white/70">{label}</div>
+        </div>
+      )}
+    </div>
+  );
 }
 
-function TwinCardLeft({ lang }: { lang: Lang }) {
+function TwinCardLeft({ lang }: { lang: 'it' | 'en' }) {
   const t = I18N[lang].twin_left;
 
   return (
@@ -464,12 +472,63 @@ function TwinCardLeft({ lang }: { lang: Lang }) {
           <div className="rounded-xl border border-white/10 bg-white/[0.03] px-4 py-6 grid place-items-center text-center min-h-[140px]">
             <div>
               <div className="text-3xl font-extrabold leading-none">100+</div>
-              <div className="text-xs text-white/70 mt-1">
-                {t.wines}
-              </div>
+              <div className="text-xs text-white/70 mt-1">{t.wines}</div>
             </div>
           </div>
         </div>
+
+        {/* RIGA 2: 25/25/25/25 pilloline (nessun box vuoto sotto) */}
+        <KPIBlock chips={t.chipsTopLeft} align="left" />
+      </div>
+
+      {/* footer / CTA */}
+      <div className="mt-5 pt-4 border-t border-white/10">
+        <a
+          href="#funziona"
+          className="inline-flex items-center justify-center rounded-full border px-5 py-2.5 text-sm font-semibold hover:bg-white/5"
+          style={{ borderColor: `${WC_PINK}55` }}
+        >
+          {t.how}
+        </a>
+      </div>
+    </div>
+  );
+}
+
+function TwinCardRight({ lang }: { lang: 'it' | 'en' }) {
+  const t = I18N[lang].twin_right;
+  const items = t.squares;
+  return (
+    <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 md:p-6 h-full flex flex-col md:text-right">
+      {/* header */}
+      <div>
+        <div className="text-[11px] tracking-wider uppercase text-white/60">{t.kicker}</div>
+        <h3 className="mt-1 text-xl md:text-2xl font-extrabold">{t.title}</h3>
+      </div>
+
+      {/* body: 4 quadrati */}
+      <div className="mt-4 grid grid-cols-2 gap-3 flex-1">
+        {items.map((label, i) => (
+          <div
+            key={i}
+            className="rounded-xl border border-white/10 bg-white/[0.03] p-3 text-sm flex items-center justify-center text-center min-h-[80px]"
+          >
+            {label}
+          </div>
+        ))}
+      </div>
+
+      {/* footer / CTA */}
+      <div className="mt-5 pt-4 border-t border-white/10 md:text-right">
+        <a
+          href="#funziona"
+          className="inline-flex items-center justify-center rounded-full border px-5 py-2.5 text-sm font-semibold hover:bg-white/5"
+          style={{ borderColor: `${WC_PINK}55` }}
+        >
+          {t.how}
+        </a>
+      </div>
+    </div>
 
         {/* RIGA 2: 25/25/25/25 chips */}
         <KPIBlock chips={t.chipsTopLeft} value="" label="" />
