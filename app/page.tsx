@@ -408,14 +408,14 @@ function SquareChip({ children }: { children: React.ReactNode }) {
   );
 }
 
-/** Box KPI con pilloline opzionale: il box numerico appare solo se value/label sono valorizzati */
+/** Box KPI con pilloline; il box numerico appare solo se value/label sono presenti */
 function KPIBlock({
   chips,
   value,
   label,
   align = 'left',
 }: {
-  chips?: readonly string[];
+  chips?: readonly string[]; // opzionale per accettare const arrays
   value?: string;
   label?: string;
   align?: 'left' | 'right';
@@ -444,7 +444,7 @@ function KPIBlock({
   );
 }
 
-function TwinCardLeft({ lang }: { lang: 'it' | 'en' }) {
+function TwinCardLeft({ lang }: { lang: Lang }) {
   const t = I18N[lang].twin_left;
 
   return (
@@ -477,61 +477,8 @@ function TwinCardLeft({ lang }: { lang: 'it' | 'en' }) {
           </div>
         </div>
 
-        {/* RIGA 2: 25/25/25/25 pilloline (nessun box vuoto sotto) */}
+        {/* RIGA 2: 25/25/25/25 pilloline (nessun box sotto) */}
         <KPIBlock chips={t.chipsTopLeft} align="left" />
-      </div>
-
-      {/* footer / CTA */}
-      <div className="mt-5 pt-4 border-t border-white/10">
-        <a
-          href="#funziona"
-          className="inline-flex items-center justify-center rounded-full border px-5 py-2.5 text-sm font-semibold hover:bg-white/5"
-          style={{ borderColor: `${WC_PINK}55` }}
-        >
-          {t.how}
-        </a>
-      </div>
-    </div>
-  );
-}
-
-function TwinCardRight({ lang }: { lang: 'it' | 'en' }) {
-  const t = I18N[lang].twin_right;
-  const items = t.squares;
-  return (
-    <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 md:p-6 h-full flex flex-col md:text-right">
-      {/* header */}
-      <div>
-        <div className="text-[11px] tracking-wider uppercase text-white/60">{t.kicker}</div>
-        <h3 className="mt-1 text-xl md:text-2xl font-extrabold">{t.title}</h3>
-      </div>
-
-      {/* body: 4 quadrati */}
-      <div className="mt-4 grid grid-cols-2 gap-3 flex-1">
-        {items.map((label, i) => (
-          <div
-            key={i}
-            className="rounded-xl border border-white/10 bg-white/[0.03] p-3 text-sm flex items-center justify-center text-center min-h-[80px]"
-          >
-            {label}
-          </div>
-        ))}
-      </div>
-
-      {/* footer / CTA */}
-      <div className="mt-5 pt-4 border-t border-white/10 md:text-right">
-        <a
-          href="#funziona"
-          className="inline-flex items-center justify-center rounded-full border px-5 py-2.5 text-sm font-semibold hover:bg-white/5"
-          style={{ borderColor: `${WC_PINK}55` }}
-        >
-          {t.how}
-        </a>
-      </div>
-    </div>
-
-        {/* RIGA 2: 25/25/25/25 chips */}
-        <KPIBlock chips={t.chipsTopLeft} value="" label="" />
       </div>
 
       {/* footer / CTA */}
@@ -586,7 +533,6 @@ function TwinCardRight({ lang }: { lang: Lang }) {
 }
 
 /* ===================== UI helpers ===================== */
-
 function Header({ kicker, title, gradient = false }: { kicker: string; title: string; gradient?: boolean }) {
   return (
     <div className="pb-5 text-center md:text-left">
