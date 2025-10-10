@@ -4,32 +4,77 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  ArrowLeft,
-  ArrowRight,
-  Maximize2,
-  Minimize2,
-  LayoutGrid,
-  X,
-  TriangleAlert,
-  Ship,
-  Globe2,
-  Route,
-  FileCheck2,
-  TrendingUp,
-  Building2,
-  LineChart,
-  MessageSquareMore,
-  ShoppingCart,
-  Users2,
-  BadgeCheck,
-  Handshake,
-  Search
+  ArrowLeft, ArrowRight, Maximize2, Minimize2,
+  LayoutGrid, X, TriangleAlert, Ship, Globe2,
+  Route, FileCheck2, TrendingUp, Building2,
+  LineChart, MessageSquareMore, ShoppingCart,
+  Users2, BadgeCheck, Handshake, Search, Palette
 } from 'lucide-react';
 
-/* ===================== PALETTE (dalla home) ===================== */
-const WC_BLUE = '#0a1722';
-const WC_BLUE_SOFT = '#1c3e5e';
-const WC_PINK = '#E33955';
+/* ===================== THEME SET =====================
+ * A: Rosso dominante, dettagli blu (solido)
+ * B: Rosso con glass + glow
+ * C: Rosso scuro + blu elettrico (accent più brillante)
+ * Puoi cambiare i colori qui e vedere l’effetto live.
+ */
+const THEMES = [
+  {
+    id: 'A',
+    name: 'Rosso Solido',
+    vars: {
+      '--wc-primary': '#E33955',      // rosso main
+      '--wc-accent' : '#1c3e5e',      // blu dettagli
+      '--wc-bg1'    : '#0a1722',      // sfondo scuro
+      '--wc-bg2'    : '#000000',
+      '--wc-card'   : 'rgba(255,255,255,0.03)',
+      '--wc-border' : 'rgba(255,255,255,0.10)',
+      '--wc-ring'   : 'rgba(227,57,85,0.35)',
+      '--wc-shadow' : '0 8px 30px rgba(0,0,0,.25)',
+      '--wc-radius' : '16px',
+      '--wc-underline': 'linear-gradient(90deg, var(--wc-primary), transparent)',
+      '--wc-progress' : 'linear-gradient(90deg, var(--wc-primary), transparent)',
+      '--wc-gradient' : 'radial-gradient(140% 140% at 50% -10%, var(--wc-accent) 0%, var(--wc-bg1) 60%, var(--wc-bg2) 140%)',
+    },
+  },
+  {
+    id: 'B',
+    name: 'Rosso Glass',
+    vars: {
+      '--wc-primary': '#E33955',
+      '--wc-accent' : '#1c3e5e',
+      '--wc-bg1'    : '#0a1722',
+      '--wc-bg2'    : '#000000',
+      '--wc-card'   : 'rgba(255,255,255,0.05)',
+      '--wc-border' : 'rgba(255,255,255,0.12)',
+      '--wc-ring'   : 'rgba(227,57,85,0.45)',
+      '--wc-shadow' : '0 12px 40px rgba(0,0,0,.35)',
+      '--wc-radius' : '20px',
+      '--wc-underline': 'linear-gradient(90deg, var(--wc-primary), white)',
+      '--wc-progress' : 'linear-gradient(90deg, white, var(--wc-primary))',
+      '--wc-gradient' : 'radial-gradient(140% 140% at 50% -10%, #112433 0%, var(--wc-bg1) 55%, var(--wc-bg2) 140%)',
+    },
+  },
+  {
+    id: 'C',
+    name: 'Rosso + Blu Elettrico',
+    vars: {
+      '--wc-primary': '#E33955',
+      '--wc-accent' : '#2f79b7',      // blu più brillante
+      '--wc-bg1'    : '#071018',
+      '--wc-bg2'    : '#000000',
+      '--wc-card'   : 'rgba(255,255,255,0.04)',
+      '--wc-border' : 'rgba(255,255,255,0.14)',
+      '--wc-ring'   : 'rgba(47,121,183,0.45)',
+      '--wc-shadow' : '0 16px 50px rgba(0,0,0,.38)',
+      '--wc-radius' : '24px',
+      '--wc-underline': 'linear-gradient(90deg, var(--wc-accent), var(--wc-primary))',
+      '--wc-progress' : 'linear-gradient(90deg, var(--wc-accent), transparent)',
+      '--wc-gradient' : 'radial-gradient(140% 140% at 50% -10%, #123a57 0%, var(--wc-bg1) 55%, var(--wc-bg2) 140%)',
+    },
+  },
+] as const;
+
+type ThemeId = typeof THEMES[number]['id'];
 
 /* ===================== ASSETS ===================== */
 const LOGO_PNG = '/wc-logo.png';
@@ -52,10 +97,7 @@ const slides: Slide[] = [
     title: (
       <>
         Il tuo vino incontra i{' '}
-        <span
-          className="text-transparent bg-clip-text"
-          style={{ backgroundImage: `linear-gradient(90deg, ${WC_PINK}, ${WC_BLUE_SOFT})` }}
-        >
+        <span className="text-transparent bg-clip-text" style={{ backgroundImage: `linear-gradient(90deg, var(--wc-primary), var(--wc-accent))` }}>
           buyer giusti
         </span>
         .
@@ -128,13 +170,16 @@ export default function PresentationPage() {
   const [i, setI] = React.useState(0);
   const [grid, setGrid] = React.useState(false);
   const [fs, setFs] = React.useState(false);
+  const [theme, setTheme] = React.useState<ThemeId>('A');
+
+  const current = React.useMemo(() => THEMES.find(t => t.id === theme)!, [theme]);
+  const styleVars = current.vars as React.CSSProperties;
 
   const total = slides.length;
   const clamp = (n: number) => Math.max(0, Math.min(total - 1, n));
   const go = (dir: number) => setI((v) => clamp(v + dir));
   const goto = (idx: number) => setI(clamp(idx));
 
-  // keyboard
   React.useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (grid) {
@@ -174,17 +219,16 @@ export default function PresentationPage() {
 
   return (
     <main
-      className="min-h-[100svh] antialiased font-sans text-slate-100 selection:bg-[color:var(--wc)]/30"
+      className="min-h-[100svh] antialiased font-sans text-slate-100"
       style={{
-        // usa la stessa dinamica della home
-        ['--wc' as any]: WC_PINK,
-        background: `radial-gradient(140% 140% at 50% -10%, ${WC_BLUE_SOFT} 0%, ${WC_BLUE} 60%, #000 140%)`,
+        ...styleVars,
+        background: `var(--wc-gradient)`,
       }}
       onTouchStart={onTouchStart}
       onTouchEnd={onTouchEnd}
     >
       {/* Header */}
-      <header className="sticky top-0 z-50 border-b border-white/10 bg-black/30 backdrop-blur supports-[backdrop-filter]:bg-black/20">
+      <header className="sticky top-0 z-50 border-b border-[color:var(--wc-border)] bg-black/30 backdrop-blur supports-[backdrop-filter]:bg-black/20">
         <div className="mx-auto max-w-[1200px] px-4 h-14 flex items-center justify-between gap-3">
           <a href="/" className="flex items-center gap-2 text-white font-extrabold">
             <picture>
@@ -195,6 +239,21 @@ export default function PresentationPage() {
           </a>
 
           <div className="flex items-center gap-1 sm:gap-2">
+            {/* THEME SWITCHER */}
+            <div className="hidden md:flex items-center gap-1 pr-1 mr-1 border-r border-[color:var(--wc-border)]">
+              <span className="text-xs text-white/70 mr-1 flex items-center gap-1"><Palette className="h-4 w-4" /> Stile</span>
+              {THEMES.map(t => (
+                <button
+                  key={t.id}
+                  onClick={() => setTheme(t.id)}
+                  className={`px-2 py-1 rounded-md text-xs font-semibold hover:bg-white/10 border border-transparent ${theme === t.id ? 'bg-white/10 border-[color:var(--wc-border)]' : ''}`}
+                  title={t.name}
+                >
+                  {t.id}
+                </button>
+              ))}
+            </div>
+
             <button onClick={() => setGrid((v) => !v)} title="Indice (G)" className="rounded-lg hover:bg-white/10 p-2">
               {grid ? <X className="h-5 w-5" /> : <LayoutGrid className="h-5 w-5" />}
             </button>
@@ -205,12 +264,12 @@ export default function PresentationPage() {
         </div>
 
         {/* progress */}
-        <div className="h-1 bg-white/10">
+        <div className="h-1" style={{ background: 'rgba(255,255,255,.06)' }}>
           <div
             className="h-1"
             style={{
-              width: `${((i + 1) / total) * 100}%`,
-              backgroundImage: `linear-gradient(90deg, ${WC_PINK}, transparent)`,
+              width: `${((i + 1) / slides.length) * 100}%`,
+              backgroundImage: 'var(--wc-progress)',
             }}
           />
         </div>
@@ -219,40 +278,40 @@ export default function PresentationPage() {
       {/* Viewport */}
       <section className="mx-auto max-w-[1400px] px-4 py-4 md:py-6">
         <div
-          className="
-            relative mx-auto w-full rounded-2xl border border-white/10 bg-white/[0.03] overflow-hidden shadow-[0_8px_30px_rgba(0,0,0,.25)]
-            h-[calc(100svh-56px-4px-2rem)] md:h-auto md:max-w-[1200px] md:aspect-[16/9]
-          "
+          className="relative mx-auto w-full overflow-hidden"
+          style={{
+            borderRadius: 'var(--wc-radius)',
+            border: '1px solid var(--wc-border)',
+            background: 'var(--wc-card)',
+            boxShadow: 'var(--wc-shadow)',
+            height: 'calc(100svh - 56px - 4px - 2rem)',
+          }}
         >
           {/* Nav: mobile bottom, desktop laterali */}
           <div className="md:hidden absolute inset-x-0 bottom-3 flex items-center justify-between px-3 pointer-events-none">
             <button
-              className="pointer-events-auto p-3 rounded-xl bg-black/40 border border-white/10 backdrop-blur hover:bg-white/10"
-              onClick={() => go(-1)}
-              title="Indietro"
+              className="pointer-events-auto p-3 rounded-xl bg-black/40 border border-[color:var(--wc-border)] backdrop-blur hover:bg-white/10"
+              onClick={() => go(-1)} title="Indietro"
             >
               <ArrowLeft className="h-5 w-5" />
             </button>
             <button
-              className="pointer-events-auto p-3 rounded-xl bg-black/40 border border-white/10 backdrop-blur hover:bg-white/10"
-              onClick={() => go(1)}
-              title="Avanti"
+              className="pointer-events-auto p-3 rounded-xl bg-black/40 border border-[color:var(--wc-border)] backdrop-blur hover:bg-white/10"
+              onClick={() => go(1)} title="Avanti"
             >
               <ArrowRight className="h-5 w-5" />
             </button>
           </div>
 
           <button
-            className="hidden md:inline-flex absolute left-2 top-1/2 -translate-y-1/2 p-2 rounded-lg bg-black/30 border border-white/10 hover:bg-white/10"
-            onClick={() => go(-1)}
-            title="Indietro"
+            className="hidden md:inline-flex absolute left-2 top-1/2 -translate-y-1/2 p-2 rounded-lg bg-black/30 border border-[color:var(--wc-border)] hover:bg-white/10"
+            onClick={() => go(-1)} title="Indietro"
           >
             <ArrowLeft className="h-5 w-5" />
           </button>
           <button
-            className="hidden md:inline-flex absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-lg bg-black/30 border border-white/10 hover:bg-white/10"
-            onClick={() => go(1)}
-            title="Avanti"
+            className="hidden md:inline-flex absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-lg bg-black/30 border border-[color:var(--wc-border)] hover:bg-white/10"
+            onClick={() => go(1)} title="Avanti"
           >
             <ArrowRight className="h-5 w-5" />
           </button>
@@ -280,11 +339,13 @@ export default function PresentationPage() {
               {slides.map((s, idx) => (
                 <button
                   key={idx}
-                  onClick={() => {
-                    goto(idx);
-                    setGrid(false);
+                  onClick={() => { goto(idx); setGrid(false); }}
+                  className="text-left p-3 sm:p-4 transition"
+                  style={{
+                    borderRadius: 'calc(var(--wc-radius) - 4px)',
+                    border: '1px solid var(--wc-border)',
+                    background: 'var(--wc-card)',
                   }}
-                  className="text-left rounded-xl border border-white/10 bg-white/[0.04] p-3 sm:p-4 hover:bg-white/[0.07] transition"
                 >
                   <div className="text-[11px] text-white/60 mb-1">Slide {idx + 1}</div>
                   <Preview slide={s} />
@@ -325,12 +386,12 @@ function SlideRenderer({ slide }: { slide: Slide }) {
           <div className="mb-3 sm:mb-4">
             {slide.kicker && <div className="text-[10px] sm:text-[11px] uppercase tracking-wider text-white/70">{slide.kicker}</div>}
             <h2 className="text-[22px] sm:text-[28px] md:text-[34px] font-black">
-              <span className="bg-clip-text text-transparent" style={{ backgroundImage: `linear-gradient(90deg, ${WC_PINK}, #fff)` }}>
+              <span className="bg-clip-text text-transparent" style={{ backgroundImage: `linear-gradient(90deg, var(--wc-primary), #fff)` }}>
                 {slide.title}
               </span>
             </h2>
             {slide.description && <p className="text-white/80 mt-2 text-[14px] sm:text-[15px]">{slide.description}</p>}
-            <div className="mt-3 h-[2px] w-20 rounded-full opacity-70" style={{ backgroundImage: `linear-gradient(90deg, ${WC_PINK}, transparent)` }} />
+            <div className="mt-3 h-[2px] w-20 rounded-full opacity-80" style={{ backgroundImage: 'var(--wc-underline)' }} />
           </div>
 
           {slide.items && (
@@ -341,11 +402,21 @@ function SlideRenderer({ slide }: { slide: Slide }) {
                   initial={{ y: 12, opacity: 0 }}
                   animate={{ y: 0, opacity: 1 }}
                   transition={{ delay: i * 0.05 }}
-                  className="rounded-2xl p-4 sm:p-5 border border-white/10 bg-white/[0.04]"
+                  className="p-4 sm:p-5"
+                  style={{
+                    borderRadius: 'var(--wc-radius)',
+                    border: '1px solid var(--wc-border)',
+                    background: 'var(--wc-card)',
+                  }}
                 >
                   <div className="flex items-start gap-3">
                     {it.icon && (
-                      <div className="w-9 h-9 sm:w-10 sm:h-10 grid place-items-center rounded-xl bg-white/5 border border-white/10 shrink-0">
+                      <div className="w-9 h-9 sm:w-10 sm:h-10 grid place-items-center shrink-0"
+                        style={{
+                          borderRadius: '12px',
+                          border: '1px solid var(--wc-border)',
+                          background: 'rgba(255,255,255,0.05)'
+                        }}>
                         {it.icon}
                       </div>
                     )}
@@ -367,6 +438,7 @@ function SlideRenderer({ slide }: { slide: Slide }) {
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 px-4 py-2 rounded-full font-semibold border border-white/30 hover:bg-white/10 transition text-sm"
+                style={{ borderColor: 'var(--wc-border)' }}
               >
                 <MessageSquareMore className="h-4 w-4" />
                 Scopri la piattaforma
@@ -385,23 +457,29 @@ function SlideRenderer({ slide }: { slide: Slide }) {
           <h2 className="text-[24px] sm:text-[30px] md:text-[34px] font-black">{slide.title}</h2>
           {slide.bullets && (
             <ul className="mt-3 text-white/80 text-[14px] sm:text-[15px]">
-              {slide.bullets.map((b, i) => (
-                <li key={i}>• {b}</li>
-              ))}
+              {slide.bullets.map((b, i) => (<li key={i}>• {b}</li>))}
             </ul>
           )}
           <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-3">
             <a
               href={slide.primary.href}
-              className="px-4 py-2 rounded-full font-bold text-[#0f1720] transition-all duration-200 hover:-translate-y-[1px] active:translate-y-[1px] hover:shadow-[0_0_0_2px_rgba(227,57,85,.2)] hover:ring-2 ring-[rgba(227,57,85,.35)]"
-              style={{ background: WC_PINK }}
+              className="px-4 py-2 rounded-full font-bold text-[#0f1720] transition-all duration-200 hover:-translate-y-[1px] active:translate-y-[1px]"
+              style={{
+                background: 'var(--wc-primary)',
+                boxShadow: '0 0 0 2px rgba(227,57,85,.20)',
+                outline: '2px solid transparent',
+              }}
             >
               {slide.primary.label}
             </a>
             {slide.secondary && (
               <a
                 href={slide.secondary.href}
-                className="px-4 py-2 rounded-full font-bold border border-white/70 transition-all duration-200 hover:-translate-y-[1px] active:translate-y-[1px] hover:bg-white/10 hover:ring-2 ring-white/30"
+                className="px-4 py-2 rounded-full font-bold transition-all duration-200 hover:-translate-y-[1px] active:translate-y-[1px]"
+                style={{
+                  border: '1px solid var(--wc-border)',
+                  background: 'transparent',
+                }}
               >
                 {slide.secondary.label}
               </a>
