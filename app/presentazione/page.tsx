@@ -11,19 +11,19 @@ import {
 } from 'lucide-react';
 
 /* ===================== PALETTE ===================== */
-/** Rosso del logo come sfondo dominante */
-const WC_RED = '#E33955';      // main background
-const WC_RED_DARK = '#7b1527'; // bordeaux per gradiente
+/** Sfondo rosso brand */
+const WC_RED = '#E33955';
+const WC_RED_DARK = '#7b1527';
 const WC_BG_BLACK = '#000000';
 
-/** Toni chiari per contrasto su rosso */
-const BLUSH = '#ffd6de';       // blush caldo (accento morbido)
-const IVORY = '#fffaf7';       // avorio leggermente caldo
+/** Accenti “grafite freddo” */
+const GRAPHITE = '#24303A';
+const GRAPHITE_LIGHT = '#8EA3B0';
 const WHITE = '#ffffff';
 
 /* ===================== ASSETS ===================== */
 const LOGO_PNG = '/wc-logo.png';
-const LOGO_SVG = '/wc-logo.svg'; // opzionale se presente
+const LOGO_SVG = '/wc-logo.svg'; // opzionale
 
 /* ===================== LINK CTA ===================== */
 const CTA_WINE_URL = 'https://www.wearewineconnect.com/apply/winery';
@@ -44,8 +44,7 @@ const slides: Slide[] = [
         Il tuo vino incontra i{' '}
         <span
           className="text-transparent bg-clip-text"
-          // Più contrasto sul rosso: bianco → blush caldo
-          style={{ backgroundImage: `linear-gradient(90deg, ${WHITE}, ${BLUSH})` }}
+          style={{ backgroundImage: `linear-gradient(90deg, ${WHITE}, ${GRAPHITE_LIGHT})` }}
         >
           buyer giusti
         </span>
@@ -166,6 +165,7 @@ export default function PresentationPage() {
     <main
       className="min-h-[100svh] antialiased font-sans text-slate-100 selection:bg-white/20"
       style={{
+        // sfondo rosso con vignette
         background:
           `radial-gradient(140% 140% at 50% -10%, ${WC_RED} 0%, ${WC_RED_DARK} 55%, ${WC_BG_BLACK} 140%)`,
       }}
@@ -173,7 +173,7 @@ export default function PresentationPage() {
       onTouchEnd={onTouchEnd}
     >
       {/* Header */}
-      <header className="sticky top-0 z-50 border-b border-white/15 bg-black/30 backdrop-blur supports-[backdrop-filter]:bg-black/20">
+      <header className="sticky top-0 z-50 border-b border-white/15 bg-black/40 backdrop-blur-md supports-[backdrop-filter]:bg-black/30">
         <div className="mx-auto max-w-[1200px] px-4 h-14 flex items-center justify-between gap-3">
           <a href="/" className="flex items-center gap-2 text-white font-extrabold">
             <picture>
@@ -193,13 +193,13 @@ export default function PresentationPage() {
           </div>
         </div>
 
-        {/* progress — ora bianca */}
+        {/* progress — bianco pieno */}
         <div className="h-1 bg-white/15">
           <div
             className="h-1"
             style={{
               width: `${((i + 1) / total) * 100}%`,
-              background: WHITE, // bianco pieno
+              background: WHITE,
             }}
           />
         </div>
@@ -208,21 +208,28 @@ export default function PresentationPage() {
       {/* Viewport */}
       <section className="mx-auto max-w-[1400px] px-4 py-4 md:py-6">
         <div
-          className="
-            relative mx-auto w-full rounded-2xl border border-white/15 bg-white/[0.05] backdrop-blur-sm overflow-hidden shadow-[0_8px_30px_rgba(0,0,0,.35)]
-            h-[calc(100svh-56px-4px-2rem)] md:h-auto md:max-w-[1200px] md:aspect-[16/9]
-          "
+          className="relative mx-auto w-full overflow-hidden"
+          style={{
+            borderRadius: 16,
+            border: '1px solid rgba(255,255,255,0.12)',
+            // blur più scuro: glass con overlay nero
+            background: 'linear-gradient(180deg, rgba(0,0,0,.45), rgba(0,0,0,.32))',
+            backdropFilter: 'blur(10px)',
+            WebkitBackdropFilter: 'blur(10px)',
+            boxShadow: '0 12px 40px rgba(0,0,0,.45)',
+            height: 'calc(100svh - 56px - 4px - 2rem)',
+          }}
         >
           {/* Nav: mobile bottom, desktop laterali */}
           <div className="md:hidden absolute inset-x-0 bottom-3 flex items-center justify-between px-3 pointer-events-none">
             <button
-              className="pointer-events-auto p-3 rounded-xl bg-black/40 border border-white/15 backdrop-blur hover:bg-white/10"
+              className="pointer-events-auto p-3 rounded-xl bg-black/50 border border-white/15 backdrop-blur hover:bg-white/10"
               onClick={() => go(-1)} title="Indietro"
             >
               <ArrowLeft className="h-5 w-5" />
             </button>
             <button
-              className="pointer-events-auto p-3 rounded-xl bg-black/40 border border-white/15 backdrop-blur hover:bg-white/10"
+              className="pointer-events-auto p-3 rounded-xl bg-black/50 border border-white/15 backdrop-blur hover:bg-white/10"
               onClick={() => go(1)} title="Avanti"
             >
               <ArrowRight className="h-5 w-5" />
@@ -230,13 +237,13 @@ export default function PresentationPage() {
           </div>
 
           <button
-            className="hidden md:inline-flex absolute left-2 top-1/2 -translate-y-1/2 p-2 rounded-lg bg-black/30 border border-white/15 hover:bg-white/10"
+            className="hidden md:inline-flex absolute left-2 top-1/2 -translate-y-1/2 p-2 rounded-lg bg-black/40 border border-white/15 hover:bg-white/10"
             onClick={() => go(-1)} title="Indietro"
           >
             <ArrowLeft className="h-5 w-5" />
           </button>
           <button
-            className="hidden md:inline-flex absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-lg bg-black/30 border border-white/15 hover:bg-white/10"
+            className="hidden md:inline-flex absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-lg bg-black/40 border border-white/15 hover:bg-white/10"
             onClick={() => go(1)} title="Avanti"
           >
             <ArrowRight className="h-5 w-5" />
@@ -266,7 +273,14 @@ export default function PresentationPage() {
                 <button
                   key={idx}
                   onClick={() => { goto(idx); setGrid(false); }}
-                  className="text-left rounded-xl border border-white/15 bg-white/[0.06] p-3 sm:p-4 hover:bg-white/[0.09] transition"
+                  className="text-left p-3 sm:p-4 transition"
+                  style={{
+                    borderRadius: 14,
+                    border: '1px solid rgba(255,255,255,0.12)',
+                    background: 'linear-gradient(180deg, rgba(0,0,0,.45), rgba(0,0,0,.30))',
+                    backdropFilter: 'blur(8px)',
+                    WebkitBackdropFilter: 'blur(8px)',
+                  }}
                 >
                   <div className="text-[11px] text-white/70 mb-1">Slide {idx + 1}</div>
                   <Preview slide={s} />
@@ -307,14 +321,14 @@ function SlideRenderer({ slide }: { slide: Slide }) {
           <div className="mb-3 sm:mb-4">
             {slide.kicker && <div className="text-[10px] sm:text-[11px] uppercase tracking-wider text-white/90">{slide.kicker}</div>}
             <h2 className="text-[22px] sm:text-[28px] md:text-[34px] font-black">
-              {/* Gradient più contrastato ma caldo (niente blu) */}
-              <span className="bg-clip-text text-transparent" style={{ backgroundImage: `linear-gradient(90deg, ${IVORY}, ${BLUSH})` }}>
+              {/* Gradiente titoli: bianco → grafite chiaro */}
+              <span className="bg-clip-text text-transparent" style={{ backgroundImage: `linear-gradient(90deg, ${WHITE}, ${GRAPHITE_LIGHT})` }}>
                 {slide.title}
               </span>
             </h2>
             {slide.description && <p className="text-white/90 mt-2 text-[14px] sm:text-[15px]">{slide.description}</p>}
-            {/* underline chiara */}
-            <div className="mt-3 h-[2px] w-20 rounded-full" style={{ backgroundImage: `linear-gradient(90deg, ${WHITE}, transparent)` }} />
+            {/* underline in grafite chiaro */}
+            <div className="mt-3 h-[2px] w-20 rounded-full" style={{ backgroundImage: `linear-gradient(90deg, ${GRAPHITE_LIGHT}, transparent)` }} />
           </div>
 
           {slide.items && (
@@ -325,11 +339,24 @@ function SlideRenderer({ slide }: { slide: Slide }) {
                   initial={{ y: 12, opacity: 0 }}
                   animate={{ y: 0, opacity: 1 }}
                   transition={{ delay: i * 0.05 }}
-                  className="rounded-2xl p-4 sm:p-5 border border-white/15 bg-white/[0.06]"
+                  className="rounded-2xl p-4 sm:p-5"
+                  style={{
+                    border: '1px solid rgba(255,255,255,0.12)',
+                    background: 'linear-gradient(180deg, rgba(0,0,0,.45), rgba(0,0,0,.30))',
+                    backdropFilter: 'blur(8px)',
+                    WebkitBackdropFilter: 'blur(8px)',
+                  }}
                 >
                   <div className="flex items-start gap-3">
                     {it.icon && (
-                      <div className="w-9 h-9 sm:w-10 sm:h-10 grid place-items-center rounded-xl bg-white/10 border border-white/15 shrink-0 text-white">
+                      <div
+                        className="w-9 h-9 sm:w-10 sm:h-10 grid place-items-center rounded-xl shrink-0"
+                        style={{
+                          border: `1px solid ${GRAPHITE}66`,
+                          background: 'rgba(255,255,255,0.06)',
+                          color: WHITE,
+                        }}
+                      >
                         {it.icon}
                       </div>
                     )}
@@ -350,8 +377,12 @@ function SlideRenderer({ slide }: { slide: Slide }) {
                 href={TUTORIAL_URL}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-full font-semibold border transition text-sm"
-                style={{ borderColor: 'rgba(255,255,255,.9)' }}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-full font-semibold transition text-sm"
+                style={{
+                  border: `1px solid ${GRAPHITE_LIGHT}`,
+                  background: 'transparent',
+                  color: WHITE,
+                }}
               >
                 <MessageSquareMore className="h-4 w-4" />
                 Scopri la piattaforma
@@ -374,7 +405,7 @@ function SlideRenderer({ slide }: { slide: Slide }) {
             </ul>
           )}
           <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-3">
-            {/* Primary: pill bianca (alto contrasto) */}
+            {/* Primary: pill bianca per contrasto massimo */}
             <a
               href={slide.primary.href}
               className="px-4 py-2 rounded-full font-bold text-[#0f1720] transition-all duration-200 hover:-translate-y-[1px] active:translate-y-[1px]"
@@ -386,13 +417,13 @@ function SlideRenderer({ slide }: { slide: Slide }) {
             >
               {slide.primary.label}
             </a>
-            {/* Secondary: outline bianco */}
+            {/* Secondary: outline grafite chiaro */}
             {slide.secondary && (
               <a
                 href={slide.secondary.href}
                 className="px-4 py-2 rounded-full font-bold transition-all duration-200 hover:-translate-y-[1px] active:translate-y-[1px]"
                 style={{
-                  border: '1px solid rgba(255,255,255,.9)',
+                  border: `1px solid ${GRAPHITE_LIGHT}`,
                   background: 'transparent',
                   color: WHITE,
                 }}
@@ -415,7 +446,7 @@ function Preview({ slide }: { slide: Slide }) {
     return (
       <div>
         <div className="font-semibold">{slide.title}</div>
-        {slide.items && <div className="text-white/80 text-[11px]">{slide.items.map((i) => i.title).join(' • ')}</div>}
+        {slide.items && <div className="text-white/70 text-[11px]">{slide.items.map((i) => i.title).join(' • ')}</div>}
       </div>
     );
   if (slide.kind === 'cta') return <div className="font-semibold">{slide.title}</div>;
