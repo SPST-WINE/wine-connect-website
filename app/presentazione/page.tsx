@@ -26,39 +26,24 @@ import {
   Search
 } from 'lucide-react';
 
-/**
- * ===========================
- *  BRAND & LINKS — WINE CONNECT
- * ===========================
- * TODO: sostituisci LOGO_URL con l’asset ufficiale WC (SVG/PNG trasparente)
- * TODO: sostituisci gli URL delle CTA con i path reali del tuo progetto
- */
-const WC_WINE = '#6d1b2d';      // borgogna
-const WC_GOLD = '#f0b35c';      // accento dorato
-const LOGO_URL =
-  '/wc-logo.png'; // ⬅️ segnaposto
+/* ===================== PALETTE (dalla home) ===================== */
+const WC_BLUE = '#0a1722';
+const WC_BLUE_SOFT = '#1c3e5e';
+const WC_PINK = '#E33955';
 
-const TUTORIAL_URL = 'https://www.wearewineconnect.com'; // ⬅️ puoi puntare a un video o tour
-const CTA_BUYER_URL = 'https://www.wearewineconnect.com/apply/buyer';
+/* ===================== ASSETS ===================== */
+const LOGO_PNG = '/wc-logo.png';
+const LOGO_SVG = '/wc-logo.svg'; // opzionale se presente
+
+/* ===================== LINK CTA ===================== */
 const CTA_WINE_URL = 'https://www.wearewineconnect.com/apply/winery';
+const TUTORIAL_URL = 'https://www.wearewineconnect.com';
 
+/* ===================== SLIDES ===================== */
 type Slide =
   | { kind: 'title'; kicker?: string; title: React.ReactNode; subtitle?: string }
-  | {
-      kind: 'column';
-      kicker?: string;
-      title: string;
-      description?: string;
-      items?: Array<{ icon?: React.ReactNode; title: string; desc?: string }>;
-    }
-  | {
-      kind: 'cta';
-      title: string;
-      bullets?: string[];
-      primary: { label: string; href: string };
-      secondary?: { label: string; href: string };
-      tertiary?: { label: string; href: string };
-    };
+  | { kind: 'column'; kicker?: string; title: string; description?: string; items?: Array<{ icon?: React.ReactNode; title: string; desc?: string }> }
+  | { kind: 'cta'; title: string; bullets?: string[]; primary: { label: string; href: string }; secondary?: { label: string; href: string } };
 
 const slides: Slide[] = [
   {
@@ -69,7 +54,7 @@ const slides: Slide[] = [
         Il tuo vino incontra i{' '}
         <span
           className="text-transparent bg-clip-text"
-          style={{ backgroundImage: `linear-gradient(90deg, ${WC_GOLD}, ${WC_WINE})` }}
+          style={{ backgroundImage: `linear-gradient(90deg, ${WC_PINK}, ${WC_BLUE_SOFT})` }}
         >
           buyer giusti
         </span>
@@ -99,7 +84,7 @@ const slides: Slide[] = [
       'Un funnel chiaro per trasformare interesse in ordini, con visibilità e tracciamento end-to-end.',
     items: [
       { icon: <Users2 className="h-5 w-5" />, title: '1) Onboarding & profilo', desc: 'Crei il profilo cantina o buyer con target, listini e preferenze.' },
-      { icon: <Handshake className="h-5 w-5" />, title: '2) Matchmaking', desc: 'Ti proponiamo connessioni adatte al tuo posizionamento e ai mercati target.' },
+      { icon: <Handshake className="h-5 w-5" />, title: '2) Matchmaking', desc: 'Connessioni adatte al tuo posizionamento e ai mercati target.' },
       { icon: <ShoppingCart className="h-5 w-5" />, title: '3) Campionature & RFQ', desc: 'Carrello campionature e richieste d’offerta con condizioni chiare.' },
       { icon: <Route className="h-5 w-5" />, title: '4) Ordine & spedizione', desc: 'Logistica SPST integrata: documenti, ritiro, tracking e consegna.' },
     ],
@@ -133,12 +118,12 @@ const slides: Slide[] = [
     kind: 'cta',
     title: 'Pronto a connetterti?',
     bullets: ['Buyer verificati', 'Campionature veloci', 'Compliance e logistica integrate'],
-    primary: { label: 'Diventa Buyer', href: CTA_BUYER_URL },
-    secondary: { label: 'Registra la Cantina', href: CTA_WINE_URL },
-    tertiary: { label: 'Scopri la piattaforma', href: TUTORIAL_URL },
+    primary: { label: 'Registra la Cantina', href: CTA_WINE_URL },
+    secondary: { label: 'Scopri la piattaforma', href: TUTORIAL_URL },
   },
 ];
 
+/* ===================== PAGE ===================== */
 export default function PresentationPage() {
   const [i, setI] = React.useState(0);
   const [grid, setGrid] = React.useState(false);
@@ -149,6 +134,7 @@ export default function PresentationPage() {
   const go = (dir: number) => setI((v) => clamp(v + dir));
   const goto = (idx: number) => setI(clamp(idx));
 
+  // keyboard
   React.useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (grid) {
@@ -188,10 +174,11 @@ export default function PresentationPage() {
 
   return (
     <main
-      className="min-h-[100svh] antialiased font-sans text-slate-100 selection:bg-yellow-300/30"
+      className="min-h-[100svh] antialiased font-sans text-slate-100 selection:bg-[color:var(--wc)]/30"
       style={{
-        background:
-          `radial-gradient(140% 140% at 50% -10%, ${WC_WINE} 0%, #14070b 60%, #000 140%)`,
+        // usa la stessa dinamica della home
+        ['--wc' as any]: WC_PINK,
+        background: `radial-gradient(140% 140% at 50% -10%, ${WC_BLUE_SOFT} 0%, ${WC_BLUE} 60%, #000 140%)`,
       }}
       onTouchStart={onTouchStart}
       onTouchEnd={onTouchEnd}
@@ -200,7 +187,10 @@ export default function PresentationPage() {
       <header className="sticky top-0 z-50 border-b border-white/10 bg-black/30 backdrop-blur supports-[backdrop-filter]:bg-black/20">
         <div className="mx-auto max-w-[1200px] px-4 h-14 flex items-center justify-between gap-3">
           <a href="/" className="flex items-center gap-2 text-white font-extrabold">
-            <img src={LOGO_URL} alt="Wine Connect" className="h-7 w-auto" />
+            <picture>
+              <source srcSet={LOGO_SVG} type="image/svg+xml" />
+              <img src={LOGO_PNG} alt="Wine Connect" className="h-7 w-auto object-contain" />
+            </picture>
             <span className="hidden sm:inline">Wine Connect</span>
           </a>
 
@@ -220,7 +210,7 @@ export default function PresentationPage() {
             className="h-1"
             style={{
               width: `${((i + 1) / total) * 100}%`,
-              backgroundImage: `linear-gradient(90deg, ${WC_GOLD}, transparent)`,
+              backgroundImage: `linear-gradient(90deg, ${WC_PINK}, transparent)`,
             }}
           />
         </div>
@@ -335,15 +325,12 @@ function SlideRenderer({ slide }: { slide: Slide }) {
           <div className="mb-3 sm:mb-4">
             {slide.kicker && <div className="text-[10px] sm:text-[11px] uppercase tracking-wider text-white/70">{slide.kicker}</div>}
             <h2 className="text-[22px] sm:text-[28px] md:text-[34px] font-black">
-              <span className="bg-clip-text text-transparent" style={{ backgroundImage: `linear-gradient(90deg, ${WC_GOLD}, #fff)` }}>
+              <span className="bg-clip-text text-transparent" style={{ backgroundImage: `linear-gradient(90deg, ${WC_PINK}, #fff)` }}>
                 {slide.title}
               </span>
             </h2>
             {slide.description && <p className="text-white/80 mt-2 text-[14px] sm:text-[15px]">{slide.description}</p>}
-            <div
-              className="mt-3 h-[2px] w-20 rounded-full opacity-70"
-              style={{ backgroundImage: `linear-gradient(90deg, ${WC_GOLD}, transparent)` }}
-            />
+            <div className="mt-3 h-[2px] w-20 rounded-full opacity-70" style={{ backgroundImage: `linear-gradient(90deg, ${WC_PINK}, transparent)` }} />
           </div>
 
           {slide.items && (
@@ -405,26 +392,18 @@ function SlideRenderer({ slide }: { slide: Slide }) {
           )}
           <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-3">
             <a
-              href={slides.find(s => s.kind === 'cta') && (slides.find(s => s.kind === 'cta') as any).primary.href}
-              className="px-4 py-2 rounded-full font-bold text-[#0f1720] transition-all duration-200 hover:-translate-y-[1px] active:translate-y-[1px] hover:shadow-yellow-500/20 hover:ring-2 ring-yellow-300/50"
-              style={{ background: WC_GOLD }}
+              href={slide.primary.href}
+              className="px-4 py-2 rounded-full font-bold text-[#0f1720] transition-all duration-200 hover:-translate-y-[1px] active:translate-y-[1px] hover:shadow-[0_0_0_2px_rgba(227,57,85,.2)] hover:ring-2 ring-[rgba(227,57,85,.35)]"
+              style={{ background: WC_PINK }}
             >
-              {(slides.find(s => s.kind === 'cta') as any).primary.label}
+              {slide.primary.label}
             </a>
-            {(slides.find(s => s.kind === 'cta') as any).secondary && (
+            {slide.secondary && (
               <a
-                href={(slides.find(s => s.kind === 'cta') as any).secondary.href}
+                href={slide.secondary.href}
                 className="px-4 py-2 rounded-full font-bold border border-white/70 transition-all duration-200 hover:-translate-y-[1px] active:translate-y-[1px] hover:bg-white/10 hover:ring-2 ring-white/30"
               >
-                {(slides.find(s => s.kind === 'cta') as any).secondary.label}
-              </a>
-            )}
-            {(slides.find(s => s.kind === 'cta') as any).tertiary && (
-              <a
-                href={(slides.find(s => s.kind === 'cta') as any).tertiary.href}
-                className="px-4 py-2 rounded-full font-bold border border-white/40 transition-all duration-200 hover:-translate-y-[1px] active:translate-y-[1px] hover:bg-white/10"
-              >
-                {(slides.find(s => s.kind === 'cta') as any).tertiary.label}
+                {slide.secondary.label}
               </a>
             )}
           </div>
