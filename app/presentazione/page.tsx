@@ -36,7 +36,7 @@ import {
 const WC_WINE = '#6d1b2d';      // borgogna
 const WC_GOLD = '#f0b35c';      // accento dorato
 const LOGO_URL =
-  'https://upload.wikimedia.org/wikipedia/commons/thumb/2/29/Wine_Glass_Icon.svg/240px-Wine_Glass_Icon.svg.png'; // ⬅️ segnaposto
+  '/wc-logo.png'; // ⬅️ segnaposto
 
 const TUTORIAL_URL = 'https://www.wearewineconnect.com'; // ⬅️ puoi puntare a un video o tour
 const CTA_BUYER_URL = 'https://www.wearewineconnect.com/apply/buyer';
