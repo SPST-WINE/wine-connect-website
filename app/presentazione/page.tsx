@@ -4,77 +4,18 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  ArrowLeft, ArrowRight, Maximize2, Minimize2,
-  LayoutGrid, X, TriangleAlert, Ship, Globe2,
-  Route, FileCheck2, TrendingUp, Building2,
-  LineChart, MessageSquareMore, ShoppingCart,
-  Users2, BadgeCheck, Handshake, Search, Palette
+  ArrowLeft, ArrowRight, Maximize2, Minimize2, LayoutGrid, X,
+  TriangleAlert, Ship, Globe2, Route, FileCheck2, TrendingUp,
+  Building2, LineChart, MessageSquareMore, ShoppingCart, Users2,
+  BadgeCheck, Handshake, Search
 } from 'lucide-react';
 
-/* ===================== THEME SET =====================
- * A: Rosso dominante, dettagli blu (solido)
- * B: Rosso con glass + glow
- * C: Rosso scuro + blu elettrico (accent più brillante)
- * Puoi cambiare i colori qui e vedere l’effetto live.
- */
-const THEMES = [
-  {
-    id: 'A',
-    name: 'Rosso Solido',
-    vars: {
-      '--wc-primary': '#E33955',      // rosso main
-      '--wc-accent' : '#1c3e5e',      // blu dettagli
-      '--wc-bg1'    : '#0a1722',      // sfondo scuro
-      '--wc-bg2'    : '#000000',
-      '--wc-card'   : 'rgba(255,255,255,0.03)',
-      '--wc-border' : 'rgba(255,255,255,0.10)',
-      '--wc-ring'   : 'rgba(227,57,85,0.35)',
-      '--wc-shadow' : '0 8px 30px rgba(0,0,0,.25)',
-      '--wc-radius' : '16px',
-      '--wc-underline': 'linear-gradient(90deg, var(--wc-primary), transparent)',
-      '--wc-progress' : 'linear-gradient(90deg, var(--wc-primary), transparent)',
-      '--wc-gradient' : 'radial-gradient(140% 140% at 50% -10%, var(--wc-accent) 0%, var(--wc-bg1) 60%, var(--wc-bg2) 140%)',
-    },
-  },
-  {
-    id: 'B',
-    name: 'Rosso Glass',
-    vars: {
-      '--wc-primary': '#E33955',
-      '--wc-accent' : '#1c3e5e',
-      '--wc-bg1'    : '#0a1722',
-      '--wc-bg2'    : '#000000',
-      '--wc-card'   : 'rgba(255,255,255,0.05)',
-      '--wc-border' : 'rgba(255,255,255,0.12)',
-      '--wc-ring'   : 'rgba(227,57,85,0.45)',
-      '--wc-shadow' : '0 12px 40px rgba(0,0,0,.35)',
-      '--wc-radius' : '20px',
-      '--wc-underline': 'linear-gradient(90deg, var(--wc-primary), white)',
-      '--wc-progress' : 'linear-gradient(90deg, white, var(--wc-primary))',
-      '--wc-gradient' : 'radial-gradient(140% 140% at 50% -10%, #112433 0%, var(--wc-bg1) 55%, var(--wc-bg2) 140%)',
-    },
-  },
-  {
-    id: 'C',
-    name: 'Rosso + Blu Elettrico',
-    vars: {
-      '--wc-primary': '#E33955',
-      '--wc-accent' : '#2f79b7',      // blu più brillante
-      '--wc-bg1'    : '#071018',
-      '--wc-bg2'    : '#000000',
-      '--wc-card'   : 'rgba(255,255,255,0.04)',
-      '--wc-border' : 'rgba(255,255,255,0.14)',
-      '--wc-ring'   : 'rgba(47,121,183,0.45)',
-      '--wc-shadow' : '0 16px 50px rgba(0,0,0,.38)',
-      '--wc-radius' : '24px',
-      '--wc-underline': 'linear-gradient(90deg, var(--wc-accent), var(--wc-primary))',
-      '--wc-progress' : 'linear-gradient(90deg, var(--wc-accent), transparent)',
-      '--wc-gradient' : 'radial-gradient(140% 140% at 50% -10%, #123a57 0%, var(--wc-bg1) 55%, var(--wc-bg2) 140%)',
-    },
-  },
-] as const;
-
-type ThemeId = typeof THEMES[number]['id'];
+/* ===================== PALETTE ===================== */
+/** Rosso del logo + blu di brand */
+const WC_RED = '#E33955';      // main background
+const WC_RED_DARK = '#7b1527'; // bordeaux profondo per il gradiente
+const WC_BLUE = '#1c3e5e';     // accenti / dettagli
+const WC_BG_BLACK = '#000000';
 
 /* ===================== ASSETS ===================== */
 const LOGO_PNG = '/wc-logo.png';
@@ -97,7 +38,10 @@ const slides: Slide[] = [
     title: (
       <>
         Il tuo vino incontra i{' '}
-        <span className="text-transparent bg-clip-text" style={{ backgroundImage: `linear-gradient(90deg, var(--wc-primary), var(--wc-accent))` }}>
+        <span
+          className="text-transparent bg-clip-text"
+          style={{ backgroundImage: `linear-gradient(90deg, #fff, ${WC_BLUE})` }}
+        >
           buyer giusti
         </span>
         .
@@ -170,10 +114,6 @@ export default function PresentationPage() {
   const [i, setI] = React.useState(0);
   const [grid, setGrid] = React.useState(false);
   const [fs, setFs] = React.useState(false);
-  const [theme, setTheme] = React.useState<ThemeId>('A');
-
-  const current = React.useMemo(() => THEMES.find(t => t.id === theme)!, [theme]);
-  const styleVars = current.vars as React.CSSProperties;
 
   const total = slides.length;
   const clamp = (n: number) => Math.max(0, Math.min(total - 1, n));
@@ -219,16 +159,17 @@ export default function PresentationPage() {
 
   return (
     <main
-      className="min-h-[100svh] antialiased font-sans text-slate-100"
+      className="min-h-[100svh] antialiased font-sans text-slate-100 selection:bg-white/20"
       style={{
-        ...styleVars,
-        background: `var(--wc-gradient)`,
+        // red-first gradient + vignette
+        background:
+          `radial-gradient(140% 140% at 50% -10%, ${WC_RED} 0%, ${WC_RED_DARK} 55%, ${WC_BG_BLACK} 140%)`,
       }}
       onTouchStart={onTouchStart}
       onTouchEnd={onTouchEnd}
     >
       {/* Header */}
-      <header className="sticky top-0 z-50 border-b border-[color:var(--wc-border)] bg-black/30 backdrop-blur supports-[backdrop-filter]:bg-black/20">
+      <header className="sticky top-0 z-50 border-b border-white/15 bg-black/30 backdrop-blur supports-[backdrop-filter]:bg-black/20">
         <div className="mx-auto max-w-[1200px] px-4 h-14 flex items-center justify-between gap-3">
           <a href="/" className="flex items-center gap-2 text-white font-extrabold">
             <picture>
@@ -239,21 +180,6 @@ export default function PresentationPage() {
           </a>
 
           <div className="flex items-center gap-1 sm:gap-2">
-            {/* THEME SWITCHER */}
-            <div className="hidden md:flex items-center gap-1 pr-1 mr-1 border-r border-[color:var(--wc-border)]">
-              <span className="text-xs text-white/70 mr-1 flex items-center gap-1"><Palette className="h-4 w-4" /> Stile</span>
-              {THEMES.map(t => (
-                <button
-                  key={t.id}
-                  onClick={() => setTheme(t.id)}
-                  className={`px-2 py-1 rounded-md text-xs font-semibold hover:bg-white/10 border border-transparent ${theme === t.id ? 'bg-white/10 border-[color:var(--wc-border)]' : ''}`}
-                  title={t.name}
-                >
-                  {t.id}
-                </button>
-              ))}
-            </div>
-
             <button onClick={() => setGrid((v) => !v)} title="Indice (G)" className="rounded-lg hover:bg-white/10 p-2">
               {grid ? <X className="h-5 w-5" /> : <LayoutGrid className="h-5 w-5" />}
             </button>
@@ -263,13 +189,13 @@ export default function PresentationPage() {
           </div>
         </div>
 
-        {/* progress */}
-        <div className="h-1" style={{ background: 'rgba(255,255,255,.06)' }}>
+        {/* progress — blu per contrastare il rosso */}
+        <div className="h-1 bg-white/10">
           <div
             className="h-1"
             style={{
-              width: `${((i + 1) / slides.length) * 100}%`,
-              backgroundImage: 'var(--wc-progress)',
+              width: `${((i + 1) / total) * 100}%`,
+              backgroundImage: `linear-gradient(90deg, ${WC_BLUE}, transparent)`,
             }}
           />
         </div>
@@ -278,25 +204,21 @@ export default function PresentationPage() {
       {/* Viewport */}
       <section className="mx-auto max-w-[1400px] px-4 py-4 md:py-6">
         <div
-          className="relative mx-auto w-full overflow-hidden"
-          style={{
-            borderRadius: 'var(--wc-radius)',
-            border: '1px solid var(--wc-border)',
-            background: 'var(--wc-card)',
-            boxShadow: 'var(--wc-shadow)',
-            height: 'calc(100svh - 56px - 4px - 2rem)',
-          }}
+          className="
+            relative mx-auto w-full rounded-2xl border border-white/15 bg-white/[0.05] backdrop-blur-sm overflow-hidden shadow-[0_8px_30px_rgba(0,0,0,.35)]
+            h-[calc(100svh-56px-4px-2rem)] md:h-auto md:max-w-[1200px] md:aspect-[16/9]
+          "
         >
           {/* Nav: mobile bottom, desktop laterali */}
           <div className="md:hidden absolute inset-x-0 bottom-3 flex items-center justify-between px-3 pointer-events-none">
             <button
-              className="pointer-events-auto p-3 rounded-xl bg-black/40 border border-[color:var(--wc-border)] backdrop-blur hover:bg-white/10"
+              className="pointer-events-auto p-3 rounded-xl bg-black/40 border border-white/15 backdrop-blur hover:bg-white/10"
               onClick={() => go(-1)} title="Indietro"
             >
               <ArrowLeft className="h-5 w-5" />
             </button>
             <button
-              className="pointer-events-auto p-3 rounded-xl bg-black/40 border border-[color:var(--wc-border)] backdrop-blur hover:bg-white/10"
+              className="pointer-events-auto p-3 rounded-xl bg-black/40 border border-white/15 backdrop-blur hover:bg-white/10"
               onClick={() => go(1)} title="Avanti"
             >
               <ArrowRight className="h-5 w-5" />
@@ -304,13 +226,13 @@ export default function PresentationPage() {
           </div>
 
           <button
-            className="hidden md:inline-flex absolute left-2 top-1/2 -translate-y-1/2 p-2 rounded-lg bg-black/30 border border-[color:var(--wc-border)] hover:bg-white/10"
+            className="hidden md:inline-flex absolute left-2 top-1/2 -translate-y-1/2 p-2 rounded-lg bg-black/30 border border-white/15 hover:bg-white/10"
             onClick={() => go(-1)} title="Indietro"
           >
             <ArrowLeft className="h-5 w-5" />
           </button>
           <button
-            className="hidden md:inline-flex absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-lg bg-black/30 border border-[color:var(--wc-border)] hover:bg-white/10"
+            className="hidden md:inline-flex absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-lg bg-black/30 border border-white/15 hover:bg-white/10"
             onClick={() => go(1)} title="Avanti"
           >
             <ArrowRight className="h-5 w-5" />
@@ -327,7 +249,7 @@ export default function PresentationPage() {
               className="absolute inset-0 md:p-0 overflow-auto md:overflow-hidden"
               onClick={() => go(1)}
             >
-              <SlideRenderer slide={slides[i]} />
+              <SlideRenderer />
             </motion.div>
           </AnimatePresence>
         </div>
@@ -340,14 +262,9 @@ export default function PresentationPage() {
                 <button
                   key={idx}
                   onClick={() => { goto(idx); setGrid(false); }}
-                  className="text-left p-3 sm:p-4 transition"
-                  style={{
-                    borderRadius: 'calc(var(--wc-radius) - 4px)',
-                    border: '1px solid var(--wc-border)',
-                    background: 'var(--wc-card)',
-                  }}
+                  className="text-left rounded-xl border border-white/15 bg-white/[0.06] p-3 sm:p-4 hover:bg-white/[0.09] transition"
                 >
-                  <div className="text-[11px] text-white/60 mb-1">Slide {idx + 1}</div>
+                  <div className="text-[11px] text-white/70 mb-1">Slide {idx + 1}</div>
                   <Preview slide={s} />
                 </button>
               ))}
@@ -356,152 +273,149 @@ export default function PresentationPage() {
         </AnimatePresence>
 
         {/* Helper comandi tastiera */}
-        <div className="mt-4 text-center text-white/60 text-[11px] sm:text-xs">
-          Usa <kbd className="px-1 py-[2px] bg-white/10 rounded">←</kbd> / <kbd className="px-1 py-[2px] bg-white/10 rounded">→</kbd>,{' '}
-          <kbd className="px-1 py-[2px] bg-white/10 rounded">G</kbd> per indice, <kbd className="px-1 py-[2px] bg-white/10 rounded">F</kbd> per fullscreen.
+        <div className="mt-4 text-center text-white/80 text-[11px] sm:text-xs">
+          Usa <kbd className="px-1 py-[2px] bg-white/15 rounded">←</kbd> / <kbd className="px-1 py-[2px] bg-white/15 rounded">→</kbd>,{' '}
+          <kbd className="px-1 py-[2px] bg-white/15 rounded">G</kbd> per indice, <kbd className="px-1 py-[2px] bg-white/15 rounded">F</kbd> per fullscreen.
         </div>
       </section>
     </main>
   );
-}
 
-/* ---------------- RENDERERS ---------------- */
-function SlideRenderer({ slide }: { slide: Slide }) {
-  if (slide.kind === 'title') {
-    return (
-      <div className="w-full h-full grid place-items-center p-4 sm:p-6 text-center">
-        <div className="max-w-[80ch] px-1">
-          {slide.kicker && <div className="text-[10px] sm:text-[11px] uppercase tracking-wider text-white/70">{slide.kicker}</div>}
-          <h1 className="mt-1 text-[26px] sm:text-[34px] md:text-[44px] font-black leading-tight">{slide.title}</h1>
-          {slide.subtitle && <p className="mt-3 text-white/80 text-[14px] sm:text-base">{slide.subtitle}</p>}
-        </div>
-      </div>
-    );
-  }
+  function SlideRenderer() {
+    const s = slides[i];
 
-  if (slide.kind === 'column') {
-    return (
-      <div className="w-full h-full p-4 sm:p-6 md:p-10">
-        <div className="mx-auto max-w-[980px] md:h-full md:flex md:flex-col md:justify-center">
-          <div className="mb-3 sm:mb-4">
-            {slide.kicker && <div className="text-[10px] sm:text-[11px] uppercase tracking-wider text-white/70">{slide.kicker}</div>}
-            <h2 className="text-[22px] sm:text-[28px] md:text-[34px] font-black">
-              <span className="bg-clip-text text-transparent" style={{ backgroundImage: `linear-gradient(90deg, var(--wc-primary), #fff)` }}>
-                {slide.title}
-              </span>
-            </h2>
-            {slide.description && <p className="text-white/80 mt-2 text-[14px] sm:text-[15px]">{slide.description}</p>}
-            <div className="mt-3 h-[2px] w-20 rounded-full opacity-80" style={{ backgroundImage: 'var(--wc-underline)' }} />
+    if (s.kind === 'title') {
+      return (
+        <div className="w-full h-full grid place-items-center p-4 sm:p-6 text-center">
+          <div className="max-w-[80ch] px-1">
+            {s.kicker && <div className="text-[10px] sm:text-[11px] uppercase tracking-wider text-white/85">{s.kicker}</div>}
+            <h1 className="mt-1 text-[26px] sm:text-[34px] md:text-[44px] font-black leading-tight">{s.title}</h1>
+            {s.subtitle && <p className="mt-3 text-white/90 text-[14px] sm:text-base">{s.subtitle}</p>}
           </div>
-
-          {slide.items && (
-            <div className="grid grid-cols-1 gap-3">
-              {slide.items.map((it, i) => (
-                <motion.div
-                  key={i}
-                  initial={{ y: 12, opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  transition={{ delay: i * 0.05 }}
-                  className="p-4 sm:p-5"
-                  style={{
-                    borderRadius: 'var(--wc-radius)',
-                    border: '1px solid var(--wc-border)',
-                    background: 'var(--wc-card)',
-                  }}
-                >
-                  <div className="flex items-start gap-3">
-                    {it.icon && (
-                      <div className="w-9 h-9 sm:w-10 sm:h-10 grid place-items-center shrink-0"
-                        style={{
-                          borderRadius: '12px',
-                          border: '1px solid var(--wc-border)',
-                          background: 'rgba(255,255,255,0.05)'
-                        }}>
-                        {it.icon}
-                      </div>
-                    )}
-                    <div>
-                      <div className="font-extrabold text-[15px] sm:text-base">{it.title}</div>
-                      {it.desc && <div className="text-white/75 text-[13px] sm:text-sm">{it.desc}</div>}
-                    </div>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-          )}
-
-          {/* link tutorial per la slide Piattaforma */}
-          {slide.title.includes('Un’unica piattaforma') && (
-            <div className="mt-4">
-              <a
-                href={TUTORIAL_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-full font-semibold border border-white/30 hover:bg-white/10 transition text-sm"
-                style={{ borderColor: 'var(--wc-border)' }}
-              >
-                <MessageSquareMore className="h-4 w-4" />
-                Scopri la piattaforma
-              </a>
-            </div>
-          )}
         </div>
-      </div>
-    );
-  }
+      );
+    }
 
-  if (slide.kind === 'cta') {
-    return (
-      <div className="w-full h-full grid place-items-center p-4 sm:p-6 text-center">
-        <div className="max-w-[70ch]">
-          <h2 className="text-[24px] sm:text-[30px] md:text-[34px] font-black">{slide.title}</h2>
-          {slide.bullets && (
-            <ul className="mt-3 text-white/80 text-[14px] sm:text-[15px]">
-              {slide.bullets.map((b, i) => (<li key={i}>• {b}</li>))}
-            </ul>
-          )}
-          <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-3">
-            <a
-              href={slide.primary.href}
-              className="px-4 py-2 rounded-full font-bold text-[#0f1720] transition-all duration-200 hover:-translate-y-[1px] active:translate-y-[1px]"
-              style={{
-                background: 'var(--wc-primary)',
-                boxShadow: '0 0 0 2px rgba(227,57,85,.20)',
-                outline: '2px solid transparent',
-              }}
-            >
-              {slide.primary.label}
-            </a>
-            {slide.secondary && (
-              <a
-                href={slide.secondary.href}
-                className="px-4 py-2 rounded-full font-bold transition-all duration-200 hover:-translate-y-[1px] active:translate-y-[1px]"
-                style={{
-                  border: '1px solid var(--wc-border)',
-                  background: 'transparent',
-                }}
-              >
-                {slide.secondary.label}
-              </a>
+    if (s.kind === 'column') {
+      return (
+        <div className="w-full h-full p-4 sm:p-6 md:p-10">
+          <div className="mx-auto max-w-[980px] md:h-full md:flex md:flex-col md:justify-center">
+            <div className="mb-3 sm:mb-4">
+              {s.kicker && <div className="text-[10px] sm:text-[11px] uppercase tracking-wider text-white/90">{s.kicker}</div>}
+              <h2 className="text-[22px] sm:text-[28px] md:text-[34px] font-black">
+                <span className="bg-clip-text text-transparent" style={{ backgroundImage: `linear-gradient(90deg, ${WC_BLUE}, #fff)` }}>
+                  {s.title}
+                </span>
+              </h2>
+              {s.description && <p className="text-white/90 mt-2 text-[14px] sm:text-[15px]">{s.description}</p>}
+              <div
+                className="mt-3 h-[2px] w-20 rounded-full"
+                style={{ backgroundImage: `linear-gradient(90deg, ${WC_BLUE}, transparent)` }}
+              />
+            </div>
+
+            {s.items && (
+              <div className="grid grid-cols-1 gap-3">
+                {s.items.map((it, k) => (
+                  <motion.div
+                    key={k}
+                    initial={{ y: 12, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    transition={{ delay: k * 0.05 }}
+                    className="rounded-2xl p-4 sm:p-5 border border-white/15 bg-white/[0.06]"
+                  >
+                    <div className="flex items-start gap-3">
+                      {it.icon && (
+                        <div className="w-9 h-9 sm:w-10 sm:h-10 grid place-items-center rounded-xl bg-white/10 border border-white/15 shrink-0 text-white">
+                          {it.icon}
+                        </div>
+                      )}
+                      <div>
+                        <div className="font-extrabold text-[15px] sm:text-base text-white">{it.title}</div>
+                        {it.desc && <div className="text-white/85 text-[13px] sm:text-sm">{it.desc}</div>}
+                      </div>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            )}
+
+            {/* link tutorial per la slide Piattaforma */}
+            {s.title.includes('Un’unica piattaforma') && (
+              <div className="mt-4">
+                <a
+                  href={TUTORIAL_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-full font-semibold border transition text-sm"
+                  style={{ borderColor: 'rgba(255,255,255,.8)' }}
+                >
+                  <MessageSquareMore className="h-4 w-4" />
+                  Scopri la piattaforma
+                </a>
+              </div>
             )}
           </div>
         </div>
-      </div>
-    );
+      );
+    }
+
+    if (s.kind === 'cta') {
+      return (
+        <div className="w-full h-full grid place-items-center p-4 sm:p-6 text-center">
+          <div className="max-w-[70ch]">
+            <h2 className="text-[24px] sm:text-[30px] md:text-[34px] font-black">{s.title}</h2>
+            {s.bullets && (
+              <ul className="mt-3 text-white/95 text-[14px] sm:text-[15px]">
+                {s.bullets.map((b, k) => <li key={k}>• {b}</li>)}
+              </ul>
+            )}
+            <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-3">
+              {/* Primary: pill bianca (contrasto su sfondo rosso) */}
+              <a
+                href={s.primary.href}
+                className="px-4 py-2 rounded-full font-bold text-[#0f1720] transition-all duration-200 hover:-translate-y-[1px] active:translate-y-[1px]"
+                style={{
+                  background: '#ffffff',
+                  boxShadow: '0 0 0 2px rgba(227,57,85,.18)',
+                  outline: '2px solid transparent',
+                }}
+              >
+                {s.primary.label}
+              </a>
+              {/* Secondary: outline bianco */}
+              {s.secondary && (
+                <a
+                  href={s.secondary.href}
+                  className="px-4 py-2 rounded-full font-bold transition-all duration-200 hover:-translate-y-[1px] active:translate-y-[1px]"
+                  style={{
+                    border: '1px solid rgba(255,255,255,.85)',
+                    background: 'transparent',
+                    color: '#ffffff',
+                  }}
+                >
+                  {s.secondary.label}
+                </a>
+              )}
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    return null;
   }
 
-  return null;
-}
-
-function Preview({ slide }: { slide: Slide }) {
-  if (slide.kind === 'title') return <div className="font-semibold">Intro</div>;
-  if (slide.kind === 'column')
-    return (
-      <div>
-        <div className="font-semibold">{slide.title}</div>
-        {slide.items && <div className="text-white/70 text-[11px]">{slide.items.map((i) => i.title).join(' • ')}</div>}
-      </div>
-    );
-  if (slide.kind === 'cta') return <div className="font-semibold">{slide.title}</div>;
-  return null;
+  function Preview({ slide }: { slide: Slide }) {
+    if (slide.kind === 'title') return <div className="font-semibold">Intro</div>;
+    if (slide.kind === 'column')
+      return (
+        <div>
+          <div className="font-semibold">{slide.title}</div>
+          {slide.items && <div className="text-white/80 text-[11px]">{slide.items.map((i) => i.title).join(' • ')}</div>}
+        </div>
+      );
+    if (slide.kind === 'cta') return <div className="font-semibold">{slide.title}</div>;
+    return null;
+  }
 }
