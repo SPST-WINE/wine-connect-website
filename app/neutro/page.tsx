@@ -10,14 +10,14 @@ import {
   BadgeCheck, Handshake, Search
 } from 'lucide-react';
 
-/* ===================== PALETTE NEUTRA ===================== */
-const BG_DARK = '#0b1117';
-const BG_DARK_2 = '#060a0f';
+/* ===================== PALETTE NEUTRA (più chiara) ===================== */
+const BG_DARK = '#121a24';   // prima #0b1117 -> più chiaro
+const BG_DARK_2 = '#0d141c'; // prima #060a0f -> più chiaro
 const WHITE = '#ffffff';
 const ACCENT_LIGHT = '#AFC0CA';   // grafite chiaro
-const BORDER = 'rgba(255,255,255,.14)';
-const GLASS_TOP = 'rgba(255,255,255,.06)';
-const GLASS_BOTTOM = 'rgba(255,255,255,.03)';
+const BORDER = 'rgba(255,255,255,.18)';
+const GLASS_TOP = 'rgba(255,255,255,.10)';   // più chiaro
+const GLASS_BOTTOM = 'rgba(255,255,255,.05)';// più chiaro
 
 /* ===================== SLIDES ===================== */
 type Slide =
@@ -41,28 +41,28 @@ const slides: Slide[] = [
       </>
     ),
     subtitle:
-      'In 5 minuti: valore del mercato, destinazioni chiave, tendenze 2024–25 e perché oggi è più difficile crescere all’estero.',
+      'Valore del mercato, destinazioni chiave, tendenze 2024–25 e perché oggi è più difficile crescere all’estero.',
   },
   {
     kind: 'column',
     kicker: 'Fotografia 2024',
     title: 'Valore dell’export e mercati principali',
-    description: 'L’export ha toccato nuovi massimi, ma la domanda globale è selettiva.',
+    description: 'L’export ha toccato nuovi massimi, ma la domanda globale è sempre più selettiva.',
     items: [
       { icon: <LineChart className="h-5 w-5" />, title: '€8,1 mld · 21,7 Mhl', desc: 'Record per valore e volumi su base annua.' },
-      { icon: <Globe2 className="h-5 w-5" />, title: 'Dove va il vino italiano', desc: 'USA, Germania e Regno Unito restano i primi sbocchi.' },
-      { icon: <TrendingUp className="h-5 w-5" />, title: 'Mercati ad alto valore', desc: 'Prezzi medi più alti in Svizzera, Giappone e USA.' },
+      { icon: <Globe2 className="h-5 w-5" />, title: 'Dove va il vino italiano (per volumi)', desc: 'USA, Germania e Regno Unito restano i primi sbocchi; la domanda chiede però maggiore qualità.' },
+      { icon: <TrendingUp className="h-5 w-5" />, title: 'Mercati ad alto valore', desc: 'Svizzera, Giappone, USA e alcune piazze asiatiche (Hong Kong, Singapore, Corea) pagano prezzi medi più alti.' },
     ],
   },
   {
     kind: 'column',
     kicker: '2024–2025',
     title: 'Le tendenze che contano',
-    description: 'Driver polarizzati: premium regge, il base price è sotto pressione.',
+    description: 'In parole semplici: le etichette migliori tengono, quelle da prezzo soffrono.',
     items: [
-      { icon: <SparklesIcon />, title: 'Premium & bollicine', desc: 'Crescita trainata dallo sparkling; share in aumento sui fermi.' },
-      { icon: <LineChart className="h-5 w-5" />, title: 'Consumi fiacchi', desc: 'Import nei top mercati piatto/leggero calo: selezione più dura sul valore.' },
-      { icon: <FileCheck2 className="h-5 w-5" />, title: 'Regole & costi', desc: 'Accise, etichettatura e oneri logistici pesano più di prima.' },
+      { icon: <SparklesIcon />, title: 'Bollicine in crescita', desc: 'Le bollicine stanno tirando: aumentano la loro quota rispetto ai vini fermi.' },
+      { icon: <LineChart className="h-5 w-5" />, title: 'Consumi non brillanti', desc: 'Gli acquisti nei principali Paesi sono stabili o in leggero calo: si compra meno, ma meglio.' },
+      { icon: <FileCheck2 className="h-5 w-5" />, title: 'Regole e costi più pesanti', desc: 'Accise, etichette e logistica incidono di più sul conto economico.' },
     ],
   },
   {
@@ -73,43 +73,39 @@ const slides: Slide[] = [
     items: [
       { icon: <Ship className="h-5 w-5" />, title: 'Dipendenza logistica', desc: 'Campionature, groupage e pallet multi-paese con costi/tempi variabili e tracking non uniforme.' },
       { icon: <TrendingUp className="h-5 w-5" />, title: 'Margini “a fisarmonica”', desc: 'Sconti, resi, promo e pagamenti allungano il ciclo e comprimono la marginalità.' },
-      { icon: <Search className="h-5 w-5" />, title: 'Costo apertura canali', desc: 'Fiere, registrazioni, campioni, PR e viaggi senza garanzia di lead qualificati.' },
+      { icon: <Search className="h-5 w-5" />, title: 'Costo apertura canali', desc: 'Fiere, registrazioni, campioni, PR e viaggi senza garanzia di contatti davvero interessati.' },
       { icon: <TriangleAlert className="h-5 w-5" />, title: 'Compliance complessa', desc: 'Accise/e-DAS, HS code, requisiti sanitari, COLA/Prior Notice (USA): un errore blocca la spedizione.' },
     ],
   },
   {
     kind: 'column',
-    kicker: 'Cluster Calabria',
-    title: 'Sintesi operativa per 20 cantine',
-    description: 'I volumi ci sono; la crescita reale è dove il prezzo medio regge.',
+    kicker: 'Nuove prospettive',
+    title: 'Cambiare assetto, non prodotto',
+    description: 'La leva è organizzativa: come ci si presenta, come si spedisce, come si misura.',
     items: [
-      { icon: <Globe2 className="h-5 w-5" />, title: 'Mercati ad alto valore', desc: 'Presidiare USA, Svizzera, Giappone e Canada con posizionamento coerente.' },
-      { icon: <ShoppingCart className="h-5 w-5" />, title: 'Funnel campioni → ordini', desc: 'Ridurre attriti su spedizioni prova e RFQ, con KPI su tempi e conversione.' },
-      { icon: <FileCheck2 className="h-5 w-5" />, title: 'Standardizzare compliance', desc: 'Checklist per destinazione per ridurre blocchi e costi nascosti.' },
+      { icon: <Globe2 className="h-5 w-5" />, title: 'Mercati ad alto valore', desc: 'Presidiare piazze dove il prezzo medio regge: USA, Svizzera, Giappone e hub asiatici.' },
+      { icon: <ShoppingCart className="h-5 w-5" />, title: 'Funnel campioni → ordini', desc: 'Meno attriti su spedizioni prova e richieste d’offerta; tempi e conversione sotto controllo.' },
+      { icon: <FileCheck2 className="h-5 w-5" />, title: 'Standard di compliance', desc: 'Checklist per destinazione per ridurre blocchi e costi nascosti.' },
     ],
   },
   {
     kind: 'column',
-    kicker: 'Approccio (senza brand)',
+    kicker: 'Approccio',
     title: 'Ridurre rischio, tempi e dispersioni',
-    description: 'Non serve un nuovo canale, ma un metodo unico domanda + operatività.',
+    description: 'Non serve un nuovo canale: serve un metodo unico che unisca domanda qualificata e operatività.',
     items: [
-      { icon: <Users2 className="h-5 w-5" />, title: 'Matchmaking verificato', desc: 'Buyer filtrati per stile, fascia prezzo, volumi e canali.' },
-      { icon: <FileCheck2 className="h-5 w-5" />, title: 'Documenti a norma by default', desc: 'Proforma, accise e pratiche paese generati/validati prima del ritiro.' },
-      { icon: <Route className="h-5 w-5" />, title: 'Logistica multi-rotta', desc: 'Campioni/express/pallet con scelta tratta per costo e lead time; tracking unificato.' },
+      { icon: <Users2 className="h-5 w-5" />, title: 'Matchmaking verificato', desc: 'Contatti filtrati per stile, fascia prezzo, volumi e canali di vendita.' },
+      { icon: <FileCheck2 className="h-5 w-5" />, title: 'Documenti a norma “by default”', desc: 'Proforma, accise e pratiche Paese pronti prima del ritiro.' },
+      { icon: <Route className="h-5 w-5" />, title: 'Logistica multi-rotta', desc: 'Campioni, express o pallet con scelta tratta per costo e tempi; tracking unificato.' },
       { icon: <LineChart className="h-5 w-5" />, title: 'KPI e feedback loop', desc: 'Tempi medi, win-rate, prezzo medio per mercato e alert su marginalità.' },
     ],
   },
   {
     kind: 'cta',
-    title: 'Prossimi passi per il cluster',
-    bullets: [
-      'Qualifica buyer target per stile/prezzo/volumi',
-      'Protocollo campionature + RFQ con SLA',
-      'Checklist documentale per paese e tracciamento',
-    ],
-    primary: { label: 'Richiedi il framework operativo', href: '#' },
-    secondary: { label: 'Prenota un confronto', href: '#' },
+    title: 'Grazie per essere arrivati fin qui.',
+    // niente bullets, solo contatto e 1 CTA
+    primary: { label: 'Prenota un confronto', href: '#' },
+    secondary: { label: 'Gianluca Laudante, Wine Export Manager', href: '#' },
   },
 ];
 
@@ -176,7 +172,7 @@ export default function PresentationPage() {
       {/* Header neutro */}
       <header className="sticky top-0 z-50 border-b border-white/15 bg-black/30 backdrop-blur supports-[backdrop-filter]:bg-black/20">
         <div className="mx-auto max-w-[1200px] px-4 h-14 flex items-center justify-between">
-          <div className="text-white/90 font-extrabold tracking-tight">Presentazione</div>
+          <div className="text-white/90 font-extrabold tracking-tight">Una fotografia del mercato</div>
           <div className="flex items-center gap-1 sm:gap-2">
             <button onClick={() => setGrid((v) => !v)} title="Indice (G)" className="rounded-lg hover:bg-white/10 p-2">
               {grid ? <X className="h-5 w-5" /> : <LayoutGrid className="h-5 w-5" />}
@@ -329,7 +325,7 @@ function SlideRenderer({ slide }: { slide: Slide }) {
             </div>
           )}
 
-          {/* callout neutro (solo dove serve) */}
+          {/* callout neutro opzionale */}
           {slide.title.includes('metodo') && (
             <div className="mt-4">
               <a
@@ -352,23 +348,17 @@ function SlideRenderer({ slide }: { slide: Slide }) {
       <div className="w-full h-full grid place-items-center p-4 sm:p-6 text-center">
         <div className="max-w-[70ch]">
           <h2 className="text-[24px] sm:text-[30px] md:text-[34px] font-black">{slide.title}</h2>
-          {slide.bullets && (
-            <ul className="mt-3 text-white/95 text-[14px] sm:text-[15px]">
-              {slide.bullets.map((b, i) => <li key={i}>• {b}</li>)}
-            </ul>
-          )}
-          <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-3">
+
+          {/* Contatto singolo */}
+          <div className="mt-4 text-white/95 text-[15px] sm:text-base font-semibold">
+            Gianluca Laudante, Wine Export Manager
+          </div>
+
+          <div className="mt-6 flex items-center justify-center">
             <a
               href="#"
-              className="px-4 py-2 rounded-full font-bold text-[#0f1720] transition-all duration-200 hover:-translate-y-[1px] active:translate-y-[1px]"
+              className="px-5 py-2.5 rounded-full font-bold text-[#0f1720] transition-all duration-200 hover:-translate-y-[1px] active:translate-y-[1px]"
               style={{ background: WHITE, boxShadow: '0 0 0 2px rgba(255,255,255,.15)' }}
-            >
-              Richiedi il framework operativo
-            </a>
-            <a
-              href="#"
-              className="px-4 py-2 rounded-full font-bold transition-all duration-200 hover:-translate-y-[1px] active:translate-y-[1px]"
-              style={{ border: '1px solid rgba(255,255,255,.9)', background: 'transparent', color: WHITE }}
             >
               Prenota un confronto
             </a>
@@ -387,7 +377,6 @@ function Preview({ slide }: { slide: Slide }) {
     return (
       <div>
         <div className="font-semibold">{slide.title}</div>
-        {/* lista sintetica */}
         {slide.items && <div className="text-white/70 text-[11px]">{slide.items.map((i) => i.title).join(' • ')}</div>}
       </div>
     );
