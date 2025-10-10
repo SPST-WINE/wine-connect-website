@@ -11,11 +11,15 @@ import {
 } from 'lucide-react';
 
 /* ===================== PALETTE ===================== */
-/** Rosso del logo + blu di brand */
+/** Rosso del logo come sfondo dominante */
 const WC_RED = '#E33955';      // main background
-const WC_RED_DARK = '#7b1527'; // bordeaux profondo per il gradiente
-const WC_BLUE = '#1c3e5e';     // accenti / dettagli
+const WC_RED_DARK = '#7b1527'; // bordeaux per gradiente
 const WC_BG_BLACK = '#000000';
+
+/** Toni chiari per contrasto su rosso */
+const BLUSH = '#ffd6de';       // blush caldo (accento morbido)
+const IVORY = '#fffaf7';       // avorio leggermente caldo
+const WHITE = '#ffffff';
 
 /* ===================== ASSETS ===================== */
 const LOGO_PNG = '/wc-logo.png';
@@ -40,7 +44,8 @@ const slides: Slide[] = [
         Il tuo vino incontra i{' '}
         <span
           className="text-transparent bg-clip-text"
-          style={{ backgroundImage: `linear-gradient(90deg, #fff, ${WC_BLUE})` }}
+          // Più contrasto sul rosso: bianco → blush caldo
+          style={{ backgroundImage: `linear-gradient(90deg, ${WHITE}, ${BLUSH})` }}
         >
           buyer giusti
         </span>
@@ -161,7 +166,6 @@ export default function PresentationPage() {
     <main
       className="min-h-[100svh] antialiased font-sans text-slate-100 selection:bg-white/20"
       style={{
-        // red-first gradient + vignette
         background:
           `radial-gradient(140% 140% at 50% -10%, ${WC_RED} 0%, ${WC_RED_DARK} 55%, ${WC_BG_BLACK} 140%)`,
       }}
@@ -189,13 +193,13 @@ export default function PresentationPage() {
           </div>
         </div>
 
-        {/* progress — blu per contrastare il rosso */}
-        <div className="h-1 bg-white/10">
+        {/* progress — ora bianca */}
+        <div className="h-1 bg-white/15">
           <div
             className="h-1"
             style={{
               width: `${((i + 1) / total) * 100}%`,
-              backgroundImage: `linear-gradient(90deg, ${WC_BLUE}, transparent)`,
+              background: WHITE, // bianco pieno
             }}
           />
         </div>
@@ -249,7 +253,7 @@ export default function PresentationPage() {
               className="absolute inset-0 md:p-0 overflow-auto md:overflow-hidden"
               onClick={() => go(1)}
             >
-              <SlideRenderer />
+              <SlideRenderer slide={slides[i]} />
             </motion.div>
           </AnimatePresence>
         </div>
@@ -280,142 +284,140 @@ export default function PresentationPage() {
       </section>
     </main>
   );
+}
 
-  function SlideRenderer() {
-    const s = slides[i];
-
-    if (s.kind === 'title') {
-      return (
-        <div className="w-full h-full grid place-items-center p-4 sm:p-6 text-center">
-          <div className="max-w-[80ch] px-1">
-            {s.kicker && <div className="text-[10px] sm:text-[11px] uppercase tracking-wider text-white/85">{s.kicker}</div>}
-            <h1 className="mt-1 text-[26px] sm:text-[34px] md:text-[44px] font-black leading-tight">{s.title}</h1>
-            {s.subtitle && <p className="mt-3 text-white/90 text-[14px] sm:text-base">{s.subtitle}</p>}
-          </div>
+/* ---------------- RENDERERS ---------------- */
+function SlideRenderer({ slide }: { slide: Slide }) {
+  if (slide.kind === 'title') {
+    return (
+      <div className="w-full h-full grid place-items-center p-4 sm:p-6 text-center">
+        <div className="max-w-[80ch] px-1">
+          {slide.kicker && <div className="text-[10px] sm:text-[11px] uppercase tracking-wider text-white/90">{slide.kicker}</div>}
+          <h1 className="mt-1 text-[26px] sm:text-[34px] md:text-[44px] font-black leading-tight">{slide.title}</h1>
+          {slide.subtitle && <p className="mt-3 text-white/95 text-[14px] sm:text-base">{slide.subtitle}</p>}
         </div>
-      );
-    }
+      </div>
+    );
+  }
 
-    if (s.kind === 'column') {
-      return (
-        <div className="w-full h-full p-4 sm:p-6 md:p-10">
-          <div className="mx-auto max-w-[980px] md:h-full md:flex md:flex-col md:justify-center">
-            <div className="mb-3 sm:mb-4">
-              {s.kicker && <div className="text-[10px] sm:text-[11px] uppercase tracking-wider text-white/90">{s.kicker}</div>}
-              <h2 className="text-[22px] sm:text-[28px] md:text-[34px] font-black">
-                <span className="bg-clip-text text-transparent" style={{ backgroundImage: `linear-gradient(90deg, ${WC_BLUE}, #fff)` }}>
-                  {s.title}
-                </span>
-              </h2>
-              {s.description && <p className="text-white/90 mt-2 text-[14px] sm:text-[15px]">{s.description}</p>}
-              <div
-                className="mt-3 h-[2px] w-20 rounded-full"
-                style={{ backgroundImage: `linear-gradient(90deg, ${WC_BLUE}, transparent)` }}
-              />
-            </div>
+  if (slide.kind === 'column') {
+    return (
+      <div className="w-full h-full p-4 sm:p-6 md:p-10">
+        <div className="mx-auto max-w-[980px] md:h-full md:flex md:flex-col md:justify-center">
+          <div className="mb-3 sm:mb-4">
+            {slide.kicker && <div className="text-[10px] sm:text-[11px] uppercase tracking-wider text-white/90">{slide.kicker}</div>}
+            <h2 className="text-[22px] sm:text-[28px] md:text-[34px] font-black">
+              {/* Gradient più contrastato ma caldo (niente blu) */}
+              <span className="bg-clip-text text-transparent" style={{ backgroundImage: `linear-gradient(90deg, ${IVORY}, ${BLUSH})` }}>
+                {slide.title}
+              </span>
+            </h2>
+            {slide.description && <p className="text-white/90 mt-2 text-[14px] sm:text-[15px]">{slide.description}</p>}
+            {/* underline chiara */}
+            <div className="mt-3 h-[2px] w-20 rounded-full" style={{ backgroundImage: `linear-gradient(90deg, ${WHITE}, transparent)` }} />
+          </div>
 
-            {s.items && (
-              <div className="grid grid-cols-1 gap-3">
-                {s.items.map((it, k) => (
-                  <motion.div
-                    key={k}
-                    initial={{ y: 12, opacity: 0 }}
-                    animate={{ y: 0, opacity: 1 }}
-                    transition={{ delay: k * 0.05 }}
-                    className="rounded-2xl p-4 sm:p-5 border border-white/15 bg-white/[0.06]"
-                  >
-                    <div className="flex items-start gap-3">
-                      {it.icon && (
-                        <div className="w-9 h-9 sm:w-10 sm:h-10 grid place-items-center rounded-xl bg-white/10 border border-white/15 shrink-0 text-white">
-                          {it.icon}
-                        </div>
-                      )}
-                      <div>
-                        <div className="font-extrabold text-[15px] sm:text-base text-white">{it.title}</div>
-                        {it.desc && <div className="text-white/85 text-[13px] sm:text-sm">{it.desc}</div>}
-                      </div>
-                    </div>
-                  </motion.div>
-                ))}
-              </div>
-            )}
-
-            {/* link tutorial per la slide Piattaforma */}
-            {s.title.includes('Un’unica piattaforma') && (
-              <div className="mt-4">
-                <a
-                  href={TUTORIAL_URL}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 px-4 py-2 rounded-full font-semibold border transition text-sm"
-                  style={{ borderColor: 'rgba(255,255,255,.8)' }}
+          {slide.items && (
+            <div className="grid grid-cols-1 gap-3">
+              {slide.items.map((it, i) => (
+                <motion.div
+                  key={i}
+                  initial={{ y: 12, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ delay: i * 0.05 }}
+                  className="rounded-2xl p-4 sm:p-5 border border-white/15 bg-white/[0.06]"
                 >
-                  <MessageSquareMore className="h-4 w-4" />
-                  Scopri la piattaforma
-                </a>
-              </div>
-            )}
-          </div>
-        </div>
-      );
-    }
+                  <div className="flex items-start gap-3">
+                    {it.icon && (
+                      <div className="w-9 h-9 sm:w-10 sm:h-10 grid place-items-center rounded-xl bg-white/10 border border-white/15 shrink-0 text-white">
+                        {it.icon}
+                      </div>
+                    )}
+                    <div>
+                      <div className="font-extrabold text-[15px] sm:text-base text-white">{it.title}</div>
+                      {it.desc && <div className="text-white/90 text-[13px] sm:text-sm">{it.desc}</div>}
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          )}
 
-    if (s.kind === 'cta') {
-      return (
-        <div className="w-full h-full grid place-items-center p-4 sm:p-6 text-center">
-          <div className="max-w-[70ch]">
-            <h2 className="text-[24px] sm:text-[30px] md:text-[34px] font-black">{s.title}</h2>
-            {s.bullets && (
-              <ul className="mt-3 text-white/95 text-[14px] sm:text-[15px]">
-                {s.bullets.map((b, k) => <li key={k}>• {b}</li>)}
-              </ul>
-            )}
-            <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-3">
-              {/* Primary: pill bianca (contrasto su sfondo rosso) */}
+          {/* link tutorial per la slide Piattaforma */}
+          {slide.title.includes('Un’unica piattaforma') && (
+            <div className="mt-4">
               <a
-                href={s.primary.href}
-                className="px-4 py-2 rounded-full font-bold text-[#0f1720] transition-all duration-200 hover:-translate-y-[1px] active:translate-y-[1px]"
+                href={TUTORIAL_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-full font-semibold border transition text-sm"
+                style={{ borderColor: 'rgba(255,255,255,.9)' }}
+              >
+                <MessageSquareMore className="h-4 w-4" />
+                Scopri la piattaforma
+              </a>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  if (slide.kind === 'cta') {
+    return (
+      <div className="w-full h-full grid place-items-center p-4 sm:p-6 text-center">
+        <div className="max-w-[70ch]">
+          <h2 className="text-[24px] sm:text-[30px] md:text-[34px] font-black">{slide.title}</h2>
+          {slide.bullets && (
+            <ul className="mt-3 text-white/95 text-[14px] sm:text-[15px]">
+              {slide.bullets.map((b, i) => <li key={i}>• {b}</li>)}
+            </ul>
+          )}
+          <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-3">
+            {/* Primary: pill bianca (alto contrasto) */}
+            <a
+              href={slide.primary.href}
+              className="px-4 py-2 rounded-full font-bold text-[#0f1720] transition-all duration-200 hover:-translate-y-[1px] active:translate-y-[1px]"
+              style={{
+                background: WHITE,
+                boxShadow: '0 0 0 2px rgba(255,255,255,.15)',
+                outline: '2px solid transparent',
+              }}
+            >
+              {slide.primary.label}
+            </a>
+            {/* Secondary: outline bianco */}
+            {slide.secondary && (
+              <a
+                href={slide.secondary.href}
+                className="px-4 py-2 rounded-full font-bold transition-all duration-200 hover:-translate-y-[1px] active:translate-y-[1px]"
                 style={{
-                  background: '#ffffff',
-                  boxShadow: '0 0 0 2px rgba(227,57,85,.18)',
-                  outline: '2px solid transparent',
+                  border: '1px solid rgba(255,255,255,.9)',
+                  background: 'transparent',
+                  color: WHITE,
                 }}
               >
-                {s.primary.label}
+                {slide.secondary.label}
               </a>
-              {/* Secondary: outline bianco */}
-              {s.secondary && (
-                <a
-                  href={s.secondary.href}
-                  className="px-4 py-2 rounded-full font-bold transition-all duration-200 hover:-translate-y-[1px] active:translate-y-[1px]"
-                  style={{
-                    border: '1px solid rgba(255,255,255,.85)',
-                    background: 'transparent',
-                    color: '#ffffff',
-                  }}
-                >
-                  {s.secondary.label}
-                </a>
-              )}
-            </div>
+            )}
           </div>
         </div>
-      );
-    }
-
-    return null;
+      </div>
+    );
   }
 
-  function Preview({ slide }: { slide: Slide }) {
-    if (slide.kind === 'title') return <div className="font-semibold">Intro</div>;
-    if (slide.kind === 'column')
-      return (
-        <div>
-          <div className="font-semibold">{slide.title}</div>
-          {slide.items && <div className="text-white/80 text-[11px]">{slide.items.map((i) => i.title).join(' • ')}</div>}
-        </div>
-      );
-    if (slide.kind === 'cta') return <div className="font-semibold">{slide.title}</div>;
-    return null;
-  }
+  return null;
+}
+
+function Preview({ slide }: { slide: Slide }) {
+  if (slide.kind === 'title') return <div className="font-semibold">Intro</div>;
+  if (slide.kind === 'column')
+    return (
+      <div>
+        <div className="font-semibold">{slide.title}</div>
+        {slide.items && <div className="text-white/80 text-[11px]">{slide.items.map((i) => i.title).join(' • ')}</div>}
+      </div>
+    );
+  if (slide.kind === 'cta') return <div className="font-semibold">{slide.title}</div>;
+  return null;
 }
