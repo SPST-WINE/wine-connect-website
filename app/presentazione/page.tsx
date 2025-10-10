@@ -173,7 +173,7 @@ export default function PresentationPage() {
       onTouchEnd={onTouchEnd}
     >
       {/* Header */}
-      <header className="sticky top-0 z-50 border-b border-white/15 bg-black/40 backdrop-blur-md supports-[backdrop-filter]:bg-black/30">
+      <header className="sticky top-0 z-50 border-b border-white/15 bg-black/30 backdrop-blur supports-[backdrop-filter]:bg-black/20">
         <div className="mx-auto max-w-[1200px] px-4 h-14 flex items-center justify-between gap-3">
           <a href="/" className="flex items-center gap-2 text-white font-extrabold">
             <picture>
@@ -205,31 +205,26 @@ export default function PresentationPage() {
         </div>
       </header>
 
-      {/* Viewport */}
+      {/* Viewport — CORNICE COMPATTA COME SPST */}
       <section className="mx-auto max-w-[1400px] px-4 py-4 md:py-6">
         <div
-          className="relative mx-auto w-full overflow-hidden"
-          style={{
-            borderRadius: 16,
-            border: '1px solid rgba(255,255,255,0.12)',
-            // blur più scuro: glass con overlay nero
-            background: 'linear-gradient(180deg, rgba(0,0,0,.45), rgba(0,0,0,.32))',
-            backdropFilter: 'blur(10px)',
-            WebkitBackdropFilter: 'blur(10px)',
-            boxShadow: '0 12px 40px rgba(0,0,0,.45)',
-            height: 'calc(100svh - 56px - 4px - 2rem)',
-          }}
+          className="
+            relative mx-auto w-full rounded-2xl border border-white/15 bg-white/[0.05] overflow-hidden shadow-[0_8px_30px_rgba(0,0,0,.35)]
+            h-[calc(100svh-56px-4px-2rem)] md:h-auto md:max-w-[1200px] md:aspect-[16/9]
+          "
+          // puoi riattivare il blur scuro se vuoi un look più "glass":
+          // style={{ backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)' }}
         >
           {/* Nav: mobile bottom, desktop laterali */}
           <div className="md:hidden absolute inset-x-0 bottom-3 flex items-center justify-between px-3 pointer-events-none">
             <button
-              className="pointer-events-auto p-3 rounded-xl bg-black/50 border border-white/15 backdrop-blur hover:bg-white/10"
+              className="pointer-events-auto p-3 rounded-xl bg-black/40 border border-white/15 backdrop-blur hover:bg-white/10"
               onClick={() => go(-1)} title="Indietro"
             >
               <ArrowLeft className="h-5 w-5" />
             </button>
             <button
-              className="pointer-events-auto p-3 rounded-xl bg-black/50 border border-white/15 backdrop-blur hover:bg-white/10"
+              className="pointer-events-auto p-3 rounded-xl bg-black/40 border border-white/15 backdrop-blur hover:bg-white/10"
               onClick={() => go(1)} title="Avanti"
             >
               <ArrowRight className="h-5 w-5" />
@@ -237,13 +232,13 @@ export default function PresentationPage() {
           </div>
 
           <button
-            className="hidden md:inline-flex absolute left-2 top-1/2 -translate-y-1/2 p-2 rounded-lg bg-black/40 border border-white/15 hover:bg-white/10"
+            className="hidden md:inline-flex absolute left-2 top-1/2 -translate-y-1/2 p-2 rounded-lg bg-black/30 border border-white/15 hover:bg-white/10"
             onClick={() => go(-1)} title="Indietro"
           >
             <ArrowLeft className="h-5 w-5" />
           </button>
           <button
-            className="hidden md:inline-flex absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-lg bg-black/40 border border-white/15 hover:bg-white/10"
+            className="hidden md:inline-flex absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-lg bg-black/30 border border-white/15 hover:bg-white/10"
             onClick={() => go(1)} title="Avanti"
           >
             <ArrowRight className="h-5 w-5" />
@@ -273,14 +268,7 @@ export default function PresentationPage() {
                 <button
                   key={idx}
                   onClick={() => { goto(idx); setGrid(false); }}
-                  className="text-left p-3 sm:p-4 transition"
-                  style={{
-                    borderRadius: 14,
-                    border: '1px solid rgba(255,255,255,0.12)',
-                    background: 'linear-gradient(180deg, rgba(0,0,0,.45), rgba(0,0,0,.30))',
-                    backdropFilter: 'blur(8px)',
-                    WebkitBackdropFilter: 'blur(8px)',
-                  }}
+                  className="text-left rounded-xl border border-white/15 bg-white/[0.06] p-3 sm:p-4 hover:bg-white/[0.09] transition"
                 >
                   <div className="text-[11px] text-white/70 mb-1">Slide {idx + 1}</div>
                   <Preview slide={s} />
@@ -339,24 +327,11 @@ function SlideRenderer({ slide }: { slide: Slide }) {
                   initial={{ y: 12, opacity: 0 }}
                   animate={{ y: 0, opacity: 1 }}
                   transition={{ delay: i * 0.05 }}
-                  className="rounded-2xl p-4 sm:p-5"
-                  style={{
-                    border: '1px solid rgba(255,255,255,0.12)',
-                    background: 'linear-gradient(180deg, rgba(0,0,0,.45), rgba(0,0,0,.30))',
-                    backdropFilter: 'blur(8px)',
-                    WebkitBackdropFilter: 'blur(8px)',
-                  }}
+                  className="rounded-2xl p-4 sm:p-5 border border-white/15 bg-white/[0.06]"
                 >
                   <div className="flex items-start gap-3">
                     {it.icon && (
-                      <div
-                        className="w-9 h-9 sm:w-10 sm:h-10 grid place-items-center rounded-xl shrink-0"
-                        style={{
-                          border: `1px solid ${GRAPHITE}66`,
-                          background: 'rgba(255,255,255,0.06)',
-                          color: WHITE,
-                        }}
-                      >
+                      <div className="w-9 h-9 sm:w-10 sm:h-10 grid place-items-center rounded-xl bg-white/10 border border-white/15 shrink-0 text-white">
                         {it.icon}
                       </div>
                     )}
@@ -377,12 +352,8 @@ function SlideRenderer({ slide }: { slide: Slide }) {
                 href={TUTORIAL_URL}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-full font-semibold transition text-sm"
-                style={{
-                  border: `1px solid ${GRAPHITE_LIGHT}`,
-                  background: 'transparent',
-                  color: WHITE,
-                }}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-full font-semibold border transition text-sm"
+                style={{ borderColor: 'rgba(255,255,255,.9)', color: WHITE }}
               >
                 <MessageSquareMore className="h-4 w-4" />
                 Scopri la piattaforma
@@ -407,30 +378,20 @@ function SlideRenderer({ slide }: { slide: Slide }) {
           <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-3">
             {/* Primary: pill bianca per contrasto massimo */}
             <a
-              href={slide.primary.href}
+              href={CTA_WINE_URL}
               className="px-4 py-2 rounded-full font-bold text-[#0f1720] transition-all duration-200 hover:-translate-y-[1px] active:translate-y-[1px]"
-              style={{
-                background: WHITE,
-                boxShadow: '0 0 0 2px rgba(255,255,255,.15)',
-                outline: '2px solid transparent',
-              }}
+              style={{ background: WHITE, boxShadow: '0 0 0 2px rgba(255,255,255,.15)' }}
             >
-              {slide.primary.label}
+              Registra la Cantina
             </a>
-            {/* Secondary: outline grafite chiaro */}
-            {slide.secondary && (
-              <a
-                href={slide.secondary.href}
-                className="px-4 py-2 rounded-full font-bold transition-all duration-200 hover:-translate-y-[1px] active:translate-y-[1px]"
-                style={{
-                  border: `1px solid ${GRAPHITE_LIGHT}`,
-                  background: 'transparent',
-                  color: WHITE,
-                }}
-              >
-                {slide.secondary.label}
-              </a>
-            )}
+            {/* Secondary: outline bianco */}
+            <a
+              href={TUTORIAL_URL}
+              className="px-4 py-2 rounded-full font-bold transition-all duration-200 hover:-translate-y-[1px] active:translate-y-[1px]"
+              style={{ border: '1px solid rgba(255,255,255,.9)', background: 'transparent', color: WHITE }}
+            >
+              Scopri la piattaforma
+            </a>
           </div>
         </div>
       </div>
@@ -446,7 +407,7 @@ function Preview({ slide }: { slide: Slide }) {
     return (
       <div>
         <div className="font-semibold">{slide.title}</div>
-        {slide.items && <div className="text-white/70 text-[11px]">{slide.items.map((i) => i.title).join(' • ')}</div>}
+        {slide.items && <div className="text-white/80 text-[11px]">{slide.items.map((i) => i.title).join(' • ')}</div>}
       </div>
     );
   if (slide.kind === 'cta') return <div className="font-semibold">{slide.title}</div>;
