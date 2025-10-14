@@ -1,224 +1,213 @@
 export const dynamic = "force-dynamic";
 
+import Image from "next/image";
 import Link from "next/link";
 import { createSupabaseServer } from "@/lib/supabase/server";
-import { ArrowRight, Trash2 } from "lucide-react";
 
-/** Fetch current buyer, open SAMPLE cart and items */
-async function getData() {
+type CartItemRow = {
+  id: string;
+  quantity: number;
+  unit_price: number | null;
+  wines: {
+    id: string;
+    name: string;
+    vintage: number | null;
+    type: string | null;
+    wineries: { name: string | null } | null;
+    image_url: string | null;
+  } | null;
+};
+
+export default async function SampleCartPage() {
   const supa = createSupabaseServer();
 
-  // who is logged in
+  // Who's logged in?
   const { data: { user } } = await supa.auth.getUser();
-  if (!user) return { user: null, buyer: null, cart: null, items: [] as any[], total: 0 };
+  if (!user) {
+    return (
+      <main className="mx-auto max-w-[1100px] px-5 py-10">
+        <h1 className="text-2xl font-semibold">Sample cart</h1>
+        <p className="mt-2 text-sm text-neutral-500">
+          You are not signed in. <Link className="underline" href="/login">Sign in</Link>.
+        </p>
+      </main>
+    );
+  }
 
+  // Resolve buyer
   const { data: buyer } = await supa
     .from("buyers")
-    .select("id, email, company_name")
+    .select("id")
     .eq("auth_user_id", user.id)
     .maybeSingle();
 
-  if (!buyer) return { user, buyer: null, cart: null, items: [] as any[], total: 0 };
+  if (!buyer) {
+    return (
+      <main className="mx-auto max-w-[1100px] px-5 py-10">
+        <h1 className="text-2xl font-semibold">Sample cart</h1>
+        <p className="mt-2 text-sm text-neutral-500">Buyer profile not found.</p>
+      </main>
+    );
+  }
 
-  // open SAMPLE cart for this buyer
+  // Get open sample cart (do NOT create here)
   const { data: cart } = await supa
     .from("carts")
-    .select("id, status, type")
+    .select("id,status,cart_type")
     .eq("buyer_id", buyer.id)
-    .eq("type", "sample")
     .eq("status", "open")
+    .eq("cart_type", "sample")
+    .order("created_at", { ascending: false })
+    .limit(1)
     .maybeSingle();
 
-  if (!cart) return { user, buyer, cart: null, items: [] as any[], total: 0 };
+  let items: CartItemRow[] = [];
+  if (cart) {
+    const { data } = await supa
+      .from("cart_items")
+      .select(`
+        id, quantity, unit_price,
+        wines:wine_id (
+          id, name, vintage, type, image_url,
+          wineries:wineries ( name )
+        )
+      `)
+      .eq("cart_id", cart.id)
+      .order("created_at", { ascending: true }) as unknown as { data: CartItemRow[] | null };
+    items = data ?? [];
+  }
 
-  // items + wine info (image/name/winery)
-  const { data: items } = await supa
-    .from("cart_items")
-    .select(`
-      id,
-      quantity,
-      unit_price,
-      list_type,
-      wine:wine_id (
-        id,
-        wine_name,
-        winery_name,
-        region,
-        type,
-        vintage,
-        image_url
-      )
-    `)
-    .eq("cart_id", cart.id)
-    .order("id", { ascending: true });
-
-  const total =
-    (items || []).reduce((sum, it: any) => sum + (Number(it.unit_price ?? 0) * Number(it.quantity ?? 0)), 0) ?? 0;
-
-  return { user, buyer, cart, items: items || [], total };
-}
-
-export default async function SampleCartPage() {
-  const { buyer, cart, items, total } = await getData();
+  const count = items.reduce((n, r) => n + r.quantity, 0);
+  const subtotal = items.reduce((s, r) => s + r.quantity * Number(r.unit_price ?? 0), 0);
 
   return (
-    <div
-      className="min-h-screen"
-      style={{
-        background:
-          "radial-gradient(120% 120% at 50% -10%, #1c3e5e 0%, #0a1722 60%, #000 140%)",
-      }}
-    >
-      {/* Top bar */}
-      <header className="h-14 flex items-center justify-between px-5">
-        <Link href="/buyer-home" className="flex items-center gap-2 text-white">
-          <img src="/wc-logo.png" alt="Wine Connect" className="h-6 w-auto" />
-          <span className="font-semibold">Wine Connect</span>
-        </Link>
-        <nav className="flex items-center gap-5 text-sm">
-          <Link className="text-white/80 hover:text-white" href="/catalog">
-            Catalog
-          </Link>
-          <Link className="text-white/80 hover:text-white" href="/profile">
-            Profile
-          </Link>
-        </nav>
-      </header>
-
-      <main className="px-5">
-        <div className="mx-auto max-w-6xl py-6">
-          {/* Heading */}
-          <div className="flex items-end justify-between gap-3">
-            <div>
-              <div className="text-xs uppercase tracking-wider text-white/60">
-                Sample cart
-              </div>
-              <h1 className="text-3xl font-extrabold text-white">
-                {buyer?.company_name || "Your cart"}
-              </h1>
-              <p className="text-white/70 text-sm">
-                {items.length} item{items.length === 1 ? "" : "s"} • Total €{total.toFixed(2)}
-              </p>
-            </div>
-
-            {items.length > 0 && cart && (
-              <form action="/api/cart/checkout" method="post">
-                {/* server route reads open sample cart by user; no hidden needed */}
-                <button
-                  className="rounded-xl px-4 py-2 text-sm font-semibold text-[#0f1720]"
-                  style={{ background: "#E33955" }}
-                >
-                  Request shipment <span className="inline-block -mr-1 pl-1"><ArrowRight size={14} /></span>
-                </button>
-              </form>
-            )}
+    <main className="mx-auto max-w-[1100px] px-5 py-10">
+      <div className="flex items-center justify-between">
+        <div>
+          <div className="text-xs uppercase tracking-wide text-neutral-400">Sample Cart</div>
+          <h1 className="text-2xl font-semibold">Your cart</h1>
+          <div className="text-sm text-neutral-500">
+            {count} {count === 1 ? "item" : "items"} • Total €{subtotal.toFixed(2)}
           </div>
+        </div>
+        <nav className="text-sm">
+          <Link className="underline text-neutral-500 hover:text-neutral-700" href="/catalog">Catalog</Link>
+          <span className="mx-2 text-neutral-400">·</span>
+          <Link className="underline text-neutral-500 hover:text-neutral-700" href="/profile">Profile</Link>
+        </nav>
+      </div>
 
-          {/* List */}
-          <div className="mt-6 grid gap-3">
-            {items.map((it: any) => {
-              const w = it.wine || {};
+      {/* Empty state */}
+      {(!cart || items.length === 0) && (
+        <>
+          <div className="mt-6 rounded-2xl border border-white/10 bg-white/[0.04] p-6 text-center">
+            Your sample cart is empty.{" "}
+            <Link className="underline" href="/catalog">Go to catalog</Link>.
+          </div>
+          <SummaryBox subtotal={subtotal} canCheckout={false} />
+        </>
+      )}
+
+      {/* Items */}
+      {cart && items.length > 0 && (
+        <>
+          <ul className="mt-6 space-y-3">
+            {items.map((it) => {
+              const w = it.wines;
+              const winery = w?.wineries?.name ?? "—";
               return (
-                <div
-                  key={it.id}
-                  className="rounded-2xl border border-white/10 bg-white/[0.04] p-4 flex items-center gap-4"
-                >
-                  <div className="w-24 h-24 rounded-lg bg-black/30 overflow-hidden grid place-items-center">
-                    {w.image_url ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={w.image_url}
-                        alt={w.wine_name || "Wine"}
-                        className="h-full w-full object-cover"
-                      />
-                    ) : (
-                      <div className="text-white/30 text-xs">No image</div>
-                    )}
+                <li key={it.id} className="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
+                  <div className="grid grid-cols-[64px_1fr_auto] gap-4 items-center">
+                    <div className="relative h-16 w-16 overflow-hidden rounded-lg bg-black/20">
+                      {w?.image_url ? (
+                        <Image
+                          src={w.image_url}
+                          alt={w?.name ?? "Wine"}
+                          fill
+                          className="object-cover"
+                        />
+                      ) : (
+                        <div className="h-full w-full grid place-items-center text-xs text-neutral-400">
+                          No img
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="min-w-0">
+                      <div className="font-medium truncate">
+                        {w?.name ?? "Unnamed wine"}{" "}
+                        {w?.vintage ? <span className="text-neutral-500">({w.vintage})</span> : null}
+                      </div>
+                      <div className="text-sm text-neutral-500 truncate">
+                        {winery} {w?.type ? `· ${w.type}` : ""}
+                      </div>
+                      <div className="text-sm mt-1">€{Number(it.unit_price ?? 0).toFixed(2)} / sample</div>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      {/* Update quantity */}
+                      <form
+                        action="/api/cart/item/update"
+                        method="post"
+                        className="flex items-center gap-2"
+                      >
+                        <input type="hidden" name="itemId" value={it.id} />
+                        <input
+                          name="qty"
+                          type="number"
+                          min={0}
+                          defaultValue={it.quantity}
+                          className="w-20 rounded border bg-transparent p-2"
+                        />
+                        <button className="rounded bg-black px-3 py-2 text-white text-sm">
+                          Update
+                        </button>
+                      </form>
+
+                      {/* Remove */}
+                      <form action="/api/cart/item/remove" method="post">
+                        <input type="hidden" name="itemId" value={it.id} />
+                        <button className="rounded border px-3 py-2 text-sm hover:bg-white/5">
+                          Remove
+                        </button>
+                      </form>
+                    </div>
                   </div>
-
-                  <div className="min-w-0 flex-1">
-                    <div className="font-semibold text-white truncate">
-                      {w.wine_name}{" "}
-                      {w.vintage ? <span className="text-white/60">({w.vintage})</span> : null}
-                    </div>
-                    <div className="text-sm text-white/70 truncate">
-                      {w.winery_name} · {w.region} · {w.type}
-                    </div>
-                    <div className="text-sm text-white mt-1">
-                      <span className="text-white/70">Sample price:</span> €{Number(it.unit_price ?? 0).toFixed(2)}
-                    </div>
-                  </div>
-
-                  {/* Update qty */}
-                  <form action="/api/cart/item/update" method="post" className="flex items-center gap-2">
-                    <input type="hidden" name="itemId" value={it.id} />
-                    <label className="sr-only" htmlFor={`qty-${it.id}`}>Qty</label>
-                    <input
-                      id={`qty-${it.id}`}
-                      name="qty"
-                      type="number"
-                      min={0}
-                      defaultValue={it.quantity}
-                      className="w-20 rounded-lg bg-black/30 border border-white/10 px-3 py-2 text-white"
-                    />
-                    <button
-                      className="rounded-lg border border-white/10 px-3 py-2 text-sm text-white/90 hover:bg-white/5"
-                      title="Update quantity"
-                    >
-                      Update
-                    </button>
-                  </form>
-
-                  {/* Remove */}
-                  <form action="/api/cart/item/remove" method="post">
-                    <input type="hidden" name="itemId" value={it.id} />
-                    <button
-                      className="rounded-lg border border-white/10 px-2 py-2 text-white/80 hover:bg-white/5"
-                      title="Remove item"
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  </form>
-                </div>
+                </li>
               );
             })}
+          </ul>
 
-            {items.length === 0 && (
-              <div className="rounded-xl border border-white/10 bg-white/[0.04] p-6 text-center text-white/70">
-                Your sample cart is empty.{" "}
-                <Link href="/catalog" className="underline">
-                  Go to catalog
-                </Link>
-                .
-              </div>
-            )}
-          </div>
+          <SummaryBox subtotal={subtotal} canCheckout>
+            <form action="/api/cart/checkout" method="post">
+              <input type="hidden" name="type" value="sample" />
+              <button className="h-11 w-full rounded-xl bg-[color:#E33955] font-semibold text-black hover:-translate-y-[1px] transition">
+                Request shipment
+              </button>
+            </form>
+          </SummaryBox>
+        </>
+      )}
+    </main>
+  );
+}
 
-          {/* Summary card */}
-          <div className="mt-6 flex items-center justify-between rounded-2xl border border-white/10 bg-white/[0.04] p-4">
-            <div className="text-white/80 text-sm">Subtotal</div>
-            <div className="text-white font-semibold">€{total.toFixed(2)}</div>
-          </div>
-
-          {/* CTA (bottom duplicated) */}
-          {items.length > 0 && cart && (
-            <div className="mt-4 text-right">
-              <form action="/api/cart/checkout" method="post">
-                <button
-                  className="rounded-xl px-4 py-2 text-sm font-semibold text-[#0f1720]"
-                  style={{ background: "#E33955" }}
-                >
-                  Request shipment <span className="inline-block -mr-1 pl-1"><ArrowRight size={14} /></span>
-                </button>
-              </form>
-            </div>
-          )}
-        </div>
-      </main>
-
-      <footer className="mt-auto py-6 px-5 text-right text-white/70 text-xs">
-        © {new Date().getFullYear()} Wine Connect — SPST
-      </footer>
+function SummaryBox({
+  subtotal,
+  canCheckout,
+  children,
+}: {
+  subtotal: number;
+  canCheckout: boolean;
+  children?: React.ReactNode;
+}) {
+  return (
+    <div className="mt-4 rounded-2xl border border-white/10 bg-white/[0.04] p-5">
+      <div className="flex items-center justify-between">
+        <div className="text-sm text-neutral-500">Subtotal</div>
+        <div className="font-semibold">€{subtotal.toFixed(2)}</div>
+      </div>
+      {canCheckout && <div className="mt-4">{children}</div>}
     </div>
   );
 }
