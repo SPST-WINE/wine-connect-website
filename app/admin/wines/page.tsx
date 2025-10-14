@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 import { requireAdmin } from "@/lib/is-admin";
 
 export default async function AdminWines() {
