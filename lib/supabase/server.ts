@@ -13,12 +13,21 @@ export function createSupabaseServer() {
         get(name: string) {
           return cookieStore.get(name)?.value;
         },
+        // In Server Components i cookie sono read-only → se Supabase
+        // prova a refreshare la sessione e settare cookie, ignoriamo l’errore.
         set(name: string, value: string, options: any) {
-          // Next 14: scrittura cookie lato server
-          cookieStore.set({ name, value, ...options });
+          try {
+            cookieStore.set({ name, value, ...options });
+          } catch {
+            // ignore "Cookies can only be modified..." in RSC
+          }
         },
         remove(name: string, options: any) {
-          cookieStore.set({ name, value: "", ...options });
+          try {
+            cookieStore.set({ name, value: "", ...options });
+          } catch {
+            // ignore in RSC
+          }
         },
       },
     }
