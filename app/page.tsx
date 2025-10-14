@@ -14,7 +14,10 @@ const LOGO_PNG = '/wc-logo.png';
 const LOGO_SVG = '/wc-logo.svg'; // opzionale (se presente)
 
 /* ===================== I18N ===================== */
-const I18N = {
+type Lang = 'it' | 'en';
+type RootStyle = React.CSSProperties & { ['--wc']: string };
+
+const I18N: Record<Lang, any> = {
   it: {
     hero_kicker: "L’hub tra chi produce e chi compra",
     hero_title_a: 'Matchmaking su misura.',
@@ -49,7 +52,7 @@ const I18N = {
       wines: 'Cantine pronte',
       buyers: 'Buyer qualificati',
       how: 'Come funziona',
-      chipsTopLeft: ['USA', 'ASIA', 'UK', 'UE'] as const, // readonly
+      chipsTopLeft: ['USA', 'ASIA', 'UK', 'UE'],
     },
     twin_right: {
       kicker: 'Export full compliance',
@@ -116,7 +119,7 @@ const I18N = {
       wines: 'Wineries ready',
       buyers: 'Qualified buyers',
       how: 'How it works',
-      chipsTopLeft: ['USA', 'ASIA', 'UK', 'EU'] as const, // readonly
+      chipsTopLeft: ['USA', 'ASIA', 'UK', 'EU'],
     },
     twin_right: {
       kicker: 'Export full compliance',
@@ -149,10 +152,7 @@ const I18N = {
     },
     enter: 'Enter Wine Connect',
   },
-} as const;
-
-type Lang = 'it' | 'en';
-type RootStyle = React.CSSProperties & Record<'--wc', string>;
+};
 
 /* ===================== PAGE ===================== */
 export default function WineConnectHome() {
