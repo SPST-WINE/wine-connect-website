@@ -20,7 +20,7 @@ export async function POST(req: Request) {
     .maybeSingle();
   if (!item) return NextResponse.json({ error: "Item non trovato" }, { status: 404 });
 
-  // Cart
+  // Cart (potrebbe essere nullo → guardia)
   const { data: cart } = await supa
     .from("carts")
     .select("id, buyer_id, status")
