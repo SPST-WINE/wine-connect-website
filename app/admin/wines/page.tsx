@@ -5,6 +5,7 @@ import { requireAdmin } from "@/lib/is-admin";
 import { createSupabaseServer } from "@/lib/supabase/server";
 import ConfirmSubmit from "@/components/ConfirmSubmit";
 
+type WineryObj = { name: string };
 type Row = {
   id: string;
   name: string;
@@ -12,8 +13,15 @@ type Row = {
   type: string | null;
   available: boolean | null;
   image_url: string | null;
-  wineries: { name: string } | null;
+  // Può arrivare come oggetto, array (di 1 elem), o null
+  wineries: WineryObj | WineryObj[] | null;
 };
+
+function getWineryName(w: Row): string {
+  const v = w.wineries;
+  if (!v) return "—";
+  return Array.isArray(v) ? (v[0]?.name ?? "—") : (v.name ?? "—");
+}
 
 export default async function AdminWines() {
   const { ok } = await requireAdmin();
@@ -30,7 +38,7 @@ export default async function AdminWines() {
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold">Wines (immagini & dettagli)</h1>
+          <h1 className="text-2xl font-semibold">Wines (immagini &amp; dettagli)</h1>
           <nav className="mt-1 text-sm flex gap-4">
             <Link className="underline" href="/admin">Dashboard</Link>
             <Link className="underline" href="/admin/orders">Ordini</Link>
@@ -48,7 +56,7 @@ export default async function AdminWines() {
 
       {/* Lista vini */}
       <ul className="grid gap-4">
-        {(wines ?? []).map((w) => (
+        {(wines as Row[] | null)?.map((w) => (
           <li key={w.id} className="rounded border bg-white p-4">
             <div className="flex flex-col gap-3 md:flex-row md:items-center md:gap-4">
               {/* thumb */}
@@ -68,7 +76,7 @@ export default async function AdminWines() {
                   ) : null}
                 </div>
                 <div className="text-sm text-neutral-600 truncate">
-                  {w.wineries?.name ?? "—"} {w.type ? `· ${w.type}` : ""}
+                  {getWineryName(w)} {w.type ? `· ${w.type}` : ""}
                 </div>
                 <div className="text-xs mt-0.5">
                   {w.available ? "Disponibile a catalogo" : "Non disponibile"}
@@ -118,7 +126,7 @@ export default async function AdminWines() {
               </div>
             </div>
 
-            {/* URL immagine (aiuta debugging) */}
+            {/* URL immagine (debug) */}
             {w.image_url && (
               <div className="mt-2 text-xs text-neutral-500 truncate">
                 {w.image_url}
