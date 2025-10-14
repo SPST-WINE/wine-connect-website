@@ -1,155 +1,202 @@
-export const dynamic = "force-dynamic";
+// app/admin/orders/[id]/page.tsx
+export const dynamic = 'force-dynamic';
 
 import Link from "next/link";
+import { notFound } from "next/navigation";
 import { requireAdmin } from "@/lib/is-admin";
+import { createSupabaseServer } from "@/lib/supabase/server";
+import ConfirmSubmit from "@/components/ConfirmSubmit";
 
-type Params = { params: { id: string } };
+type OrderItem = {
+  id: string;
+  wine_id: string;
+  quantity: number;
+  unit_price: number | null;
+  list_type: "sample" | "order";
+  wines: { name: string; vintage: string | null; image_url: string | null };
+};
 
-const STATUS = ["pending","processing","shipped","completed","cancelled"] as const;
+type OrderRow = {
+  id: string;
+  buyer_id: string;
+  type: "samples" | "order";
+  status: "pending" | "processing" | "shipped" | "completed" | "cancelled";
+  created_at: string;
+  tracking_code: string | null;
+  notes: string | null;
+  buyers: { email: string | null; company_name: string | null } | null;
+  items: OrderItem[];
+};
 
-export default async function AdminOrderDetail({ params }: Params) {
-  const { ok, supa } = await requireAdmin();
-  if (!ok || !supa) return <div className="mt-10">Non autorizzato.</div>;
+const STATI: OrderRow["status"][] = [
+  "pending",
+  "processing",
+  "shipped",
+  "completed",
+  "cancelled",
+];
 
-  const orderId = params.id;
+function money(n: number | null | undefined) {
+  if (n == null) return "—";
+  return `€${n.toFixed(2)}`;
+}
 
-  // 1) Testata ordine + buyer + shipping
+export default async function AdminOrderDetail({ params }: { params: { id: string } }) {
+  const { ok } = await requireAdmin();
+  if (!ok) {
+    return (
+      <div className="mt-10">
+        Non autorizzato. <Link className="underline" href="/login">Accedi</Link>.
+      </div>
+    );
+  }
+
+  const supa = createSupabaseServer();
+  // NB: richiede FK order_items.wine_id -> wines.id per l'embed
   const { data: order, error } = await supa
     .from("orders")
-    .select(`
-      id, type, status, created_at, tracking_code, totals, cart_id,
-      buyer_id, shipping_address_id,
-      buyers:buyer_id ( email, company_name ),
-      addresses:shipping_address_id ( label, address, city, zip, country )
-    `)
-    .eq("id", orderId)
-    .maybeSingle();
+    .select(
+      `
+      id, buyer_id, type, status, created_at, tracking_code, notes,
+      buyers:buyer_id(email, company_name),
+      items:order_items(
+        id, wine_id, quantity, unit_price, list_type,
+        wines:wine_id(name, vintage, image_url)
+      )
+    `
+    )
+    .eq("id", params.id)
+    .single<OrderRow>();
 
-  if (error) return <div className="text-red-600">Errore: {error.message}</div>;
-  if (!order) return <div className="text-sm">Ordine non trovato.</div>;
+  if (error || !order) return notFound();
 
-  // 2) Righe (cart_items) + vini
-  const { data: items } = await supa
-    .from("cart_items")
-    .select(`
-      id, wine_id, quantity, unit_price, list_type,
-      wines:wine_id ( id, name, vintage, image_url, winery_id, wineries:winery_id ( name ) )
-    `)
-    .eq("cart_id", order.cart_id)
-    .order("id");
-
-  const rows = (items ?? []) as any[];
-  const buyer = Array.isArray(order.buyers) ? order.buyers[0] : order.buyers;
-  const addr  = Array.isArray(order.addresses) ? order.addresses[0] : order.addresses;
-
-  const totals = (order.totals ?? {}) as any;
-  const subtotal = Number(
-    rows.reduce((s, r) => s + Number(r.unit_price ?? 0) * Number(r.quantity ?? 0), 0)
+  const subtotal = order.items.reduce(
+    (acc, it) => acc + (it.unit_price ?? 0) * it.quantity,
+    0
   );
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">
-          Ordine #{String(order.id).slice(0, 8)} · {String(order.type).toUpperCase()}
-        </h1>
-        <Link className="underline" href="/admin/orders">← Tutti gli ordini</Link>
+        <div>
+          <h1 className="text-2xl font-semibold">Ordine #{order.id.slice(0,8)}</h1>
+          <div className="text-sm text-neutral-600">
+            {order.type.toUpperCase()} • {new Date(order.created_at).toLocaleString()}
+          </div>
+          <div className="text-sm text-neutral-600">
+            {order.buyers?.company_name || order.buyers?.email || "—"}
+          </div>
+        </div>
+        <nav className="text-sm flex gap-4">
+          <Link className="underline" href="/admin">Dashboard</Link>
+          <Link className="underline" href="/admin/orders">Ordini</Link>
+        </nav>
       </div>
 
-      {/* Meta + Update */}
-      <section className="rounded border bg-white p-4 grid gap-4 md:grid-cols-2">
-        <div className="space-y-1">
-          <div className="text-sm text-neutral-600">
-            Creato il {new Date(order.created_at).toLocaleString()}
-          </div>
-          <div className="text-sm">
-            Buyer: <strong>{buyer?.company_name || buyer?.email || "—"}</strong>
-          </div>
-          <div className="text-sm">
-            Shipping:{" "}
-            {addr ? (
-              <span>
-                {addr.label ? `${addr.label} · ` : ""}
-                {addr.address}, {addr.city} {addr.zip}, {addr.country}
-              </span>
-            ) : "—"}
-          </div>
-          <div className="text-sm">
-            Totale (calcolato righe): <strong>€{subtotal.toFixed(2)}</strong>
-          </div>
-          {"grand_total" in totals && (
-            <div className="text-xs text-neutral-600">
-              Grand total (JSON): €{Number(totals.grand_total).toFixed(2)}
-            </div>
-          )}
-        </div>
-
-        <form
-          action="/api/admin/orders/update-status"
-          method="post"
-          className="flex flex-col gap-2 md:items-end"
-        >
+      {/* Stato / Tracking / Note */}
+      <section className="rounded border bg-white p-4">
+        <h2 className="font-semibold mb-3">Testata ordine</h2>
+        <form action="/api/admin/orders/update" method="post" className="grid gap-3 max-w-xl">
           <input type="hidden" name="orderId" value={order.id} />
-          <label className="text-sm">
-            Stato
-            <select
-              name="status"
-              defaultValue={order.status}
-              className="border rounded p-2 ml-2"
-            >
-              {STATUS.map(s => <option key={s} value={s}>{s}</option>)}
+          <label className="grid gap-1">
+            <span className="text-xs text-neutral-600">Stato</span>
+            <select name="status" defaultValue={order.status} className="border rounded p-2">
+              {STATI.map((s) => (
+                <option key={s} value={s}>{s}</option>
+              ))}
             </select>
           </label>
-
-          <label className="text-sm">
-            Tracking
+          <label className="grid gap-1">
+            <span className="text-xs text-neutral-600">Tracking code</span>
             <input
               name="tracking_code"
               defaultValue={order.tracking_code ?? ""}
-              placeholder="Inserisci tracking"
-              className="border rounded p-2 ml-2"
+              className="border rounded p-2"
+              placeholder="es. UPS 1Z..."
             />
           </label>
-
-          <button className="px-4 py-2 rounded bg-black text-white w-fit">
-            Salva
-          </button>
+          <label className="grid gap-1">
+            <span className="text-xs text-neutral-600">Note interne</span>
+            <textarea
+              name="notes"
+              defaultValue={order.notes ?? ""}
+              className="border rounded p-2 min-h-[100px]"
+              placeholder="Note operative, eccezioni, richieste speciali..."
+            />
+          </label>
+          <div className="pt-1">
+            <button className="px-4 py-2 rounded bg-black text-white">Salva</button>
+          </div>
         </form>
       </section>
 
-      {/* Righe */}
-      <section className="rounded border bg-white">
-        <div className="p-4 border-b font-semibold">Righe</div>
-        <div className="divide-y">
-          {rows.map((r) => {
-            const w = Array.isArray(r.wines) ? r.wines[0] : r.wines;
-            const winery = w?.wineries?.name || "—";
-            const lineTotal = Number(r.unit_price ?? 0) * Number(r.quantity ?? 0);
+      {/* Righe ordine */}
+      <section className="rounded border bg-white p-4">
+        <h2 className="font-semibold mb-3">Righe</h2>
+        <ul className="grid gap-3">
+          {order.items.map((it) => {
+            const img = it.wines?.image_url;
+            const line = (it.unit_price ?? 0) * it.quantity;
             return (
-              <div key={r.id} className="p-4 flex items-center gap-4">
-                <img
-                  src={w?.image_url || "/placeholder.png"}
-                  alt=""
-                  className="h-14 w-14 rounded object-cover bg-neutral-100"
-                />
+              <li key={it.id} className="flex items-center gap-4 rounded border p-3">
+                <div className="w-16 h-16 rounded border overflow-hidden bg-neutral-50 shrink-0 grid place-items-center">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={
+                      img ||
+                      'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64"><rect width="100%" height="100%" fill="%23f3f4f6"/></svg>'
+                    }
+                    alt=""
+                    className="w-full h-full object-cover"
+                  />
+                </div>
                 <div className="min-w-0 flex-1">
                   <div className="font-medium truncate">
-                    {w?.name} <span className="text-neutral-500">({w?.vintage})</span>
+                    {it.wines?.name || "—"} {it.wines?.vintage ? `(${it.wines.vintage})` : ""}
                   </div>
-                  <div className="text-sm text-neutral-600 truncate">
-                    {winery} · {String(r.list_type)} · Unit €{Number(r.unit_price ?? 0).toFixed(2)}
+                  <div className="text-xs text-neutral-600">
+                    {it.list_type.toUpperCase()} • {money(it.unit_price)} cad.
                   </div>
                 </div>
-                <div className="text-sm w-24">Q.ty: {r.quantity}</div>
-                <div className="font-medium w-28 text-right">€{lineTotal.toFixed(2)}</div>
-              </div>
+
+                {/* Update qty */}
+                <form action="/api/admin/orders/item/update" method="post" className="flex items-center gap-2">
+                  <input type="hidden" name="orderId" value={order.id} />
+                  <input type="hidden" name="itemId" value={it.id} />
+                  <input
+                    className="border rounded p-2 w-20"
+                    type="number"
+                    name="qty"
+                    min={0}
+                    defaultValue={it.quantity}
+                  />
+                  <button className="px-3 py-2 rounded border text-sm">Aggiorna</button>
+                </form>
+
+                {/* Delete riga */}
+                <form action="/api/admin/orders/item/delete" method="post" className="ml-2">
+                  <input type="hidden" name="orderId" value={order.id} />
+                  <input type="hidden" name="itemId" value={it.id} />
+                  <ConfirmSubmit
+                    confirmMessage="Eliminare questa riga?"
+                    className="px-3 py-2 rounded border border-red-600 text-red-600 text-sm"
+                  >
+                    Elimina
+                  </ConfirmSubmit>
+                </form>
+
+                <div className="w-24 text-right font-semibold">{money(line)}</div>
+              </li>
             );
           })}
+        </ul>
 
-          {rows.length === 0 && (
-            <div className="p-4 text-sm text-neutral-600">Nessuna riga.</div>
-          )}
+        <div className="mt-4 flex justify-end">
+          <div className="text-right">
+            <div className="text-sm text-neutral-600">Subtotale</div>
+            <div className="text-lg font-bold">{money(subtotal)}</div>
+          </div>
         </div>
       </section>
     </div>
