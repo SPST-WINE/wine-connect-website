@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 import { requireAdmin } from "@/lib/is-admin";
 
 const STATUS = ["pending","processing","shipped","completed","cancelled"] as const;
