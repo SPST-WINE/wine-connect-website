@@ -184,7 +184,7 @@ export default function WineConnectHome() {
           </a>
           <div className="flex items-center gap-2">
             <a
-              href="https://app.spst.it/login"
+              href="href="/login""
               className="hidden sm:inline-flex items-center rounded-full bg-[color:var(--wc)] text-black px-4 py-2 text-sm font-bold hover:-translate-y-[1px] transition"
             >
               {t.enter}
