@@ -5,11 +5,11 @@ import { createSupabaseServer } from "@/lib/supabase/server";
 export async function POST(req: Request) {
   const supa = createSupabaseServer();
 
-  // auth
+  // Auth
   const { data: { user } } = await supa.auth.getUser();
   if (!user) return NextResponse.redirect(new URL("/login", req.url));
 
-  // admin check
+  // Admin check
   const { data: isAdmin } = await supa
     .from("admins")
     .select("id")
@@ -18,7 +18,7 @@ export async function POST(req: Request) {
     .maybeSingle();
   if (!isAdmin) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
-  // form data
+  // Form data
   const form = await req.formData();
   const file = form.get("file") as File | null;
   const wineId = form.get("wineId")?.toString() ?? "";
@@ -26,21 +26,21 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "file e wineId richiesti" }, { status: 400 });
   }
 
-  // storage path
+  // Storage path
   const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
   const path = `wines/${wineId}/${Date.now()}.${ext}`;
 
-  // upload su bucket "wines"
+  // Upload su bucket "wines"
   const { error: upErr } = await supa.storage
     .from("wines")
     .upload(path, file, { cacheControl: "3600", upsert: true });
   if (upErr) return NextResponse.json({ error: upErr.message }, { status: 400 });
 
-  // public URL
+  // Public URL
   const { data: pub } = await supa.storage.from("wines").getPublicUrl(path);
   const publicUrl = pub?.publicUrl ?? null;
 
-  // salva su wines.image_url
+  // Aggiorna wines.image_url
   if (publicUrl) {
     const { error: updErr } = await supa
       .from("wines")
@@ -49,6 +49,6 @@ export async function POST(req: Request) {
     if (updErr) return NextResponse.json({ error: updErr.message }, { status: 400 });
   }
 
-  // back to admin list
+  // Torna alla lista
   return NextResponse.redirect(new URL("/admin/wines", req.url));
 }
