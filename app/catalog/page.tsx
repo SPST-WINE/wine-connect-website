@@ -1,36 +1,31 @@
 import { createSupabaseServer } from "@/lib/supabase/server";
 import Link from "next/link";
 
-async function getCatalog(params: { q?: string; type?: string; region?: string }) {
-  const supabase = createSupabaseServer();
-  let query = supabase.from("vw_catalog").select("*");
-  if (params.q) query = query.ilike("wine_name", `%${params.q}%`);
-  if (params.type) query = query.eq("type", params.type);
-  if (params.region) query = query.eq("region", params.region);
-  const { data, error } = await query.limit(60);
-  if (error) throw error;
+async function getCatalog(searchParams:any){
+  const supa=createSupabaseServer();
+  let q=supa.from("vw_catalog").select("*").limit(60);
+  if(searchParams.q) q=q.ilike("wine_name", `%${searchParams.q}%`);
+  if(searchParams.type) q=q.eq("type", searchParams.type);
+  if(searchParams.region) q=q.eq("region", searchParams.region);
+  const {data,error}=await q;
+  if(error) throw error;
   return data!;
 }
 
-export default async function Catalog({ searchParams }: { searchParams: any }) {
-  const items = await getCatalog({
-    q: searchParams.q,
-    type: searchParams.type,
-    region: searchParams.region,
-  });
-
+export default async function Catalog({searchParams}:{searchParams:any}){
+  const items=await getCatalog(searchParams);
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Catalog</h1>
-        <Link className="underline" href="/cart/samples">Samples cart</Link>
+        <h1 className="text-2xl font-semibold">Catalogo</h1>
+        <Link className="underline" href="/cart/samples">Carrello campionature</Link>
       </div>
 
       <form className="grid grid-cols-1 sm:grid-cols-4 gap-3">
-        <input name="q" placeholder="Search wine..." defaultValue={searchParams.q||""} className="border rounded p-2" />
-        <input name="type" placeholder="Type (Red/White...)" defaultValue={searchParams.type||""} className="border rounded p-2" />
-        <input name="region" placeholder="Region" defaultValue={searchParams.region||""} className="border rounded p-2" />
-        <button className="border rounded p-2">Filter</button>
+        <input name="q" placeholder="Cerca vino..." defaultValue={searchParams.q||""} className="border rounded p-2"/>
+        <input name="type" placeholder="Tipo (Red/White...)" defaultValue={searchParams.type||""} className="border rounded p-2"/>
+        <input name="region" placeholder="Regione" defaultValue={searchParams.region||""} className="border rounded p-2"/>
+        <button className="border rounded p-2">Filtra</button>
       </form>
 
       <ul className="grid md:grid-cols-3 gap-4">
@@ -43,7 +38,7 @@ export default async function Catalog({ searchParams }: { searchParams: any }) {
               <input type="hidden" name="wineId" value={w.wine_id}/>
               <input type="hidden" name="listType" value="sample"/>
               <input className="border rounded p-2 w-20" name="qty" type="number" min={1} defaultValue={1}/>
-              <button className="px-3 py-2 rounded bg-black text-white">Add sample</button>
+              <button className="px-3 py-2 rounded bg-black text-white">Aggiungi sample</button>
             </form>
           </li>
         ))}
