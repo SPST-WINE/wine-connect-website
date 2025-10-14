@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import React, { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { supabaseBrowser } from "@/lib/supabase/client";
 import { Mail, Lock, ArrowRight, Loader2 } from "lucide-react";
@@ -13,15 +13,23 @@ const WC_PINK = "#E33955";
 
 export default function LoginPage() {
   const r = useRouter();
-  const search = useSearchParams();
-  const checkEmail = search.get("checkEmail");
 
   const [mode, setMode] = useState<"login" | "signup">("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [err, setErr] = useState<string | null>(null);
-  const [ok, setOk] = useState<string | null>(checkEmail ? "Check your inbox to confirm your email." : null);
+  const [ok, setOk] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  // Read ?checkEmail without useSearchParams to avoid Suspense requirement
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("checkEmail")) {
+        setOk("We’ve sent you a confirmation link. Please check your inbox.");
+      }
+    }
+  }, []);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -34,7 +42,6 @@ export default function LoginPage() {
       if (mode === "login") {
         const { error } = await supa.auth.signInWithPassword({ email, password });
         if (error) throw error;
-        // go straight to the buyer hub
         r.push("/buyer-home");
       } else {
         const { error } = await supa.auth.signUp({
@@ -42,13 +49,11 @@ export default function LoginPage() {
           password,
           options: {
             data: { company_name: "", country: "", name: "" },
-            // after the user clicks the magic link, Next route will finalize the session
             emailRedirectTo: `${window.location.origin}/auth/callback`,
           },
         });
         if (error) throw error;
         setOk("We’ve sent you a confirmation link. Please check your inbox.");
-        // keep the user on the page; after confirming they’ll land on /buyer-home
       }
     } catch (e: any) {
       setErr(e?.message ?? "Unexpected error");
