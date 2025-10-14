@@ -184,7 +184,7 @@ export default function WineConnectHome() {
           </a>
           <div className="flex items-center gap-2">
             <a
-              href="href="/login""
+              href="/login"
               className="hidden sm:inline-flex items-center rounded-full bg-[color:var(--wc)] text-black px-4 py-2 text-sm font-bold hover:-translate-y-[1px] transition"
             >
               {t.enter}
@@ -240,7 +240,7 @@ export default function WineConnectHome() {
               <div className="uppercase text-white/60 text-sm tracking-wide">{t.buyers.kicker}</div>
               <h2 className="mt-1 text-2xl font-bold">{t.buyers.title}</h2>
               <ul className="mt-3 space-y-2 text-[15px] text-white/80">
-                {t.buyers.points.map((p, i) => (
+                {t.buyers.points.map((p: string, i: number) => (
                   <li key={i} className="flex items-start gap-2">
                     <span aria-hidden className="mt-2 inline-block h-1.5 w-1.5 rounded-full bg-[color:var(--wc)]" />
                     <span>{p}</span>
@@ -297,7 +297,7 @@ export default function WineConnectHome() {
               <div className="uppercase text-white/60 text-sm tracking-wide">{t.wineries.kicker}</div>
               <h2 className="mt-1 text-2xl font-bold">{t.wineries.title}</h2>
               <ul className="mt-3 space-y-2 text-[15px] text-white/80">
-                {t.wineries.points.map((p, i) => (
+                {t.wineries.points.map((p: string, i: number) => (
                   <li key={i} className="flex items-start gap-2 justify-end">
                     <span>{p}</span>
                     <span aria-hidden className="mt-2 inline-block h-1.5 w-1.5 rounded-full bg-[color:var(--wc)]" />
@@ -330,7 +330,7 @@ export default function WineConnectHome() {
         <div className="mx-auto max-w-[1200px] px-5">
           <Header kicker={t.why.kicker} title={t.why.title} />
           <div className="grid gap-3">
-            {t.why.rows.map(([title, desc], i) => (
+            {t.why.rows.map(([title, desc]: [string, string], i: number) => (
               <motion.div
                 key={i}
                 initial={{ opacity: 0, y: 12 }}
@@ -415,7 +415,7 @@ function KPIBlock({
   label,
   align = 'left',
 }: {
-  chips?: readonly string[]; // opzionale per accettare const arrays
+  chips?: readonly string[];
   value?: string;
   label?: string;
   align?: 'left' | 'right';
@@ -508,7 +508,7 @@ function TwinCardRight({ lang }: { lang: Lang }) {
 
       {/* body: 4 quadrati */}
       <div className="mt-4 grid grid-cols-2 gap-3 flex-1">
-        {items.map((label, i) => (
+        {items.map((label: string, i: number) => (
           <div
             key={i}
             className="rounded-xl border border-white/10 bg-white/[0.03] p-3 text-sm flex items-center justify-center text-center min-h-[80px]"
