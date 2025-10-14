@@ -3,15 +3,14 @@ import { createSupabaseServer } from "@/lib/supabase/server";
 
 export default async function SamplesCart() {
   const supa = createSupabaseServer();
-  const {
-    data: { user },
-  } = await supa.auth.getUser();
-  if (!user)
+  const { data: { user } } = await supa.auth.getUser();
+  if (!user) {
     return (
       <div className="mt-10">
         Devi <a className="underline" href="/login">accedere</a>.
       </div>
     );
+  }
 
   const { data: buyer } = await supa
     .from("buyers")
@@ -34,8 +33,7 @@ export default async function SamplesCart() {
   const { data: items } = cartId
     ? await supa
         .from("cart_items")
-        .select(
-          `
+        .select(`
           id,
           quantity,
           unit_price,
@@ -46,8 +44,7 @@ export default async function SamplesCart() {
             vintage,
             image_url
           )
-        `
-        )
+        `)
         .eq("cart_id", cartId)
     : { data: [] as any[] };
 
@@ -72,7 +69,6 @@ export default async function SamplesCart() {
         </Link>
       </div>
 
-      {/* Stato carrello */}
       {!cartId || !items || items.length === 0 ? (
         <div className="rounded border bg-white p-4">
           <p className="text-sm">Il carrello è vuoto.</p>
@@ -141,14 +137,7 @@ export default async function SamplesCart() {
                       </button>
                     </form>
 
-                    <form
-                      action="/api/cart/item/remove"
-                      method="post"
-                      onSubmit={(e) => {
-                        if (!confirm("Rimuovere questo articolo?"))
-                          e.preventDefault();
-                      }}
-                    >
+                    <form action="/api/cart/item/remove" method="post">
                       <input type="hidden" name="itemId" value={it.id} />
                       <button className="px-3 py-1.5 rounded border text-sm">
                         Rimuovi
@@ -169,7 +158,7 @@ export default async function SamplesCart() {
             </li>
           </ul>
 
-          {/* Stato indirizzi */}
+          {/* Indirizzi + checkout */}
           {!addresses || addresses.length === 0 ? (
             <div className="rounded border bg-amber-50 p-4">
               <p className="text-sm">
@@ -182,11 +171,7 @@ export default async function SamplesCart() {
               </p>
             </div>
           ) : (
-            <form
-              action="/api/cart/checkout"
-              method="post"
-              className="space-y-3"
-            >
+            <form action="/api/cart/checkout" method="post" className="space-y-3">
               <input type="hidden" name="type" value="sample" />
               <label className="block text-sm">Indirizzo spedizione</label>
               <select
