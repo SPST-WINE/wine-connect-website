@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { createSupabaseServer } from "@/lib/supabase/server";
+export const dynamic = 'force-dynamic';
+
 
 export default async function SamplesCart() {
   const supa = createSupabaseServer();
