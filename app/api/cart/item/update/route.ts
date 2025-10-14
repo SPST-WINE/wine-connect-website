@@ -12,7 +12,7 @@ export async function POST(req: Request) {
   const itemId = String(form.get("itemId") || "");
   const qty = Math.max(0, parseInt(String(form.get("qty") || "0"), 10) || 0);
 
-  // Recupera item + cart per verificare ownership
+  // Item
   const { data: item } = await supa
     .from("cart_items")
     .select("id, cart_id")
@@ -20,21 +20,23 @@ export async function POST(req: Request) {
     .maybeSingle();
   if (!item) return NextResponse.json({ error: "Item non trovato" }, { status: 404 });
 
+  // Cart
   const { data: cart } = await supa
     .from("carts")
     .select("id, buyer_id, status")
     .eq("id", item.cart_id)
-    .single();
+    .maybeSingle();
+  if (!cart) return NextResponse.json({ error: "Carrello non trovato" }, { status: 404 });
 
-  // Trova buyer dell'utente corrente
+  // Buyer dell'utente
   const { data: buyer } = await supa
     .from("buyers")
     .select("id")
     .eq("auth_user_id", user.id)
-    .single();
-
-  if (!buyer || cart.buyer_id !== buyer.id || cart.status !== "open")
+    .maybeSingle();
+  if (!buyer || cart.buyer_id !== buyer.id || cart.status !== "open") {
     return NextResponse.json({ error: "Non autorizzato" }, { status: 403 });
+  }
 
   // qty = 0 => delete
   if (qty === 0) {
@@ -46,7 +48,6 @@ export async function POST(req: Request) {
     .from("cart_items")
     .update({ quantity: qty })
     .eq("id", itemId);
-
   if (error) return NextResponse.json({ error: error.message }, { status: 400 });
 
   return NextResponse.redirect(new URL("/cart/samples", req.url));
