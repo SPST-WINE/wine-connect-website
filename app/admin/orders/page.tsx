@@ -4,15 +4,6 @@ export const dynamic = 'force-dynamic';
 import Link from "next/link";
 import { requireAdmin } from "@/lib/is-admin";
 
-type OrderRow = {
-  id: string;
-  type: "sample" | "order";
-  status: "pending" | "processing" | "shipped" | "completed" | "cancelled";
-  created_at: string;
-  tracking_code: string | null;
-  buyers: { email: string | null; company_name: string | null } | null;
-};
-
 const STATUS = ["pending","processing","shipped","completed","cancelled"] as const;
 
 export default async function AdminOrders() {
@@ -28,64 +19,71 @@ export default async function AdminOrders() {
     return <div className="mt-10 text-red-600">Errore: {error.message}</div>;
   }
 
+  // Cast “soft”: evitiamo problemi se Supabase tipizza buyers come array
+  const rows = (orders ?? []) as any[];
+
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-semibold">Ordini</h1>
 
       <ul className="grid gap-3">
-        {(orders as OrderRow[] | null)?.map((o) => (
-          <li key={o.id} className="rounded border bg-white p-4">
-            <div className="flex items-center justify-between gap-4">
-              <div className="min-w-0">
-                <div className="font-medium">
-                  <Link className="underline" href={`/orders/${o.id}`}>
-                    #{o.id.slice(0,8)}
-                  </Link>{" "}
-                  • {o.type.toUpperCase()}
-                </div>
-                <div className="text-sm text-neutral-600 truncate">
-                  {o.buyers?.company_name || o.buyers?.email || "—"} •{" "}
-                  {new Date(o.created_at).toLocaleString()}
-                </div>
-                {o.tracking_code && (
-                  <div className="text-xs text-neutral-600 mt-1">
-                    Tracking: <code>{o.tracking_code}</code>
+        {rows.map((o) => {
+          const buyer = Array.isArray(o.buyers) ? o.buyers[0] : o.buyers;
+          const buyerLabel = buyer?.company_name || buyer?.email || "—";
+
+          return (
+            <li key={o.id} className="rounded border bg-white p-4">
+              <div className="flex items-center justify-between gap-4">
+                <div className="min-w-0">
+                  <div className="font-medium">
+                    <Link className="underline" href={`/orders/${o.id}`}>
+                      #{String(o.id).slice(0,8)}
+                    </Link>{" "}
+                    • {String(o.type).toUpperCase()}
                   </div>
-                )}
-              </div>
+                  <div className="text-sm text-neutral-600 truncate">
+                    {buyerLabel} • {new Date(o.created_at).toLocaleString()}
+                  </div>
+                  {o.tracking_code && (
+                    <div className="text-xs text-neutral-600 mt-1">
+                      Tracking: <code>{o.tracking_code}</code>
+                    </div>
+                  )}
+                </div>
 
-              <form
-                action="/api/admin/orders/update-status"
-                method="post"
-                className="flex items-center gap-2 shrink-0"
-              >
-                <input type="hidden" name="orderId" value={o.id} />
-                <select
-                  name="status"
-                  defaultValue={o.status}
-                  className="border rounded p-1 text-sm"
+                <form
+                  action="/api/admin/orders/update-status"
+                  method="post"
+                  className="flex items-center gap-2 shrink-0"
                 >
-                  {STATUS.map((s) => (
-                    <option key={s} value={s}>
-                      {s}
-                    </option>
-                  ))}
-                </select>
-                <input
-                  name="tracking_code"
-                  placeholder="Tracking"
-                  defaultValue={o.tracking_code ?? ""}
-                  className="border rounded p-1 text-sm"
-                />
-                <button className="px-3 py-1.5 rounded bg-black text-white text-sm">
-                  Salva
-                </button>
-              </form>
-            </div>
-          </li>
-        ))}
+                  <input type="hidden" name="orderId" value={o.id} />
+                  <select
+                    name="status"
+                    defaultValue={o.status}
+                    className="border rounded p-1 text-sm"
+                  >
+                    {STATUS.map((s) => (
+                      <option key={s} value={s}>
+                        {s}
+                      </option>
+                    ))}
+                  </select>
+                  <input
+                    name="tracking_code"
+                    placeholder="Tracking"
+                    defaultValue={o.tracking_code ?? ""}
+                    className="border rounded p-1 text-sm"
+                  />
+                  <button className="px-3 py-1.5 rounded bg-black text-white text-sm">
+                    Salva
+                  </button>
+                </form>
+              </div>
+            </li>
+          );
+        })}
 
-        {(!orders || orders.length === 0) && (
+        {rows.length === 0 && (
           <li className="rounded border bg-white p-4 text-sm">Nessun ordine.</li>
         )}
       </ul>
