@@ -1,16 +1,18 @@
+// lib/is-admin.ts
 import { createSupabaseServer } from "@/lib/supabase/server";
 
 export async function requireAdmin() {
   const supa = createSupabaseServer();
-  const { data:{ user } } = await supa.auth.getUser();
-  if (!user) return { ok:false, reason:"no-user" as const };
+
+  const { data: { user } } = await supa.auth.getUser();
+  if (!user) return { ok: false as const, supa: null };
 
   const { data: admin } = await supa
     .from("admins")
     .select("id, role")
     .eq("auth_user_id", user.id)
-    .eq("role","admin")
+    .eq("role", "admin")
     .maybeSingle();
 
-  return { ok: !!admin, reason: admin ? null : ("not-admin" as const), supa, user };
+  return { ok: !!admin, supa };
 }
