@@ -5,9 +5,9 @@ import { createSupabaseServer } from "@/lib/supabase/server";
 export async function GET(req: Request) {
   const supabase = createSupabaseServer();
 
-  // Scambia il code nell'URL per una sessione *e* scrive i cookie
-  await supabase.auth.exchangeCodeForSession(new URL(req.url));
+  // Scambia il code per la sessione e scrive i cookie (string, non URL)
+  await supabase.auth.exchangeCodeForSession(req.url);
 
-  // Dove atterrare dopo conferma/login via magic link
+  // Dove atterrare dopo conferma/login
   return NextResponse.redirect(new URL("/catalog", req.url));
 }
