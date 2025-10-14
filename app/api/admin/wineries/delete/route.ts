@@ -8,11 +8,13 @@ export async function POST(req: Request) {
 
   const form = await req.formData();
   const id = String(form.get("id") || "");
-  if (!id) return NextResponse.json({ error: "id required" }, { status: 400 });
+  if (!id) return NextResponse.json({ error: "id mancante" }, { status: 400 });
 
   const supa = createSupabaseServer();
-  // opzionale: controlli su vini collegati
-  await supa.from("wineries").delete().eq("id", id);
+
+  // Soft-delete consigliato: set active=false (più sicuro se FK con wines)
+  const { error } = await supa.from("wineries").update({ active: false }).eq("id", id);
+  if (error) return NextResponse.json({ error: error.message }, { status: 400 });
 
   return NextResponse.redirect(new URL("/admin/wineries", req.url));
 }
