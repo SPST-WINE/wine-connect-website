@@ -1,10 +1,10 @@
-// app/api/profile/address/delete/route.ts
+export const dynamic = "force-dynamic";
+
 import { NextResponse } from "next/server";
 import { createSupabaseServer } from "@/lib/supabase/server";
 
 export async function POST(req: Request) {
   const supa = createSupabaseServer();
-
   const {
     data: { user },
   } = await supa.auth.getUser();
@@ -14,49 +14,47 @@ export async function POST(req: Request) {
   }
 
   const form = await req.formData();
-  const addressId = String(form.get("addressId") || "");
+  const addressId = String(form.get("addressId") || "").trim();
+
   if (!addressId) {
-    return NextResponse.json({ error: "Missing addressId" }, { status: 400 });
+    return NextResponse.redirect(new URL("/profile?err=missing_address_id", req.url));
   }
 
-  // 1) Buyer dell'utente
-  const { data: buyer, error: buyerErr } = await supa
+  // Buyer corrente
+  const { data: buyer } = await supa
     .from("buyers")
     .select("id")
     .eq("auth_user_id", user.id)
     .maybeSingle();
 
-  if (buyerErr) {
-    return NextResponse.json({ error: buyerErr.message }, { status: 500 });
-  }
   if (!buyer) {
-    return NextResponse.json({ error: "Buyer not found" }, { status: 404 });
+    return NextResponse.redirect(new URL("/profile?err=no_buyer", req.url));
   }
 
-  // 2) Indirizzo e verifica ownership
-  const { data: addr, error: addrErr } = await supa
+  // Address esiste e appartiene al buyer?
+  const { data: addr } = await supa
     .from("addresses")
-    .select("id,buyer_id")
+    .select("id,buyer_id,is_default")
     .eq("id", addressId)
     .maybeSingle();
 
-  if (addrErr) {
-    return NextResponse.json({ error: addrErr.message }, { status: 500 });
-  }
   if (!addr || addr.buyer_id !== buyer.id) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    return NextResponse.redirect(new URL("/profile?err=forbidden", req.url));
   }
 
-  // 3) Delete
-  const { error: delErr } = await supa
-    .from("addresses")
-    .delete()
-    .eq("id", addressId);
+  // È usato in qualche ordine?
+  const { count: refsCount } = await supa
+    .from("orders")
+    .select("id", { head: true, count: "exact" })
+    .eq("shipping_address_id", addressId);
 
-  if (delErr) {
-    return NextResponse.json({ error: delErr.message }, { status: 500 });
+  if ((refsCount ?? 0) > 0) {
+    // Blocco la cancellazione perché ci sono ordini che lo referenziano
+    return NextResponse.redirect(new URL("/profile?err=address_in_use", req.url));
   }
 
-  // 4) Redirect back
-  return NextResponse.redirect(new URL("/profile", req.url));
+  // Cancello
+  await supa.from("addresses").delete().eq("id", addressId);
+
+  return NextResponse.redirect(new URL("/profile?msg=address_deleted", req.url));
 }
