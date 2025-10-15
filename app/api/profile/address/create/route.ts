@@ -3,24 +3,40 @@ import { createSupabaseServer } from "@/lib/supabase/server";
 
 export async function POST(req: Request) {
   const supa = createSupabaseServer();
-  const form = await req.formData();
-  const buyerId = String(form.get("buyerId"));
-  const payload = {
-    buyer_id: buyerId,
-    label: String(form.get("label") || ""),
-    address: String(form.get("address") || ""),
-    city: String(form.get("city") || ""),
-    zip: String(form.get("zip") || ""),
-    country: String(form.get("country") || ""),
-    is_default: !!form.get("is_default"),
-  };
 
-  // se set default, resetta gli altri
-  if (payload.is_default) {
-    await supa.from("addresses").update({ is_default: false }).eq("buyer_id", buyerId);
+  // Autenticazione
+  const {
+    data: { user },
+  } = await supa.auth.getUser();
+  if (!user) return NextResponse.redirect(new URL("/login", req.url));
+
+  // Buyer dall'utente (ignoriamo qualsiasi buyerId dal client)
+  const { data: buyer, error: buyerErr } = await supa
+    .from("buyers")
+    .select("id")
+    .eq("auth_user_id", user.id)
+    .single();
+
+  if (buyerErr || !buyer) {
+    return NextResponse.redirect(new URL("/profile?err=no-buyer", req.url));
   }
 
-  const { data, error } = await supa.from("addresses").insert(payload).select("*").single();
-  if (error) return NextResponse.json({ error: error.message }, { status: 400 });
-  return NextResponse.json(data);
-}
+  // Form data
+  const form = await req.formData();
+  const label = String(form.get("label") || "").trim() || null;
+  const address = String(form.get("address") || "").trim();
+  const city = String(form.get("city") || "").trim();
+  const zip = String(form.get("zip") || "").trim();
+  const country = String(form.get("country") || "").trim();
+  const isDefault = !!form.get("is_default");
+
+  if (!address || !city || !zip || !country) {
+    return NextResponse.redirect(new URL("/profile?err=missing-fields", req.url));
+  }
+
+  // Se spuntato "default", rimuovi il default dagli altri
+  if (isDefault) {
+    await supa.from("addresses").update({ is_default: false }).eq("buyer_id", buyer.id);
+  }
+
+  const { error }
