@@ -2,20 +2,15 @@
 
 import * as React from "react";
 
+/** Address shape used only for rendering the list */
 type Address = {
   id: string;
   label: string | null;
-  address?: string | null;       // legacy
-  line1?: string | null;
-  line2?: string | null;
-  city?: string | null;
-  region?: string | null;
-  postal_code?: string | null;
-  zip?: string | null;           // legacy
+  address: string | null;
+  city: string | null;
+  zip: string | null;
   country: string | null;
-  phone?: string | null;
   is_default?: boolean | null;
-  full_name?: string | null;     // ✅ added to fix build
 };
 
 export default function Addresses({
@@ -25,84 +20,45 @@ export default function Addresses({
   buyerId: string;
   initial: Address[];
 }) {
+  // keep a local list so delete feels instant; create uses a full POST reload
   const [items, setItems] = React.useState<Address[]>(initial || []);
-  const [loading, setLoading] = React.useState(false);
-
-  async function create(form: HTMLFormElement) {
-    setLoading(true);
-    try {
-      const fd = new FormData(form);
-      const res = await fetch("/api/profile/address/create", {
-        method: "POST",
-        body: fd,
-      });
-      if (res.ok) {
-        // optimistic refresh to show latest list/default flag
-        window.location.reload();
-      }
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function remove(addressId: string) {
-    if (!confirm("Delete this address?")) return;
-    setLoading(true);
-    try {
-      const fd = new FormData();
-      fd.append("addressId", addressId);
-      const res = await fetch("/api/profile/address/delete", {
-        method: "POST",
-        body: fd,
-      });
-      if (res.ok) {
-        setItems((prev) => prev.filter((x) => x.id !== addressId));
-      }
-    } finally {
-      setLoading(false);
-    }
-  }
 
   return (
     <div className="grid gap-3">
-      {/* Create */}
+      {/* Create (server POST, names aligned to your API) */}
       <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          create(e.currentTarget);
-        }}
+        action="/api/profile/address/create"
+        method="post"
         className="rounded-2xl border border-white/10 bg-white/[0.04] p-5"
       >
         <input type="hidden" name="buyerId" value={buyerId} />
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <Field label="Label (e.g., Warehouse)">
             <Input name="label" placeholder="Label" />
           </Field>
-          <Field label="Full name">
-            <Input name="full_name" placeholder="Full name" />
-          </Field>
-          <Field label="Address line 1">
-            <Input name="line1" placeholder="Address line 1" />
-          </Field>
-          <Field label="Address line 2">
-            <Input name="line2" placeholder="Address line 2" />
+
+          <div />{/* spacer to keep grid balanced */}
+
+          <Field label="Address">
+            <Input
+              name="address"
+              placeholder="Street and number"
+              required
+            />
           </Field>
           <Field label="City">
-            <Input name="city" placeholder="City" />
+            <Input name="city" placeholder="City" required />
           </Field>
-          <Field label="Region / State">
-            <Input name="region" placeholder="Region / State" />
-          </Field>
-          <Field label="Postal code">
-            <Input name="postal_code" placeholder="ZIP / Postal code" />
+
+          <Field label="ZIP / Postal code">
+            <Input name="zip" placeholder="ZIP / Postal code" required />
           </Field>
           <Field label="Country">
-            <Input name="country" placeholder="Country" />
+            <Input name="country" placeholder="Country" required />
           </Field>
-          <Field label="Phone">
-            <Input name="phone" placeholder="+1 ..." />
-          </Field>
-          <label className="flex items-center gap-2 text-sm text-white/80">
+
+          <label className="flex items-center gap-2 text-sm text-white/80 md:col-span-2">
             <input
               type="checkbox"
               name="is_default"
@@ -114,28 +70,26 @@ export default function Addresses({
 
         <div className="mt-4">
           <button
-            disabled={loading}
-            className="h-11 w-full md:w-auto rounded-xl px-5 font-semibold text-[#0f1720] disabled:opacity-60"
+            className="h-11 w-full md:w-auto rounded-xl px-5 font-semibold text-[#0f1720]"
             style={{ background: "#E33955" }}
           >
-            {loading ? "Saving…" : "Add address"}
+            Add address
           </button>
         </div>
       </form>
 
-      {/* List */}
+      {/* Empty state */}
       {(!items || items.length === 0) && (
         <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4 text-sm text-white/70">
           No addresses yet.
         </div>
       )}
 
+      {/* List */}
       <ul className="grid gap-3">
         {items.map((a) => {
-          const zip = a.postal_code || a.zip || "";
-          const line = a.line1 || a.address || "";
-          const line2 = a.line2 ? `, ${a.line2}` : "";
-          const cityLine = [a.city, a.region, zip].filter(Boolean).join(", ");
+          const line = [a.address].filter(Boolean).join("");
+          const tail = [a.city, a.zip, a.country].filter(Boolean).join(" — ");
           return (
             <li
               key={a.id}
@@ -146,16 +100,8 @@ export default function Addresses({
                   <div className="text-xs uppercase tracking-wider text-white/60">
                     {a.label || "Address"}
                   </div>
-                  <div className="text-white font-medium">
-                    {a.full_name || "—"}
-                  </div>
-                  <div className="text-white/80 text-sm">
-                    {line}
-                    {line2} — {cityLine} — {a.country || "—"}
-                  </div>
-                  {a.phone ? (
-                    <div className="text-white/70 text-sm mt-0.5">{a.phone}</div>
-                  ) : null}
+                  <div className="text-white/90 text-sm">{line || "—"}</div>
+                  <div className="text-white/70 text-sm">{tail || "—"}</div>
                 </div>
 
                 <div className="shrink-0 flex items-center gap-2">
@@ -164,12 +110,14 @@ export default function Addresses({
                       Default
                     </span>
                   ) : null}
-                  <button
-                    onClick={() => remove(a.id)}
-                    className="rounded border border-white/10 px-3 py-2 text-sm text-white/80 hover:bg-white/5"
-                  >
-                    Delete
-                  </button>
+
+                  {/* Delete: server POST so it hits your existing route */}
+                  <form action="/api/profile/address/delete" method="post">
+                    <input type="hidden" name="addressId" value={a.id} />
+                    <button className="rounded border border-white/10 px-3 py-2 text-sm text-white/80 hover:bg-white/5">
+                      Delete
+                    </button>
+                  </form>
                 </div>
               </div>
             </li>
