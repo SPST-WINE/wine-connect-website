@@ -15,12 +15,11 @@ export async function POST(req: Request) {
 
   const form = await req.formData();
   const addressId = String(form.get("addressId") || "");
-
   if (!addressId) {
     return NextResponse.json({ error: "Missing addressId" }, { status: 400 });
   }
 
-  // 1) Trova il buyer dell'utente
+  // 1) Buyer dell'utente
   const { data: buyer, error: buyerErr } = await supa
     .from("buyers")
     .select("id")
@@ -34,7 +33,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Buyer not found" }, { status: 404 });
   }
 
-  // 2) Carica l'indirizzo, verifica ownership
+  // 2) Indirizzo e verifica ownership
   const { data: addr, error: addrErr } = await supa
     .from("addresses")
     .select("id,buyer_id")
@@ -48,7 +47,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  // 3) Cancella
+  // 3) Delete
   const { error: delErr } = await supa
     .from("addresses")
     .delete()
@@ -58,6 +57,6 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: delErr.message }, { status: 500 });
   }
 
-  // 4) Redirect back al profilo
+  // 4) Redirect back
   return NextResponse.redirect(new URL("/profile", req.url));
 }
