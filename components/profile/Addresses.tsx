@@ -5,16 +5,17 @@ import * as React from "react";
 type Address = {
   id: string;
   label: string | null;
-  address?: string | null; // legacy
+  address?: string | null;       // legacy
   line1?: string | null;
   line2?: string | null;
   city?: string | null;
   region?: string | null;
   postal_code?: string | null;
-  zip?: string | null; // legacy
+  zip?: string | null;           // legacy
   country: string | null;
   phone?: string | null;
   is_default?: boolean | null;
+  full_name?: string | null;     // ✅ added to fix build
 };
 
 export default function Addresses({
@@ -36,9 +37,7 @@ export default function Addresses({
         body: fd,
       });
       if (res.ok) {
-        // @ts-ignore
-        const { id } = await res.json().catch(() => ({}));
-        // optimistic reload
+        // optimistic refresh to show latest list/default flag
         window.location.reload();
       }
     } finally {
