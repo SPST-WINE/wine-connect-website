@@ -3,6 +3,7 @@ export const dynamic = "force-dynamic";
 import Link from "next/link";
 import { createSupabaseServer } from "@/lib/supabase/server";
 import Addresses from "@/components/profile/Addresses";
+import Compliance from "@/components/profile/Compliance";
 
 type SearchParams = { err?: string; ok?: string };
 
@@ -63,6 +64,12 @@ export default async function ProfilePage({ searchParams }: { searchParams?: Sea
       </main>
     );
   }
+
+  const { data: compl } = await supa
+  .from("compliance_records")
+  .select("id, buyer_id, mode, documents")
+  .eq("buyer_id", buyer.id)
+  .maybeSingle();
 
   // SOLO indirizzi attivi
   const { data: addresses } = await supa
@@ -175,11 +182,9 @@ export default async function ProfilePage({ searchParams }: { searchParams?: Sea
 
         {/* Compliance placeholder */}
         <section className="mt-8 space-y-3">
-          <h2 className="text-lg font-semibold text-white">Compliance</h2>
-          <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-5 text-white/80">
-            <p className="text-sm">(UI placeholder) Keep using your existing compliance forms/routes.</p>
-          </div>
-        </section>
+  <h2 className="text-lg font-semibold text-white">Compliance</h2>
+  <Compliance buyerId={buyer.id} initial={compl as any} />
+</section>
       </div>
 
       <footer className="mt-auto py-6 px-5 text-right text-white/70 text-xs">
