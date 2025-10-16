@@ -1,91 +1,94 @@
 import { NextResponse } from "next/server";
 import { createSupabaseServer } from "@/lib/supabase/server";
 
+// Se cambi bucket qui, ricorda di crearlo in Supabase Storage
 const BUCKET = "compliance";
-const MAX_SIZE = 10 * 1024 * 1024; // 10MB
-const ALLOWED = ["application/pdf", "image/png", "image/jpeg"];
 
 export async function POST(req: Request) {
   const supa = createSupabaseServer();
-  const { data: { user } } = await supa.auth.getUser();
-  if (!user) return NextResponse.redirect(new URL("/login", req.url));
 
-  const form = await req.formData();
-  const buyerId = form.get("buyerId")?.toString() || "";
-  const docType = form.get("docType")?.toString() || "generic";
-  const file = form.get("file") as File | null;
-
-  if (!file) return NextResponse.redirect(new URL("/profile?err=no_file", req.url));
-  if (file.size > MAX_SIZE) {
-    return NextResponse.redirect(new URL("/profile?err=file_too_large", req.url));
-  }
-  if (!ALLOWED.includes(file.type)) {
-    return NextResponse.redirect(new URL("/profile?err=bad_type", req.url));
-  }
-
-  // Ownership check
-  const { data: buyer } = await supa
-    .from("buyers")
-    .select("id, auth_user_id")
-    .eq("id", buyerId)
-    .maybeSingle();
-
-  if (!buyer || buyer.auth_user_id !== user.id) {
+  const {
+    data: { user },
+  } = await supa.auth.getUser();
+  if (!user) {
     return NextResponse.redirect(new URL("/profile?err=forbidden", req.url));
   }
 
-  // Path: compliance/{buyerId}/{timestamp}_{filename}
-  const safeName = file.name.replace(/[^\w.\-]+/g, "_");
-  const key = `compliance/${buyerId}/${Date.now()}_${safeName}`;
+  const form = await req.formData();
+  const buyerId = String(form.get("buyerId") || "");
+  const docType = String(form.get("docType") || "");
+  const file = form.get("file") as File | null;
+
+  if (!buyerId || !file || !["importer_license", "company_vat"].includes(docType)) {
+    return NextResponse.redirect(new URL("/profile?err=bad_request", req.url));
+  }
+
+  // Permessi base: buyer dell'utente
+  const { data: buyer } = await supa
+    .from("buyers")
+    .select("id")
+    .eq("id", buyerId)
+    .eq("auth_user_id", user.id)
+    .maybeSingle();
+
+  if (!buyer) {
+    return NextResponse.redirect(new URL("/profile?err=forbidden", req.url));
+  }
+
+  // Upload su Storage
+  const now = Date.now();
+  const safeName = file.name.replace(/[^\w\-.]+/g, "_");
+  const path = `${buyerId}/${docType}-${now}-${safeName}`;
 
   const arrayBuffer = await file.arrayBuffer();
   const { error: upErr } = await supa.storage
     .from(BUCKET)
-    .upload(key, new Uint8Array(arrayBuffer), {
+    .upload(path, new Uint8Array(arrayBuffer), {
       cacheControl: "3600",
-      upsert: true,
-      contentType: file.type || undefined,
+      upsert: false,
+      contentType: file.type || "application/octet-stream",
     });
 
   if (upErr) {
-    return NextResponse.redirect(new URL("/profile?err=upload_failed", req.url));
+    const u = new URL("/profile", req.url);
+    u.searchParams.set("err", "upload_failed");
+    return NextResponse.redirect(u);
   }
 
-  // Public URL (se il bucket è public)
-  const { data: pub } = supa.storage.from(BUCKET).getPublicUrl(key);
-  const url = pub?.publicUrl ?? null;
+  // URL pubblico o signed; qui usiamo getPublicUrl (rendi il bucket pubblico)
+  const { data: pub } = supa.storage.from(BUCKET).getPublicUrl(path);
+  const fileUrl = pub?.publicUrl ?? "";
 
-  // Leggiamo ANCHE 'mode' per poterlo riusare nell'upsert
+  // Aggiorna compliance_records.documents (append)
   const { data: rec } = await supa
     .from("compliance_records")
-    .select("id, mode, documents")
+    .select("mode, documents")
     .eq("buyer_id", buyerId)
     .maybeSingle();
 
-  const newDoc = {
-    id: crypto.randomUUID(),
-    name: file.name,
-    path: key,
-    type: docType,
-    url,
-  };
+  const currentDocs = Array.isArray(rec?.documents) ? rec!.documents : [];
+  const mode = (rec?.mode === "delegate" ? "delegate" : "self") as "self" | "delegate";
 
-  const docs = Array.isArray(rec?.documents) ? [...(rec!.documents as any[]), newDoc] : [newDoc];
+  const newDoc = {
+    id: `${docType}-${now}`,
+    type: docType,
+    url: fileUrl,
+    name: file.name,
+    uploaded_at: new Date().toISOString(),
+  };
 
   const { error: upsertErr } = await supa
     .from("compliance_records")
     .upsert(
-      {
-        buyer_id: buyerId,
-        mode: rec?.mode ?? "self",
-        documents: docs,
-      },
+      { buyer_id: buyerId, mode, documents: [...currentDocs, newDoc] },
       { onConflict: "buyer_id" }
     );
 
+  const u = new URL("/profile", req.url);
   if (upsertErr) {
-    return NextResponse.redirect(new URL("/profile?err=save_failed", req.url));
+    u.searchParams.set("err", "save_failed");
+  } else {
+    u.searchParams.set("ok", "document_uploaded");
   }
-
-  return NextResponse.redirect(new URL("/profile?ok=document_uploaded", req.url));
+  return NextResponse.redirect(u);
 }
