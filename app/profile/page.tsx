@@ -14,20 +14,19 @@ export default async function ProfilePage({
 }) {
   const supa = createSupabaseServer();
 
-  // ---- Auth ----
+  /* ---------- Auth ---------- */
   const {
     data: { user },
   } = await supa.auth.getUser();
 
+  const gradient = {
+    background:
+      "radial-gradient(120% 120% at 50% -10%, #1c3e5e 0%, #0a1722 60%, #000 140%)",
+  };
+
   if (!user) {
     return (
-      <main
-        className="min-h-screen"
-        style={{
-          background:
-            "radial-gradient(120% 120% at 50% -10%, #1c3e5e 0%, #0a1722 60%, #000 140%)",
-        }}
-      >
+      <main className="min-h-screen" style={gradient}>
         <header className="h-14 flex items-center justify-between px-5">
           <div className="flex items-center gap-2 text-white">
             <img src="/wc-logo.png" alt="Wine Connect" className="h-6 w-auto" />
@@ -45,24 +44,16 @@ export default async function ProfilePage({
     );
   }
 
-  // ---- Buyer ----
+  /* ---------- Buyer ---------- */
   const { data: buyer } = await supa
     .from("buyers")
-    .select(
-      "id, company_name, contact_name, email, country, compliance_mode, auth_user_id"
-    )
+    .select("id, company_name, contact_name, email, country, auth_user_id")
     .eq("auth_user_id", user.id)
     .maybeSingle();
 
   if (!buyer) {
     return (
-      <main
-        className="min-h-screen"
-        style={{
-          background:
-            "radial-gradient(120% 120% at 50% -10%, #1c3e5e 0%, #0a1722 60%, #000 140%)",
-        }}
-      >
+      <main className="min-h-screen" style={gradient}>
         <header className="h-14 flex items-center justify-between px-5">
           <a href="/buyer-home" className="flex items-center gap-2 text-white">
             <img src="/wc-logo.png" alt="Wine Connect" className="h-6 w-auto" />
@@ -76,22 +67,22 @@ export default async function ProfilePage({
     );
   }
 
-  // ---- Compliance record (può non esistere) ----
+  /* ---------- Compliance record (può non esistere) ---------- */
   const { data: complRaw } = await supa
     .from("compliance_records")
     .select("id, buyer_id, mode, documents")
     .eq("buyer_id", buyer.id)
     .maybeSingle();
 
-  // Normalizzazione: documents sempre array
+  // Normalizzazione: documents sempre OBJECT, non array
   const complianceSafe = {
     id: complRaw?.id ?? null,
     buyer_id: buyer.id,
-    mode: complRaw?.mode ?? "self",
-    documents: Array.isArray(complRaw?.documents) ? (complRaw!.documents as any[]) : ([] as any[]),
+    mode: (complRaw?.mode as "self" | "delegate") ?? "self",
+    documents: (complRaw?.documents ?? {}) as Record<string, any>,
   };
 
-  // ---- Indirizzi attivi ----
+  /* ---------- Indirizzi attivi ---------- */
   const { data: addressesRaw } = await supa
     .from("addresses")
     .select("id,label,address,city,zip,country,is_default")
@@ -101,7 +92,7 @@ export default async function ProfilePage({
 
   const addressesList = Array.isArray(addressesRaw) ? addressesRaw : [];
 
-  // ---- Ordini per “in use” badge ----
+  /* ---------- Ordini per badge “in use” (opzionale) ---------- */
   const { data: ordersUsing } = await supa
     .from("orders")
     .select("shipping_address_id")
@@ -114,7 +105,7 @@ export default async function ProfilePage({
     usageMap.set(id, (usageMap.get(id) ?? 0) + 1);
   });
 
-  // ---- Banner messaggi ----
+  /* ---------- Banner messaggi ---------- */
   const err = searchParams?.err;
   const ok = searchParams?.ok;
 
@@ -122,7 +113,7 @@ export default async function ProfilePage({
     err === "forbidden"
       ? "You are not allowed to perform this action."
       : err === "not_found"
-      ? "Address not found."
+      ? "Record not found."
       : err === "bad_type"
       ? "Unsupported file type. Please upload PDF, PNG or JPG."
       : err === "file_too_large"
@@ -131,6 +122,8 @@ export default async function ProfilePage({
       ? "Upload failed. Please try again."
       : err === "save_failed"
       ? "Could not save the compliance record."
+      : err === "address_in_use"
+      ? "This address is used by one or more orders. It was hidden from your profile but kept as backup."
       : null;
 
   const okBanner =
@@ -140,18 +133,17 @@ export default async function ProfilePage({
       ? "Address deleted."
       : ok === "profile_updated"
       ? "Profile updated."
-      : ok === "document_uploaded"
+      : ok === "document_uploaded" || ok === "compliance_file_uploaded"
       ? "Document uploaded."
+      : ok === "compliance_file_removed"
+      ? "Document removed."
+      : ok === "compliance_mode_saved"
+      ? "Compliance mode saved."
       : null;
 
+  /* ---------- UI ---------- */
   return (
-    <main
-      className="min-h-screen"
-      style={{
-        background:
-          "radial-gradient(120% 120% at 50% -10%, #1c3e5e 0%, #0a1722 60%, #000 140%)",
-      }}
-    >
+    <main className="min-h-screen" style={gradient}>
       {/* Top bar */}
       <header className="h-14 flex items-center justify-between px-5">
         <a href="/buyer-home" className="flex items-center gap-2 text-white">
