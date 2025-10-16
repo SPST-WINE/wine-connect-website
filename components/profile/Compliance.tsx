@@ -2,63 +2,45 @@
 
 import * as React from "react";
 
-type Doc = {
-  id: string;           // `${docType}-${timestamp}`
-  type: "importer_license" | "company_vat";
-  url: string;          // public or signed url
-  name: string;         // original filename
-  uploaded_at: string;  // ISO
-};
+type DocObj = { id?: string; url?: string; name?: string; uploaded_at?: string; active?: boolean };
+type Docs = Record<string, any>;
 
 export default function Compliance({
   buyerId,
   initial,
 }: {
   buyerId: string;
-  initial: { id?: string; buyer_id?: string; mode?: "self" | "delegate"; documents?: Doc[] } | null;
+  initial: { id?: string; mode?: "self" | "delegate"; documents?: Docs } | null;
 }) {
-  // fallback sicuri → mai .map su undefined
-  const initialMode: "self" | "delegate" = (initial?.mode === "delegate" ? "delegate" : "self");
-  const initialDocs: Doc[] = Array.isArray(initial?.documents) ? (initial!.documents as Doc[]) : [];
+  const [mode, setMode] = React.useState<"self" | "delegate">(initial?.mode ?? "self");
+  const docs = (initial?.documents ?? {}) as Docs;
 
-  const [mode, setMode] = React.useState<"self" | "delegate">(initialMode);
-  const [docs, setDocs] = React.useState<Doc[]>(initialDocs);
-  const [busy, setBusy] = React.useState(false);
-  const [msg, setMsg] = React.useState<string | null>(null);
-  const [err, setErr] = React.useState<string | null>(null);
+  function visibleItems(arr: any[]): { kind: "obj" | "str"; value: DocObj | string; index: number }[] {
+    if (!Array.isArray(arr)) return [];
+    const onlyActive = arr.filter((x: any) => {
+      if (x && typeof x === "object") return x.active !== false;
+      return true; // stringhe sempre visibili a meno che non siano state spostate in _archived server-side
+    });
+    return onlyActive.map((value, index) => ({
+      kind: typeof value === "object" ? "obj" : "str",
+      value,
+      index,
+    }));
+  }
 
-  // Aggiorna localmente dopo redirect (facoltativo, ma utile se in futuro passiamo a fetch inline)
-  React.useEffect(() => {
-    // no-op: il server rinfresca i dati con redirect, qui solo placeholder
-  }, []);
+  const importer = visibleItems(docs["importer_license"] || []);
+  const company  = visibleItems(docs["company_vat"] || []);
 
   return (
     <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-5 text-white">
-      {/* Banner inline */}
-      {err && (
-        <div className="mb-3 rounded-lg border border-red-500/30 bg-red-500/10 text-red-200 px-3 py-2 text-sm">
-          {err}
-        </div>
-      )}
-      {msg && (
-        <div className="mb-3 rounded-lg border border-emerald-500/30 bg-emerald-500/10 text-emerald-200 px-3 py-2 text-sm">
-          {msg}
-        </div>
-      )}
-
       {/* MODE */}
       <form
         action="/api/profile/compliance/update-mode"
         method="post"
-        className="flex items-center gap-4"
-        onSubmit={() => {
-          setBusy(true);
-          setMsg(null);
-          setErr(null);
-        }}
+        className="flex items-center justify-between gap-3"
       >
         <input type="hidden" name="buyerId" value={buyerId} />
-        <fieldset className="flex items-center gap-4">
+        <div className="flex items-center gap-4">
           <label className="inline-flex items-center gap-2 text-sm text-white/80">
             <input
               type="radio"
@@ -79,11 +61,10 @@ export default function Compliance({
             />
             Delegate to Wine Connect
           </label>
-        </fieldset>
+        </div>
         <button
-          className="ml-auto rounded-xl px-4 py-2 text-sm font-semibold text-[#0f1720]"
+          className="h-10 rounded-xl px-4 text-sm font-semibold text-[#0f1720]"
           style={{ background: "#E33955" }}
-          disabled={busy}
         >
           Save
         </button>
@@ -91,100 +72,129 @@ export default function Compliance({
 
       {/* UPLOADS */}
       <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* Importer license */}
         <UploadCard
           title="Importer license"
-          docType="importer_license"
+          help="PDF / PNG / JPG — max 10MB"
+          action="/api/profile/compliance/upload"
           buyerId={buyerId}
+          docType="importer_license"
         />
-        {/* Company ID / VAT */}
         <UploadCard
           title="Company ID / VAT"
-          docType="company_vat"
+          help="PDF / PNG / JPG — max 10MB"
+          action="/api/profile/compliance/upload"
           buyerId={buyerId}
+          docType="company_vat"
         />
       </div>
 
-      {/* LISTA DOCUMENTI */}
-      <div className="mt-6">
-        <div className="text-sm text-white/70 mb-2">Uploaded documents</div>
-        {docs.length === 0 ? (
-          <div className="rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-sm text-white/60">
-            No documents yet.
-          </div>
-        ) : (
-          <ul className="space-y-2">
-            {docs.map((d) => (
-              <li
-                key={d.id}
-                className="rounded-lg border border-white/10 bg-black/20 px-3 py-2 text-sm flex items-center justify-between gap-3"
-              >
-                <div className="min-w-0">
-                  <div className="font-medium truncate">{d.name}</div>
-                  <div className="text-white/60 text-xs">
-                    {labelForType(d.type)} — {new Date(d.uploaded_at).toLocaleString()}
-                  </div>
-                </div>
-                <a
-                  href={d.url}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="text-xs underline text-white/80 hover:text-white"
-                >
-                  View
-                </a>
-              </li>
-            ))}
-          </ul>
-        )}
+      {/* LISTE FILE */}
+      <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+        <ListCard
+          title="Importer license files"
+          buyerId={buyerId}
+          docType="importer_license"
+          items={importer}
+        />
+        <ListCard
+          title="Company ID / VAT files"
+          buyerId={buyerId}
+          docType="company_vat"
+          items={company}
+        />
       </div>
     </div>
   );
 }
 
-function labelForType(t: Doc["type"]) {
-  switch (t) {
-    case "importer_license":
-      return "Importer license";
-    case "company_vat":
-      return "Company ID / VAT";
-    default:
-      return t;
-  }
-}
-
 function UploadCard({
   title,
-  docType,
+  help,
+  action,
   buyerId,
+  docType,
 }: {
   title: string;
-  docType: "importer_license" | "company_vat";
+  help?: string;
+  action: string;
   buyerId: string;
+  docType: string;
 }) {
   return (
-    <form
-      action="/api/profile/compliance/upload"
-      method="post"
-      encType="multipart/form-data"
-      className="rounded-xl border border-white/10 bg-black/20 p-4"
-    >
-      <div className="text-sm text-white/80 mb-2">{title}</div>
-      <input type="hidden" name="buyerId" value={buyerId} />
-      <input type="hidden" name="docType" value={docType} />
-      <input
-        required
-        name="file"
-        type="file"
-        accept=".pdf,.png,.jpg,.jpeg"
-        className="block w-full text-sm file:mr-3 file:rounded-lg file:border file:border-white/10 file:bg-white/10 file:px-3 file:py-2 file:text-white file:hover:bg-white/15"
-      />
-      <button
-        className="mt-3 rounded-xl px-4 py-2 text-sm font-semibold text-[#0f1720]"
-        style={{ background: "#E33955" }}
-      >
-        Upload
-      </button>
-    </form>
+    <div className="rounded-xl border border-white/10 bg-black/20 p-4">
+      <div className="text-sm font-semibold">{title}</div>
+      {help ? <div className="text-xs text-white/60 mt-0.5">{help}</div> : null}
+      <form action={action} method="post" encType="multipart/form-data" className="mt-3 flex items-center gap-3">
+        <input type="hidden" name="buyerId" value={buyerId} />
+        <input type="hidden" name="docType" value={docType} />
+        <input
+          required
+          name="file"
+          type="file"
+          className="text-sm file:mr-3 file:rounded file:border file:border-white/10 file:bg-white/10 file:px-3 file:py-2 file:text-white"
+        />
+        <button
+          className="rounded-xl px-3 py-2 text-sm font-semibold text-[#0f1720]"
+          style={{ background: "#E33955" }}
+        >
+          Upload
+        </button>
+      </form>
+    </div>
+  );
+}
+
+function ListCard({
+  title,
+  buyerId,
+  docType,
+  items,
+}: {
+  title: string;
+  buyerId: string;
+  docType: string;
+  items: { kind: "obj" | "str"; value: DocObj | string; index: number }[];
+}) {
+  return (
+    <div className="rounded-xl border border-white/10 bg-black/20 p-4">
+      <div className="text-sm font-semibold">{title}</div>
+      {items.length === 0 ? (
+        <div className="mt-2 text-sm text-white/60">No files yet.</div>
+      ) : (
+        <ul className="mt-3 space-y-2">
+          {items.map(({ kind, value, index }) => {
+            const url = kind === "obj" ? (value as DocObj).url : (value as string);
+            const name =
+              kind === "obj"
+                ? (value as DocObj).name || (value as DocObj).url || "File"
+                : typeof value === "string"
+                ? value.split("/").pop() || "File"
+                : "File";
+
+            const fileId = kind === "obj" ? (value as DocObj).id ?? "" : "";
+
+            return (
+              <li key={(fileId || "") + ":" + index} className="flex items-center justify-between gap-3 rounded border border-white/10 bg-white/[0.03] px-3 py-2">
+                <a href={url || "#"} target="_blank" className="truncate text-sm text-white/90">
+                  {name}
+                </a>
+                <form action="/api/profile/compliance/delete-file" method="post" className="shrink-0">
+                  <input type="hidden" name="buyerId" value={buyerId} />
+                  <input type="hidden" name="docType" value={docType} />
+                  {fileId ? (
+                    <input type="hidden" name="fileId" value={fileId} />
+                  ) : (
+                    <input type="hidden" name="index" value={String(index)} />
+                  )}
+                  <button className="rounded border border-white/15 px-3 py-1.5 text-xs hover:bg-white/10">
+                    Delete
+                  </button>
+                </form>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </div>
   );
 }
