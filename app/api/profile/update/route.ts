@@ -3,47 +3,52 @@ import { createSupabaseServer } from "@/lib/supabase/server";
 
 export async function POST(req: Request) {
   const supa = createSupabaseServer();
-  const { data: auth } = await supa.auth.getUser();
-  const user = auth.user;
+  const { data: { user } } = await supa.auth.getUser();
+
   if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return NextResponse.redirect(new URL("/login", req.url));
   }
 
   const form = await req.formData();
-  const buyerId = String(form.get("buyerId") || "");
-  const company_name = String(form.get("company_name") || "").trim();
-  const contact_name = String(form.get("contact_name") || "").trim();
-  const email = String(form.get("email") || "").trim();
-  const country = String(form.get("country") || "").trim();
 
-  if (!buyerId) {
-    return NextResponse.json({ error: "Missing buyerId" }, { status: 400 });
-  }
+  const company_name = (form.get("company_name") || "").toString().trim() || null;
+  const contact_name = (form.get("contact_name") || "").toString().trim() || null;
+  const country      = (form.get("country") || "").toString().trim() || null;
 
-  // Ensure the buyer belongs to the current user
-  const { data: buyer } = await supa
+  // Verifica che il buyer esista
+  const { data: buyer, error: buyerErr } = await supa
     .from("buyers")
-    .select("id, auth_user_id")
-    .eq("id", buyerId)
+    .select("id")
+    .eq("auth_user_id", user.id)
     .maybeSingle();
 
-  if (!buyer || buyer.auth_user_id !== user.id) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  if (buyerErr) {
+    return NextResponse.redirect(new URL("/profile?err=buyer_not_found", req.url));
   }
 
-  const payload: Record<string, any> = {
-    company_name,
-    contact_name,
-    email,
-    country,
-    updated_at: new Date().toISOString(),
-  };
+  // Se non esiste la riga buyers, opzionalmente creala (fallback sicuro)
+  if (!buyer) {
+    const { error: insErr } = await supa.from("buyers").insert({
+      auth_user_id: user.id,
+      email: user.email,
+      company_name,
+      contact_name,
+      country,
+    });
+    if (insErr) {
+      return NextResponse.redirect(new URL("/profile?err=save_failed", req.url));
+    }
+  } else {
+    // Aggiorna senza toccare updated_at
+    const { error: updErr } = await supa
+      .from("buyers")
+      .update({ company_name, contact_name, country })
+      .eq("auth_user_id", user.id);
 
-  const { error } = await supa.from("buyers").update(payload).eq("id", buyerId);
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 400 });
+    if (updErr) {
+      return NextResponse.redirect(new URL("/profile?err=save_failed", req.url));
+    }
   }
 
-  // Back to Profile
-  return NextResponse.redirect(new URL("/profile", req.url));
+  return NextResponse.redirect(new URL("/profile?ok=profile_saved", req.url));
 }
