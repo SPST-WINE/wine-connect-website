@@ -51,14 +51,14 @@ export async function POST(req: Request) {
     return NextResponse.redirect(new URL("/profile?err=upload_failed", req.url));
   }
 
-  // Public URL (se il bucket è public; altrimenti puoi generare signed URL lato server)
+  // Public URL (se il bucket è public)
   const { data: pub } = supa.storage.from(BUCKET).getPublicUrl(key);
   const url = pub?.publicUrl ?? null;
 
-  // Upsert compliance record + append doc
+  // Leggiamo ANCHE 'mode' per poterlo riusare nell'upsert
   const { data: rec } = await supa
     .from("compliance_records")
-    .select("id, documents")
+    .select("id, mode, documents")
     .eq("buyer_id", buyerId)
     .maybeSingle();
 
@@ -70,12 +70,16 @@ export async function POST(req: Request) {
     url,
   };
 
-  const docs = Array.isArray(rec?.documents) ? [...rec!.documents, newDoc] : [newDoc];
+  const docs = Array.isArray(rec?.documents) ? [...(rec!.documents as any[]), newDoc] : [newDoc];
 
   const { error: upsertErr } = await supa
     .from("compliance_records")
     .upsert(
-      { buyer_id: buyerId, mode: rec?.mode ?? "self", documents: docs },
+      {
+        buyer_id: buyerId,
+        mode: rec?.mode ?? "self",
+        documents: docs,
+      },
       { onConflict: "buyer_id" }
     );
 
