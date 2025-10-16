@@ -1,68 +1,71 @@
 import { NextResponse } from "next/server";
 import { createSupabaseServer } from "@/lib/supabase/server";
-import { isDebug } from "@/app/api/_utils/debug";
 
-export const dynamic = "force-dynamic";
-
+/**
+ * Aggiorna la modalità di compliance per il buyer corrente.
+ * Accetta "self" oppure "delegate" nel form (campo "mode").
+ * Su successo: 303 redirect a /profile?ok=compliance_mode_saved
+ * Su errore:   4xx/5xx con JSON { error }
+ */
 export async function POST(req: Request) {
-  const debug = isDebug(req);
-  const supa = createSupabaseServer();
-
   try {
-    const { data: { user } } = await supa.auth.getUser();
+    const supa = createSupabaseServer();
+    const {
+      data: { user },
+      error: authErr,
+    } = await supa.auth.getUser();
+
+    if (authErr) {
+      return NextResponse.json({ error: authErr.message }, { status: 500 });
+    }
     if (!user) {
-      if (debug) return NextResponse.json({ step: "auth", error: "no_user" }, { status: 401 });
-      return NextResponse.redirect(new URL("/profile?err=forbidden", req.url));
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const form = await req.formData();
-    const buyerId = String(form.get("buyerId") || "");
-    const mode = String(form.get("mode") || "self") as "self" | "delegate";
-    if (!buyerId || !["self", "delegate"].includes(mode)) {
-      if (debug) return NextResponse.json({ step: "parse", buyerId, mode, error: "bad_request" }, { status: 400 });
-      return NextResponse.redirect(new URL("/profile?err=bad_request", req.url));
-    }
+    const raw = String(form.get("mode") ?? "").toLowerCase().trim();
 
-    // check ownership
+    // normalizza per l'ENUM attuale (self | delegate)
+    const mode = raw === "delegate" ? "delegate" : "self";
+
+    // individua il buyer dell'utente
     const { data: buyer, error: buyerErr } = await supa
       .from("buyers")
       .select("id")
-      .eq("id", buyerId)
       .eq("auth_user_id", user.id)
       .maybeSingle();
 
-    console.log("[update-mode] buyer check:", { buyerId, userId: user.id, buyer, buyerErr });
-
-    if (!buyer || buyerErr) {
-      if (debug) return NextResponse.json({ step: "owner_check", buyer, buyerErr, error: "forbidden" }, { status: 403 });
-      return NextResponse.redirect(new URL("/profile?err=forbidden", req.url));
+    if (buyerErr) {
+      return NextResponse.json({ error: buyerErr.message }, { status: 500 });
+    }
+    if (!buyer) {
+      return NextResponse.json({ error: "Buyer not found" }, { status: 404 });
     }
 
-    const { data: rec, error: recErr } = await supa
-      .from("compliance_records")
-      .select("documents")
-      .eq("buyer_id", buyerId)
-      .maybeSingle();
-
-    console.log("[update-mode] existing record:", { rec, recErr });
-
-    const docs = Array.isArray(rec?.documents) ? rec!.documents : [];
-
+    // upsert del record di compliance del buyer
     const { error: upErr } = await supa
       .from("compliance_records")
-      .upsert({ buyer_id: buyerId, mode, documents: docs }, { onConflict: "buyer_id" });
+      .upsert(
+        {
+          buyer_id: buyer.id,
+          mode,            // ENUM: 'self' | 'delegate'
+          // NON tocchiamo 'documents' qui: se esiste resta com'è
+        },
+        { onConflict: "buyer_id" }
+      );
 
-    console.log("[update-mode] upsert result:", { upErr });
+    if (upErr) {
+      // niente redirect su errore -> vedrai l’errore vero nei log/UI
+      return NextResponse.json({ error: upErr.message }, { status: 400 });
+    }
 
-    if (debug) return NextResponse.json({ ok: !upErr, upErr, mode, docs });
-
-    const u = new URL("/profile", req.url);
-    if (upErr) u.searchParams.set("err", "update_failed");
-    else u.searchParams.set("ok", "compliance_mode_saved");
-    return NextResponse.redirect(u);
+    // redirect SOLO su successo
+    const url = new URL("/profile?ok=compliance_mode_saved", req.url);
+    return NextResponse.redirect(url, { status: 303 });
   } catch (e: any) {
-    console.error("[update-mode] fatal:", e);
-    if (isDebug(req)) return NextResponse.json({ error: String(e?.message || e) }, { status: 500 });
-    return NextResponse.redirect(new URL("/profile?err=server_error", req.url));
+    return NextResponse.json(
+      { error: e?.message ?? "Unexpected error" },
+      { status: 500 }
+    );
   }
 }
