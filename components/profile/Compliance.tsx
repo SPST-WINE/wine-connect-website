@@ -2,139 +2,144 @@
 
 import * as React from "react";
 
-type DocObj = { id?: string; url?: string; name?: string; uploaded_at?: string; active?: boolean };
-type Docs = Record<string, any>;
+type DocItem = {
+  id: string;
+  name: string;
+  url: string;
+  uploaded_at?: string;
+  hidden?: boolean;
+};
+
+type Docs = {
+  importer_license?: DocItem[];
+  company_vat?: DocItem[];
+  // in futuro puoi aggiungere altre chiavi qui
+};
 
 export default function Compliance({
   buyerId,
   initial,
 }: {
   buyerId: string;
-  initial: { id?: string; mode?: "self" | "delegate"; documents?: Docs } | null;
+  initial: { id: string | null; mode: "self" | "delegate"; documents: Docs };
 }) {
-  const [mode, setMode] = React.useState<"self" | "delegate">(initial?.mode ?? "self");
-  const docs = (initial?.documents ?? {}) as Docs;
-
-  function visibleItems(arr: any[]): { kind: "obj" | "str"; value: DocObj | string; index: number }[] {
-    if (!Array.isArray(arr)) return [];
-    const onlyActive = arr.filter((x: any) => {
-      if (x && typeof x === "object") return x.active !== false;
-      return true; // stringhe sempre visibili a meno che non siano state spostate in _archived server-side
-    });
-    return onlyActive.map((value, index) => ({
-      kind: typeof value === "object" ? "obj" : "str",
-      value,
-      index,
-    }));
-  }
-
-  const importer = visibleItems(docs["importer_license"] || []);
-  const company  = visibleItems(docs["company_vat"] || []);
+  const docs = normalizeDocs(initial.documents);
 
   return (
     <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-5 text-white">
-      {/* MODE */}
+      {/* Mode toggle */}
       <form
         action="/api/profile/compliance/update-mode"
         method="post"
         className="flex items-center justify-between gap-3"
       >
         <input type="hidden" name="buyerId" value={buyerId} />
-        <div className="flex items-center gap-4">
-          <label className="inline-flex items-center gap-2 text-sm text-white/80">
+        <div className="flex items-center gap-6">
+          <label className="inline-flex items-center gap-2 text-white/80">
             <input
               type="radio"
               name="mode"
               value="self"
-              checked={mode === "self"}
-              onChange={() => setMode("self")}
+              defaultChecked={initial.mode === "self"}
             />
-            Self
+            <span>Self</span>
           </label>
-          <label className="inline-flex items-center gap-2 text-sm text-white/80">
+          <label className="inline-flex items-center gap-2 text-white/80">
             <input
               type="radio"
               name="mode"
               value="delegate"
-              checked={mode === "delegate"}
-              onChange={() => setMode("delegate")}
+              defaultChecked={initial.mode === "delegate"}
             />
-            Delegate to Wine Connect
+            <span>Delegate to Wine Connect</span>
           </label>
         </div>
         <button
-          className="h-10 rounded-xl px-4 text-sm font-semibold text-[#0f1720]"
+          className="rounded-xl px-4 py-2 text-sm font-semibold text-[#0f1720]"
           style={{ background: "#E33955" }}
         >
           Save
         </button>
       </form>
 
-      {/* UPLOADS */}
-      <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+      {/* Upload blocks */}
+      <div className="mt-5 grid grid-cols-1 md:grid-cols-2 gap-4">
         <UploadCard
           title="Importer license"
-          help="PDF / PNG / JPG — max 10MB"
-          action="/api/profile/compliance/upload"
+          helper="PDF / PNG / JPG — max 10MB"
           buyerId={buyerId}
-          docType="importer_license"
+          kind="importer_license"
         />
         <UploadCard
           title="Company ID / VAT"
-          help="PDF / PNG / JPG — max 10MB"
-          action="/api/profile/compliance/upload"
+          helper="PDF / PNG / JPG — max 10MB"
           buyerId={buyerId}
-          docType="company_vat"
+          kind="company_vat"
         />
       </div>
 
-      {/* LISTE FILE */}
-      <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+      {/* Files lists */}
+      <div className="mt-5 grid grid-cols-1 md:grid-cols-2 gap-4">
         <ListCard
           title="Importer license files"
           buyerId={buyerId}
-          docType="importer_license"
-          items={importer}
+          kind="importer_license"
+          items={(docs.importer_license || []).filter((d) => !d.hidden)}
         />
         <ListCard
           title="Company ID / VAT files"
           buyerId={buyerId}
-          docType="company_vat"
-          items={company}
+          kind="company_vat"
+          items={(docs.company_vat || []).filter((d) => !d.hidden)}
         />
       </div>
     </div>
   );
 }
 
+/* ---------- Helpers & small components ---------- */
+
+function normalizeDocs(value: unknown): Docs {
+  if (!value || typeof value !== "object") return {};
+  const v = value as Record<string, unknown>;
+  const out: Docs = {};
+  if (Array.isArray(v.importer_license)) out.importer_license = v.importer_license as DocItem[];
+  if (Array.isArray(v.company_vat)) out.company_vat = v.company_vat as DocItem[];
+  return out;
+}
+
 function UploadCard({
   title,
-  help,
-  action,
+  helper,
   buyerId,
-  docType,
+  kind,
 }: {
   title: string;
-  help?: string;
-  action: string;
+  helper: string;
   buyerId: string;
-  docType: string;
+  kind: "importer_license" | "company_vat";
 }) {
   return (
     <div className="rounded-xl border border-white/10 bg-black/20 p-4">
-      <div className="text-sm font-semibold">{title}</div>
-      {help ? <div className="text-xs text-white/60 mt-0.5">{help}</div> : null}
-      <form action={action} method="post" encType="multipart/form-data" className="mt-3 flex items-center gap-3">
+      <div className="text-sm text-white/80">{title}</div>
+      <div className="text-[11px] text-white/50">{helper}</div>
+      <form
+        action="/api/profile/compliance/upload"
+        method="post"
+        encType="multipart/form-data"
+        className="mt-3 flex items-center gap-3"
+      >
         <input type="hidden" name="buyerId" value={buyerId} />
-        <input type="hidden" name="docType" value={docType} />
+        <input type="hidden" name="kind" value={kind} />
         <input
-          required
           name="file"
           type="file"
-          className="text-sm file:mr-3 file:rounded file:border file:border-white/10 file:bg-white/10 file:px-3 file:py-2 file:text-white"
+          accept=".pdf,.png,.jpg,.jpeg"
+          className="max-w-[220px] text-xs file:mr-3 file:rounded file:border file:border-white/10 file:bg-black/30 file:px-3 file:py-2 file:text-white"
+          required
         />
         <button
-          className="rounded-xl px-3 py-2 text-sm font-semibold text-[#0f1720]"
+          className="rounded-xl px-4 py-2 text-sm font-semibold text-[#0f1720]"
           style={{ background: "#E33955" }}
         >
           Upload
@@ -146,53 +151,47 @@ function UploadCard({
 
 function ListCard({
   title,
-  buyerId,
-  docType,
   items,
+  buyerId,
+  kind,
 }: {
   title: string;
+  items: DocItem[];
   buyerId: string;
-  docType: string;
-  items: { kind: "obj" | "str"; value: DocObj | string; index: number }[];
+  kind: "importer_license" | "company_vat";
 }) {
   return (
     <div className="rounded-xl border border-white/10 bg-black/20 p-4">
-      <div className="text-sm font-semibold">{title}</div>
-      {items.length === 0 ? (
-        <div className="mt-2 text-sm text-white/60">No files yet.</div>
-      ) : (
-        <ul className="mt-3 space-y-2">
-          {items.map(({ kind, value, index }) => {
-            const url = kind === "obj" ? (value as DocObj).url : (value as string);
-            const name =
-              kind === "obj"
-                ? (value as DocObj).name || (value as DocObj).url || "File"
-                : typeof value === "string"
-                ? value.split("/").pop() || "File"
-                : "File";
-
-            const fileId = kind === "obj" ? (value as DocObj).id ?? "" : "";
-
-            return (
-              <li key={(fileId || "") + ":" + index} className="flex items-center justify-between gap-3 rounded border border-white/10 bg-white/[0.03] px-3 py-2">
-                <a href={url || "#"} target="_blank" className="truncate text-sm text-white/90">
-                  {name}
-                </a>
-                <form action="/api/profile/compliance/delete-file" method="post" className="shrink-0">
-                  <input type="hidden" name="buyerId" value={buyerId} />
-                  <input type="hidden" name="docType" value={docType} />
-                  {fileId ? (
-                    <input type="hidden" name="fileId" value={fileId} />
-                  ) : (
-                    <input type="hidden" name="index" value={String(index)} />
-                  )}
-                  <button className="rounded border border-white/15 px-3 py-1.5 text-xs hover:bg-white/10">
-                    Delete
-                  </button>
-                </form>
-              </li>
-            );
-          })}
+      <div className="text-sm text-white/80">{title}</div>
+      {(!items || items.length === 0) && (
+        <div className="mt-2 text-sm text-white/50">No files yet.</div>
+      )}
+      {items && items.length > 0 && (
+        <ul className="mt-2 space-y-2">
+          {items.map((f) => (
+            <li
+              key={f.id}
+              className="flex items-center justify-between gap-3 rounded border border-white/10 bg-white/[0.03] px-3 py-2"
+            >
+              <a
+                href={f.url}
+                target="_blank"
+                rel="noreferrer"
+                className="truncate text-sm text-white/90 hover:underline"
+                title={f.name}
+              >
+                {f.name}
+              </a>
+              <form action="/api/profile/compliance/remove" method="post">
+                <input type="hidden" name="buyerId" value={buyerId} />
+                <input type="hidden" name="kind" value={kind} />
+                <input type="hidden" name="docId" value={f.id} />
+                <button className="rounded border border-white/15 bg-transparent px-3 py-1.5 text-xs text-white/80 hover:bg-white/5">
+                  Delete
+                </button>
+              </form>
+            </li>
+          ))}
         </ul>
       )}
     </div>
