@@ -1,107 +1,119 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseServer } from "@/lib/supabase/server";
-import { isDebug } from "@/app/api/_utils/debug";
 
-export const dynamic = "force-dynamic";
-const BUCKET = "compliance";
+// Limiti/validazioni
+const MAX_MB = 10;
+const MAX_BYTES = MAX_MB * 1024 * 1024;
+const ALLOWED = ["application/pdf", "image/png", "image/jpeg"];
 
-export async function POST(req: Request) {
-  const debug = isDebug(req);
-  const supa = createSupabaseServer();
+type Kind = "importer_license" | "company_vat";
 
+function safeFileName(name: string) {
+  const base = name.normalize("NFKD").replace(/[^\w.-]+/g, "_");
+  return base.slice(0, 140);
+}
+
+export async function POST(req: NextRequest) {
   try {
+    const supa = createSupabaseServer();
+
+    // --- Auth ---
     const { data: { user } } = await supa.auth.getUser();
     if (!user) {
-      if (debug) return NextResponse.json({ step: "auth", error: "no_user" }, { status: 401 });
-      return NextResponse.redirect(new URL("/profile?err=forbidden", req.url));
+      return NextResponse.redirect(new URL("/login", req.url), 307);
     }
 
+    // --- Form data ---
     const form = await req.formData();
     const buyerId = String(form.get("buyerId") || "");
-    const docType = String(form.get("docType") || "");
+    const kind = String(form.get("kind") || "") as Kind;
     const file = form.get("file") as File | null;
 
-    if (!buyerId || !file || !["importer_license", "company_vat"].includes(docType)) {
-      if (debug) return NextResponse.json({ step: "parse", buyerId, docType, hasFile: !!file, error: "bad_request" }, { status: 400 });
-      return NextResponse.redirect(new URL("/profile?err=bad_request", req.url));
+    // Validazioni form
+    if (!buyerId || !file || (kind !== "importer_license" && kind !== "company_vat")) {
+      return NextResponse.redirect(new URL("/profile?err=upload_failed", req.url), 307);
     }
 
+    if (file.size > MAX_BYTES) {
+      return NextResponse.redirect(new URL("/profile?err=file_too_large", req.url), 307);
+    }
+    if (!ALLOWED.includes(file.type)) {
+      return NextResponse.redirect(new URL("/profile?err=bad_type", req.url), 307);
+    }
+
+    // --- Ownership check ---
     const { data: buyer, error: buyerErr } = await supa
       .from("buyers")
-      .select("id")
+      .select("id, auth_user_id")
       .eq("id", buyerId)
-      .eq("auth_user_id", user.id)
       .maybeSingle();
 
-    console.log("[upload] buyer check:", { buyerId, userId: user.id, buyer, buyerErr });
-
-    if (!buyer || buyerErr) {
-      if (debug) return NextResponse.json({ step: "owner_check", buyer, buyerErr, error: "forbidden" }, { status: 403 });
-      return NextResponse.redirect(new URL("/profile?err=forbidden", req.url));
+    if (buyerErr || !buyer || buyer.auth_user_id !== user.id) {
+      console.log("[compliance-upload] forbidden", { buyerErr, buyer, userId: user.id });
+      return NextResponse.redirect(new URL("/profile?err=forbidden", req.url), 307);
     }
 
-    // 1) upload to storage
-    const now = Date.now();
-    const safeName = file.name.replace(/[^\w\-.]+/g, "_");
-    const path = `${buyerId}/${docType}-${now}-${safeName}`;
-
-    const arrayBuffer = await file.arrayBuffer();
-    const mime = file.type || "application/octet-stream";
+    // --- Upload su bucket 'compliance' ---
+    const fileName = `${crypto.randomUUID()}-${safeFileName(file.name)}`;
+    const path = `compliance/${buyerId}/${fileName}`;
 
     const { error: upErr } = await supa.storage
-      .from(BUCKET)
-      .upload(path, new Uint8Array(arrayBuffer), {
-        contentType: mime,
-        cacheControl: "3600",
-        upsert: false,
-      });
-
-    console.log("[upload] storage.upload:", { path, mime, upErr });
+      .from("compliance")
+      .upload(path, file, { upsert: false, contentType: file.type });
 
     if (upErr) {
-      if (debug) return NextResponse.json({ step: "storage_upload", path, upErr }, { status: 400 });
-      const u = new URL("/profile", req.url); u.searchParams.set("err", "upload_failed"); return NextResponse.redirect(u);
+      console.log("[compliance-upload] storage error", upErr);
+      return NextResponse.redirect(new URL("/profile?err=upload_failed", req.url), 307);
     }
 
-    const { data: pub } = supa.storage.from(BUCKET).getPublicUrl(path);
-    const fileUrl = pub?.publicUrl ?? "";
-    console.log("[upload] public url:", { fileUrl });
+    const { data: urlData } = supa.storage.from("compliance").getPublicUrl(path);
+    const publicUrl = urlData.publicUrl;
 
-    // 2) append in compliance_records
+    // --- Leggo/normalizzo il record di compliance ---
     const { data: rec, error: recErr } = await supa
       .from("compliance_records")
-      .select("mode, documents")
+      .select("id, mode, documents")
       .eq("buyer_id", buyerId)
       .maybeSingle();
 
-    console.log("[upload] existing record:", { rec, recErr });
+    if (recErr) {
+      console.log("[compliance-upload] fetch record error", recErr);
+      return NextResponse.redirect(new URL("/profile?err=save_failed", req.url), 307);
+    }
 
-    const docs = Array.isArray(rec?.documents) ? rec!.documents : [];
-    const mode = (rec?.mode === "delegate" ? "delegate" : "self") as "self" | "delegate";
+    const prev = (rec?.documents ?? {}) as Record<string, any>;
+    const arr = Array.isArray(prev[kind]) ? (prev[kind] as any[]) : [];
 
-    const newDoc = {
-      id: `${docType}-${now}`,
-      type: docType,
-      url: fileUrl,
+    const newItem = {
+      id: crypto.randomUUID(),
       name: file.name,
+      url: publicUrl,
       uploaded_at: new Date().toISOString(),
+      hidden: false, // visibile in UI
     };
 
-    const { error: upsertErr } = await supa
+    const nextDocs = { ...prev, [kind]: [...arr, newItem] };
+
+    // --- Upsert (mantiene mode se presente, default "self") ---
+    const { error: saveErr } = await supa
       .from("compliance_records")
-      .upsert({ buyer_id: buyerId, mode, documents: [...docs, newDoc] }, { onConflict: "buyer_id" });
+      .upsert(
+        {
+          buyer_id: buyerId,
+          mode: (rec?.mode ?? "self") as any,
+          documents: nextDocs,
+        },
+        { onConflict: "buyer_id" }
+      );
 
-    console.log("[upload] upsert result:", { upsertErr });
+    if (saveErr) {
+      console.log("[compliance-upload] upsert error", saveErr);
+      return NextResponse.redirect(new URL("/profile?err=save_failed", req.url), 307);
+    }
 
-    if (debug) return NextResponse.json({ ok: !upsertErr, fileUrl, newDoc, upsertErr });
-
-    const u = new URL("/profile", req.url);
-    if (upsertErr) u.searchParams.set("err", "save_failed");
-    else u.searchParams.set("ok", "document_uploaded");
-    return NextResponse.redirect(u);
-  } catch (e: any) {
-    console.error("[upload] fatal:", e);
-    if (isDebug(req)) return NextResponse.json({ error: String(e?.message || e) }, { status: 500 });
-    return NextResponse.redirect(new URL("/profile?err=server_error", req.url));
+    return NextResponse.redirect(new URL("/profile?ok=document_uploaded", req.url), 307);
+  } catch (e) {
+    console.error("[compliance-upload] unexpected", e);
+    return NextResponse.redirect(new URL("/profile?err=upload_failed", req.url), 307);
   }
 }
