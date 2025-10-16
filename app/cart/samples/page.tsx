@@ -123,10 +123,12 @@ export default async function SamplesCart() {
 
   // addresses
   const { data: addresses } = await supa
-    .from("addresses")
-    .select("id,label,address,country,is_default")
-    .eq("buyer_id", buyer.id)
-    .order("is_default", { ascending: false });
+  .from("addresses")
+  .select("id,label,address,country,is_default")
+  .eq("buyer_id", buyer.id)
+  .eq("is_active", true)        // <-- aggiunto
+  .order("is_default", { ascending: false });
+
 
   const subtotal = (items || []).reduce(
     (s: number, i: any) => s + i.quantity * Number(i.unit_price),
