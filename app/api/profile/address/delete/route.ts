@@ -1,60 +1,78 @@
-export const dynamic = "force-dynamic";
-
 import { NextResponse } from "next/server";
 import { createSupabaseServer } from "@/lib/supabase/server";
 
 export async function POST(req: Request) {
-  const supa = createSupabaseServer();
-  const {
-    data: { user },
-  } = await supa.auth.getUser();
+  try {
+    const supa = createSupabaseServer();
 
-  if (!user) {
-    return NextResponse.redirect(new URL("/login", req.url));
-  }
+    const { data: { user } } = await supa.auth.getUser();
+    if (!user) return NextResponse.redirect(new URL("/login", req.url));
 
-  const form = await req.formData();
-  const addressId = String(form.get("addressId") || "").trim();
+    const form = await req.formData();
+    const addressId = String(form.get("addressId") || "");
+    if (!addressId) {
+      return NextResponse.redirect(new URL("/profile?err=not_found", req.url));
+    }
 
-  if (!addressId) {
-    return NextResponse.redirect(new URL("/profile?err=missing_address_id", req.url));
-  }
+    // Buyer corrente
+    const { data: buyer } = await supa
+      .from("buyers")
+      .select("id")
+      .eq("auth_user_id", user.id)
+      .maybeSingle();
 
-  // Buyer corrente
-  const { data: buyer } = await supa
-    .from("buyers")
-    .select("id")
-    .eq("auth_user_id", user.id)
-    .maybeSingle();
+    if (!buyer) {
+      return NextResponse.redirect(new URL("/profile?err=forbidden", req.url));
+    }
 
-  if (!buyer) {
-    return NextResponse.redirect(new URL("/profile?err=no_buyer", req.url));
-  }
+    // Recupero indirizzo (verifico proprietà)
+    const { data: addr } = await supa
+      .from("addresses")
+      .select("id,buyer_id,is_default,is_active")
+      .eq("id", addressId)
+      .maybeSingle();
 
-  // Address esiste e appartiene al buyer?
-  const { data: addr } = await supa
-    .from("addresses")
-    .select("id,buyer_id,is_default")
-    .eq("id", addressId)
-    .maybeSingle();
+    if (!addr || addr.buyer_id !== buyer.id) {
+      return NextResponse.redirect(new URL("/profile?err=forbidden", req.url));
+    }
+    if (addr.is_active === false) {
+      // Già archiviato: idempotente
+      return NextResponse.redirect(new URL("/profile?ok=address_deleted", req.url));
+    }
 
-  if (!addr || addr.buyer_id !== buyer.id) {
+    // 1) Soft-delete: nascondi ma conserva per gli ordini
+    const { error: updErr } = await supa
+      .from("addresses")
+      .update({ is_active: false, archived_at: new Date().toISOString(), is_default: false })
+      .eq("id", addressId)
+      .eq("buyer_id", buyer.id);
+
+    if (updErr) {
+      return NextResponse.redirect(new URL("/profile?err=forbidden", req.url));
+    }
+
+    // 2) Se era default, promuovi un altro indirizzo attivo a default
+    if (addr.is_default) {
+      const { data: another } = await supa
+        .from("addresses")
+        .select("id")
+        .eq("buyer_id", buyer.id)
+        .eq("is_active", true)
+        .order("created_at", { ascending: false })
+        .limit(1);
+
+      const nextDefaultId = another?.[0]?.id;
+      if (nextDefaultId) {
+        await supa
+          .from("addresses")
+          .update({ is_default: true })
+          .eq("id", nextDefaultId)
+          .eq("buyer_id", buyer.id);
+      }
+    }
+
+    return NextResponse.redirect(new URL("/profile?ok=address_deleted", req.url));
+  } catch (e) {
     return NextResponse.redirect(new URL("/profile?err=forbidden", req.url));
   }
-
-  // È usato in qualche ordine?
-  const { count: refsCount } = await supa
-    .from("orders")
-    .select("id", { head: true, count: "exact" })
-    .eq("shipping_address_id", addressId);
-
-  if ((refsCount ?? 0) > 0) {
-    // Blocco la cancellazione perché ci sono ordini che lo referenziano
-    return NextResponse.redirect(new URL("/profile?err=address_in_use", req.url));
-  }
-
-  // Cancello
-  await supa.from("addresses").delete().eq("id", addressId);
-
-  return NextResponse.redirect(new URL("/profile?msg=address_deleted", req.url));
 }
