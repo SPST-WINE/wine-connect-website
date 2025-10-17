@@ -16,7 +16,7 @@ type Order = {
   created_at: string | null;
   tracking_code?: string | null;
   shipping_address_id?: string | null;
-  totals?: number | null;           // <-- usa 'totals'
+  totals?: number | null;
   order_code?: string | null;
 };
 
@@ -106,7 +106,7 @@ export default async function OrderDetail({ params }: { params: { id: string } }
   }
 
   // wines lookup
-  const winesById = new Map<string, Wine>();
+  const winesById: Map<string, Wine> = new Map();
   if (items.length > 0) {
     const wineIds = Array.from(new Set(items.map(i => i.wine_id))).filter(Boolean);
     if (wineIds.length > 0) {
@@ -114,7 +114,7 @@ export default async function OrderDetail({ params }: { params: { id: string } }
         .from("wines")
         .select("id, name, winery_name, vintage, region, image_url")
         .in("id", wineIds);
-      (wines || []).forEach(w => winesById.set(w.id, w as Wine));
+      (wines || []).forEach((w) => winesById.set((w as any).id, w as Wine));
     }
   }
 
@@ -220,24 +220,28 @@ export default async function OrderDetail({ params }: { params: { id: string } }
             ) : (
               <ul className="mt-4 grid gap-3">
                 {items.map((it) => {
-                  const w = winesById.get(it.wine_id) || {};
+                  const w = winesById.get(it.wine_id); // Wine | undefined
                   const unit = Number(it.unit_price) || 0;
                   const qty = Number(it.quantity) || 0;
                   return (
                     <li key={it.id} className="rounded-xl border border-white/10 bg-black/30 p-4">
                       <div className="flex items-center gap-4">
                         <div className="h-14 w-10 rounded bg-white/10 overflow-hidden shrink-0">
-                          {w.image_url ? (
+                          {w?.image_url ? (
                             // eslint-disable-next-line @next/next/no-img-element
-                            <img src={w.image_url as string} alt={(w.name as string) || "Wine"} className="h-full w-full object-cover" />
+                            <img
+                              src={w.image_url || ""}
+                              alt={w?.name || "Wine"}
+                              className="h-full w-full object-cover"
+                            />
                           ) : null}
                         </div>
                         <div className="min-w-0 flex-1">
                           <div className="font-semibold text-white truncate">
-                            {(w.name as string) || "Wine"} {w.vintage ? `— ${w.vintage}` : ""}
+                            {(w?.name || "Wine")} {w?.vintage ? `— ${w.vintage}` : ""}
                           </div>
                           <div className="text-xs text-white/70">
-                            {w.winery_name ? `${w.winery_name} · ` : ""}{w.region || ""}
+                            {w?.winery_name ? `${w.winery_name} · ` : ""}{w?.region || ""}
                           </div>
                         </div>
                         <div className="text-right">
