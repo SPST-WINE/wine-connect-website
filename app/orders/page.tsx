@@ -1,131 +1,85 @@
+// app/orders/page.tsx
 export const dynamic = "force-dynamic";
 
 import Link from "next/link";
 import { createSupabaseServer } from "@/lib/supabase/server";
-import { ArrowLeft, Truck, Rows3 } from "lucide-react";
+import { Package, Rows3, ShoppingBasket, UserCog, Truck } from "lucide-react";
 
+/** WC background */
 const WC_BG =
   "radial-gradient(120% 120% at 50% -10%, #1c3e5e 0%, #0a1722 60%, #000 140%)";
 
-type Order = {
+type OrderRow = {
   id: string;
-  buyer_id: string;
-  cart_id: string | null;
   status: string;
-  type?: string | null;
   created_at: string | null;
-  tracking_code?: string | null;
-  shipping_address_id?: string | null;
-  total?: number | null;
   order_code?: string | null;
+  type?: string | null;
+  tracking_code?: string | null;
+  totals?: number | null;
 };
 
-type CartItem = {
-  id: string;
-  cart_id: string;
-  wine_id: string;
-  quantity: number;
-  unit_price: number | null;
-  list_type: string | null;
-};
-
-type Wine = {
-  id: string;
-  name: string | null;
-  winery_name: string | null;
-  vintage: string | null;
-  region: string | null;
-  image_url: string | null;
-};
-
-export default async function OrderDetail({ params }: { params: { id: string } }) {
+export default async function OrdersPage() {
   const supa = createSupabaseServer();
-  const { data: { user } } = await supa.auth.getUser();
+
+  // Auth
+  const {
+    data: { user },
+  } = await supa.auth.getUser();
   if (!user) {
     return (
-      <div className="min-h-screen flex items-center justify-center text-white" style={{ background: WC_BG }}>
-        <div className="rounded-xl border border-white/10 bg-white/[0.05] p-6">
-          You need to <a className="underline" href="/login">log in</a> to view this order.
+      <div
+        className="min-h-screen flex items-center justify-center text-white"
+        style={{ background: WC_BG }}
+      >
+        <div className="rounded-xl border border-white/10 bg-white/[0.05] p-6 text-center">
+          You need to <a className="underline" href="/login">log in</a> to view orders.
         </div>
       </div>
     );
   }
 
   // Buyer
-  const { data: buyer } = await supa
+  const { data: buyer, error: buyerErr } = await supa
     .from("buyers")
     .select("id")
     .eq("auth_user_id", user.id)
     .maybeSingle();
-  if (!buyer) {
+
+  if (buyerErr || !buyer) {
     return (
-      <div className="min-h-screen flex items-center justify-center text-white" style={{ background: WC_BG }}>
-        <div className="rounded-xl border border-white/10 bg-white/[0.05] p-6">Buyer profile not found.</div>
+      <div
+        className="min-h-screen flex items-center justify-center text-white"
+        style={{ background: WC_BG }}
+      >
+        <div className="rounded-xl border border-white/10 bg-white/[0.05] p-6">
+          Buyer profile not found.
+        </div>
       </div>
     );
   }
 
-  // Ordine
-  const { data: order } = await supa
+  // Orders list
+  const { data: orders, error: ordersErr } = await supa
     .from("orders")
     .select("*")
-    .eq("id", params.id)
     .eq("buyer_id", buyer.id)
-    .maybeSingle<Order>();
+    .order("created_at", { ascending: false });
 
-  if (!order) {
+  if (ordersErr) {
     return (
-      <div className="min-h-screen flex items-center justify-center text-white" style={{ background: WC_BG }}>
-        <div className="rounded-xl border border-white/10 bg-white/[0.05] p-6">Order not found.</div>
+      <div
+        className="min-h-screen flex items-center justify-center text-white"
+        style={{ background: WC_BG }}
+      >
+        <div className="rounded-xl border border-white/10 bg-white/[0.05] p-6">
+          Could not load orders.
+        </div>
       </div>
     );
   }
 
-  // Address snapshot
-  let address: any = null;
-  if (order.shipping_address_id) {
-    const { data: addr } = await supa
-      .from("addresses")
-      .select("label,address,city,zip,country")
-      .eq("id", order.shipping_address_id)
-      .maybeSingle();
-    address = addr || null;
-  }
-
-  // === ITEMS FETCH LOGIC ===
-  // 1) Prova order_items (se esiste in DB)
-  let items: Array<{ id: string; wine_id: string; quantity: number; unit_price: number | null; list_type: string | null; }> = [];
-  {
-    const { data: oi } = await supa
-      .from("order_items")
-      .select("id, wine_id, quantity, unit_price, list_type")
-      .eq("order_id", order.id);
-    if (oi && oi.length) items = oi as any;
-  }
-
-  // 2) Se vuoto, fallback a cart_items del cart_id dell'ordine
-  if ((!items || items.length === 0) && order.cart_id) {
-    const { data: ci } = await supa
-      .from("cart_items")
-      .select("id, cart_id, wine_id, quantity, unit_price, list_type")
-      .eq("cart_id", order.cart_id);
-    items = (ci || []) as any;
-  }
-
-  // 3) Arricchisci con info vino (NO join implicita: query separata su wines)
-  let winesById = new Map<string, Wine>();
-  if (items.length > 0) {
-    const wineIds = Array.from(new Set(items.map(i => i.wine_id))).filter(Boolean);
-    if (wineIds.length > 0) {
-      const { data: wines } = await supa
-        .from("wines")
-        .select("id, name, winery_name, vintage, region, image_url")
-        .in("id", wineIds);
-      (wines || []).forEach(w => winesById.set(w.id, w as Wine));
-    }
-  }
-
-  const subtotal = items.reduce((acc, it) => acc + (Number(it.unit_price) || 0) * (Number(it.quantity) || 0), 0);
+  const list = (orders || []) as OrderRow[];
 
   return (
     <div className="min-h-screen flex flex-col" style={{ background: WC_BG }}>
@@ -136,80 +90,33 @@ export default async function OrderDetail({ params }: { params: { id: string } }
           <span className="font-semibold">Wine Connect</span>
         </Link>
         <nav className="flex items-center gap-5 text-sm">
-          <Link className="text-white/80 hover:text-white" href="/catalog">Catalog</Link>
-          <Link className="text-white/80 hover:text-white" href="/cart/samples">Sample Cart</Link>
-          <Link className="text-white/80 hover:text-white" href="/orders">Orders</Link>
+          <Link className="text-white/80 hover:text-white" href="/catalog">
+            Catalog
+          </Link>
+          <Link className="text-white/80 hover:text-white" href="/cart/samples">
+            Sample Cart
+          </Link>
+          <Link className="text-white/80 hover:text-white" href="/profile">
+            Profile
+          </Link>
         </nav>
       </header>
 
       <main className="flex-1 px-5">
         <div className="mx-auto max-w-5xl py-8 space-y-6">
-          {/* Header */}
+          {/* Header block */}
           <section className="rounded-2xl border border-white/10 bg-white/[0.04] p-5 md:p-6">
-            <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center justify-between gap-4">
               <div>
-                <div className="text-xs tracking-wider uppercase text-white/60">Order</div>
+                <div className="text-xs tracking-wider uppercase text-white/60">
+                  Orders
+                </div>
                 <h1 className="mt-1 text-3xl md:text-4xl font-extrabold text-white">
-                  #{order.order_code || order.id.slice(0, 8)}{" "}
-                  {order.type ? <span className="text-white/70">· {String(order.type).toUpperCase()}</span> : null}
+                  Your orders
                 </h1>
                 <p className="mt-1 text-sm text-white/70">
-                  {order.created_at ? new Date(order.created_at).toLocaleString() : "—"}
+                  Review your requests and shipments.
                 </p>
-              </div>
-              <Link
-                href="/orders"
-                className="inline-flex items-center gap-2 rounded-xl bg-black/40 border border-white/10 px-3 py-2 text-sm text-white hover:bg-black/50"
-              >
-                <ArrowLeft size={16} /> Back to orders
-              </Link>
-            </div>
-          </section>
-
-          {/* Summary */}
-          <section className="rounded-2xl border border-white/10 bg-white/[0.04] p-5 md:p-6">
-            <div className="grid gap-4 sm:grid-cols-3">
-              <div className="rounded-xl border border-white/10 bg-black/30 p-4">
-                <div className="text-xs uppercase tracking-wider text-white/60">Status</div>
-                <div className="mt-1">
-                  <StatusBadge status={order.status} />
-                </div>
-              </div>
-              <div className="rounded-xl border border-white/10 bg-black/30 p-4">
-                <div className="text-xs uppercase tracking-wider text-white/60">Tracking</div>
-                <div className="mt-1 text-sm text-white">
-                  {order.tracking_code ? <span className="inline-flex items-center gap-2"><Truck size={16} /> {order.tracking_code}</span> : "—"}
-                </div>
-              </div>
-              <div className="rounded-xl border border-white/10 bg-black/30 p-4">
-                <div className="text-xs uppercase tracking-wider text-white/60">Total</div>
-                <div className="mt-1 text-sm text-white">
-                  {order.total != null ? `€ ${Number(order.total).toFixed(2)}` : `€ ${subtotal.toFixed(2)}`}
-                </div>
-              </div>
-            </div>
-
-            {/* Address */}
-            <div className="mt-4 rounded-xl border border-white/10 bg-black/30 p-4">
-              <div className="text-xs uppercase tracking-wider text-white/60">Shipping address</div>
-              <div className="mt-1 text-sm text-white/90">
-                {address ? (
-                  <>
-                    <div className="font-semibold">{address.label || "—"}</div>
-                    <div>{address.address || "—"}</div>
-                    <div>{(address.zip || "—")}, {(address.city || "—")} — {(address.country || "—")}</div>
-                  </>
-                ) : "—"}
-              </div>
-            </div>
-          </section>
-
-          {/* Items */}
-          <section className="rounded-2xl border border-white/10 bg-white/[0.04] p-5 md:p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="text-[11px] tracking-wider uppercase text-white/60">Order lines</div>
-                <h3 className="mt-1 text-xl md:text-2xl font-extrabold text-white">Items</h3>
               </div>
               <Link
                 href="/catalog"
@@ -218,54 +125,78 @@ export default async function OrderDetail({ params }: { params: { id: string } }
                 <Rows3 size={16} /> Go to catalog
               </Link>
             </div>
+          </section>
 
-            {items.length === 0 ? (
-              <div className="mt-4 rounded-xl border border-white/10 bg-black/30 p-4 text-sm text-white/80">
-                No items found for this order.
+          {/* Orders list */}
+          <section className="rounded-2xl border border-white/10 bg-white/[0.04] p-5 md:p-6">
+            {list.length === 0 ? (
+              <div className="rounded-xl border border-white/10 bg-black/30 p-5 text-sm text-white/80">
+                No orders yet. Start from the{" "}
+                <Link href="/catalog" className="underline">
+                  catalog
+                </Link>{" "}
+                or create a brief.
               </div>
             ) : (
-              <ul className="mt-4 grid gap-3">
-                {items.map((it) => {
-                  const w = winesById.get(it.wine_id) || {};
-                  const unit = Number(it.unit_price) || 0;
-                  const qty = Number(it.quantity) || 0;
-                  return (
-                    <li key={it.id} className="rounded-xl border border-white/10 bg-black/30 p-4">
-                      <div className="flex items-center gap-4">
-                        <div className="h-14 w-10 rounded bg-white/10 overflow-hidden shrink-0">
-                          {w.image_url ? (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img src={w.image_url as string} alt={(w.name as string) || "Wine"} className="h-full w-full object-cover" />
+              <ul className="grid gap-3">
+                {list.map((o) => (
+                  <li
+                    key={o.id}
+                    className="rounded-xl border border-white/10 bg-black/30 p-4"
+                  >
+                    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                      <div className="min-w-0">
+                        <div className="font-semibold text-white truncate">
+                          #{o.order_code || o.id.slice(0, 8)}{" "}
+                          {o.type ? (
+                            <span className="text-white/70">
+                              · {String(o.type).toUpperCase()}
+                            </span>
                           ) : null}
                         </div>
-                        <div className="min-w-0 flex-1">
-                          <div className="font-semibold text-white truncate">
-                            {(w.name as string) || "Wine"} {w.vintage ? `— ${w.vintage}` : ""}
-                          </div>
-                          <div className="text-xs text-white/70">
-                            {w.winery_name ? `${w.winery_name} · ` : ""}{w.region || ""}
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <div className="text-white text-sm">Qty: {qty}</div>
-                          <div className="text-white/80 text-xs">€ {unit.toFixed(2)}</div>
+                        <div className="text-xs text-white/70 mt-0.5">
+                          {o.created_at
+                            ? new Date(o.created_at).toLocaleString()
+                            : "—"}
                         </div>
                       </div>
-                    </li>
-                  );
-                })}
+
+                      <div className="flex items-center gap-3 shrink-0">
+                        <StatusBadge status={o.status} />
+                        {o.tracking_code ? (
+                          <a
+                            href={`/orders/${o.id}`}
+                            className="inline-flex items-center gap-1 text-sm underline text-white"
+                          >
+                            <Truck size={14} /> Track
+                          </a>
+                        ) : (
+                          <Link
+                            href={`/orders/${o.id}`}
+                            className="text-sm underline text-white"
+                          >
+                            Details
+                          </Link>
+                        )}
+                      </div>
+                    </div>
+                  </li>
+                ))}
               </ul>
             )}
           </section>
         </div>
       </main>
 
+      {/* Footer */}
       <footer className="mt-auto py-6 px-5 text-right text-white/70 text-xs">
         © {new Date().getFullYear()} Wine Connect — SPST
       </footer>
     </div>
   );
 }
+
+/* ============ UI helpers ============ */
 
 function StatusBadge({ status }: { status: string }) {
   const map: Record<string, string> = {
