@@ -19,13 +19,12 @@ type CatalogRow = {
   price_ex_cellar: number | null;
   price_sample: number | null;
   image_url: string | null;
-  created_at?: string | null;
+  created_at: string | null;
 };
 
 type WineRow = {
   id: string;
   name: string | null;
-  // NB: se "winery_name" non esiste su "wines", rimarrà null (ok)
   winery_name: string | null;
   vintage: string | null;
   region: string | null;
@@ -36,7 +35,7 @@ type WineRow = {
 export default async function WineDetail({ params }: { params: { id: string } }) {
   const supa = createSupabaseServer();
 
-  // richiede login
+  // area privata coerente con il resto del sito
   const { data: { user } } = await supa.auth.getUser();
   if (!user) {
     return (
@@ -50,18 +49,16 @@ export default async function WineDetail({ params }: { params: { id: string } })
 
   const wineId = params.id;
 
-  // 1) PRIMA: prendo dalla vista (stessa fonte del catalogo)
+  // 1) PRIMA fonte: RPC su vw_catalog (SECURITY DEFINER)
   let cat: CatalogRow | null = null;
   {
     const { data } = await supa
-      .from("vw_catalog")
-      .select("wine_id,wine_name,winery_name,vintage,region,type,price_ex_cellar,price_sample,image_url,created_at")
-      .eq("wine_id", wineId)
+      .rpc("get_catalog_wine", { _wine_id: wineId })
       .maybeSingle<CatalogRow>();
     cat = data ?? null;
   }
 
-  // 2) FALLBACK: prendo da "wines" (può essere bloccato da RLS o avere meno campi)
+  // 2) FALLBACK: tabella "wines" (in caso volessimo cmq mostrare qualcosa)
   let baseWine: WineRow | null = null;
   if (!cat) {
     const { data } = await supa
@@ -110,8 +107,10 @@ export default async function WineDetail({ params }: { params: { id: string } })
         </nav>
       </header>
 
+      {/* Body */}
       <main className="flex-1 px-5">
         <div className="mx-auto max-w-5xl py-8 space-y-6">
+          {/* Hero */}
           <section className="rounded-2xl border border-white/10 bg-white/[0.04] p-5 md:p-6">
             <div className="flex items-start justify-between gap-4">
               <div className="min-w-0">
@@ -123,7 +122,8 @@ export default async function WineDetail({ params }: { params: { id: string } })
                   {model.winery ? `${model.winery} · ` : ""}{model.region || ""}{model.type ? ` · ${model.type}` : ""}
                 </p>
               </div>
-              <Link href="/catalog" className="inline-flex items-center gap-2 rounded-xl bg-black/40 border border-white/10 px-3 py-2 text-sm text-white hover:bg-black/50 shrink-0">
+              <Link href="/catalog"
+                className="inline-flex items-center gap-2 rounded-xl bg-black/40 border border-white/10 px-3 py-2 text-sm text-white hover:bg-black/50 shrink-0">
                 <ArrowLeft size={16} /> Back to catalog
               </Link>
             </div>
