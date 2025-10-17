@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import Link from "next/link";
 import { createSupabaseServer } from "@/lib/supabase/server";
 import { ArrowLeft, Truck, Rows3 } from "lucide-react";
@@ -11,7 +13,7 @@ type Order = {
   id: string;
   buyer_id: string;
   cart_id: string | null;
-  status: "pending" | "processing" | "shipped" | "completed" | "cancelled" | string;
+  status: string;
   type?: string | null;
   created_at: string | null;
   tracking_code?: string | null;
@@ -19,16 +21,10 @@ type Order = {
   total?: number | null;
 };
 
-export default async function OrderDetail({
-  params,
-}: {
-  params: { id: string };
-}) {
+export default async function OrderDetail({ params }: { params: { id: string } }) {
   const supa = createSupabaseServer();
-  const {
-    data: { user },
-  } = await supa.auth.getUser();
-  if (!user)
+  const { data: { user } } = await supa.auth.getUser();
+  if (!user) {
     return (
       <div className="min-h-screen flex items-center justify-center text-white" style={{ background: WC_BG }}>
         <div className="rounded-xl border border-white/10 bg-white/[0.05] p-6">
@@ -36,29 +32,31 @@ export default async function OrderDetail({
         </div>
       </div>
     );
+  }
 
-  // get buyer id
+  // Buyer id
   const { data: buyer } = await supa
     .from("buyers")
     .select("id")
     .eq("auth_user_id", user.id)
     .maybeSingle();
-  if (!buyer)
+  if (!buyer) {
     return (
       <div className="min-h-screen flex items-center justify-center text-white" style={{ background: WC_BG }}>
         <div className="rounded-xl border border-white/10 bg-white/[0.05] p-6">Buyer profile not found.</div>
       </div>
     );
+  }
 
-  // load order
-  const { data: order, error: orderErr } = await supa
+  // Ordine
+  const { data: order } = await supa
     .from("orders")
     .select("*")
     .eq("id", params.id)
     .eq("buyer_id", buyer.id)
-    .maybeSingle();
+    .maybeSingle<Order>();
 
-  if (orderErr || !order) {
+  if (!order) {
     return (
       <div className="min-h-screen flex items-center justify-center text-white" style={{ background: WC_BG }}>
         <div className="rounded-xl border border-white/10 bg-white/[0.05] p-6">Order not found.</div>
@@ -66,7 +64,7 @@ export default async function OrderDetail({
     );
   }
 
-  // optional: load shipping address snapshot
+  // Address snapshot (se presente)
   let address: any = null;
   if (order.shipping_address_id) {
     const { data: addr } = await supa
@@ -77,16 +75,37 @@ export default async function OrderDetail({
     address = addr || null;
   }
 
-  // load items from the originating cart if present (sample flow)
-  // join wines for display fields; tolerate missing fields
+  // 1) Prova a leggere da order_items (schema corrente)
   let items: any[] = [];
-  if (order.cart_id) {
-    const { data: cartItems } = await supa
-      .from("cart_items")
-      .select("id,quantity,unit_price,wines(name,winery_name,image_url,vintage,region)")
-      .eq("cart_id", order.cart_id);
-    items = cartItems || [];
+  {
+    const { data: oi } = await supa
+      .from("order_items")
+      .select(`
+        id, quantity, unit_price, list_type,
+        wines:wine_id ( name, winery_name, vintage, region, image_url )
+      `)
+      .eq("order_id", order.id);
+    items = oi || [];
   }
+
+  // 2) Fallback: cart_items (ordini più vecchi creati dal carrello)
+  if (!items || items.length === 0) {
+    if (order.cart_id) {
+      const { data: ci } = await supa
+        .from("cart_items")
+        .select(`
+          id, quantity, unit_price, list_type,
+          wines:wine_id ( name, winery_name, vintage, region, image_url )
+        `)
+        .eq("cart_id", order.cart_id);
+      items = ci || [];
+    }
+  }
+
+  const subtotal = (items || []).reduce(
+    (acc: number, it: any) => acc + (Number(it.unit_price) || 0) * (Number(it.quantity) || 0),
+    0
+  );
 
   return (
     <div className="min-h-screen flex flex-col" style={{ background: WC_BG }}>
@@ -151,7 +170,7 @@ export default async function OrderDetail({
               <div className="rounded-xl border border-white/10 bg-black/30 p-4">
                 <div className="text-xs uppercase tracking-wider text-white/60">Total</div>
                 <div className="mt-1 text-sm text-white">
-                  {order.total != null ? `€ ${Number(order.total).toFixed(2)}` : "—"}
+                  {order.total != null ? `€ ${Number(order.total).toFixed(2)}` : `€ ${subtotal.toFixed(2)}`}
                 </div>
               </div>
             </div>
@@ -190,7 +209,7 @@ export default async function OrderDetail({
               </Link>
             </div>
 
-            {items.length === 0 ? (
+            {(!items || items.length === 0) ? (
               <div className="mt-4 rounded-xl border border-white/10 bg-black/30 p-4 text-sm text-white/80">
                 No items found for this order.
               </div>
@@ -198,10 +217,11 @@ export default async function OrderDetail({
               <ul className="mt-4 grid gap-3">
                 {items.map((it: any) => {
                   const w = it.wines || {};
+                  const unit = Number(it.unit_price) || 0;
+                  const qty = Number(it.quantity) || 0;
                   return (
                     <li key={it.id} className="rounded-xl border border-white/10 bg-black/30 p-4">
                       <div className="flex items-center gap-4">
-                        {/* thumb */}
                         <div className="h-14 w-10 rounded bg-white/10 overflow-hidden shrink-0">
                           {w.image_url ? (
                             // eslint-disable-next-line @next/next/no-img-element
@@ -217,10 +237,8 @@ export default async function OrderDetail({
                           </div>
                         </div>
                         <div className="text-right">
-                          <div className="text-white text-sm">Qty: {it.quantity ?? "—"}</div>
-                          <div className="text-white/80 text-xs">
-                            {it.unit_price != null ? `€ ${Number(it.unit_price).toFixed(2)}` : "—"}
-                          </div>
+                          <div className="text-white text-sm">Qty: {qty}</div>
+                          <div className="text-white/80 text-xs">€ {unit.toFixed(2)}</div>
                         </div>
                       </div>
                     </li>
@@ -232,7 +250,6 @@ export default async function OrderDetail({
         </div>
       </main>
 
-      {/* Footer */}
       <footer className="mt-auto py-6 px-5 text-right text-white/70 text-xs">
         © {new Date().getFullYear()} Wine Connect — SPST
       </footer>
