@@ -64,11 +64,7 @@ async function getCatalog(searchParams: SP) {
 }
 
 /* ---------- Page ---------- */
-export default async function Catalog({
-  searchParams,
-}: {
-  searchParams: SP;
-}) {
+export default async function Catalog({ searchParams }: { searchParams: SP }) {
   const { items, total, page, pages } = await getCatalog(searchParams);
 
   const q = searchParams.q ?? "";
@@ -214,37 +210,43 @@ export default async function Catalog({
             </div>
           </form>
 
-          {/* Grid */}
-          <ul className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {/* Grid -> 4 colonne su desktop largo */}
+          <ul className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {items.map((w: any) => (
               <li
                 key={w.wine_id}
                 className="rounded-2xl border border-white/10 bg-white/[0.04] hover:bg-white/[0.06] transition overflow-hidden"
               >
-                {/* image */}
-                <div className="aspect-square bg-black/30 grid place-items-center overflow-hidden">
-                  {w.image_url ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={w.image_url}
-                      alt={w.wine_name || "Wine"}
-                      className="h-full w-full object-cover"
-                    />
-                  ) : (
-                    <div className="text-white/30 text-xs">No image</div>
-                  )}
-                </div>
+                {/* IMAGE (click apre dettaglio) */}
+                <Link href={`/wines/${w.wine_id}`} className="block">
+                  <div className="aspect-square bg-black/30 grid place-items-center overflow-hidden">
+                    {w.image_url ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={w.image_url}
+                        alt={w.wine_name || "Wine"}
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      <div className="text-white/30 text-xs">No image</div>
+                    )}
+                  </div>
+                </Link>
 
-                {/* body */}
+                {/* BODY */}
                 <div className="p-4">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
-                      <div className="font-semibold text-white truncate">
+                      {/* TITOLO (click apre dettaglio) */}
+                      <Link
+                        href={`/wines/${w.wine_id}`}
+                        className="font-semibold text-white truncate hover:underline"
+                      >
                         {w.wine_name}{" "}
                         {w.vintage ? (
                           <span className="text-white/60">({w.vintage})</span>
                         ) : null}
-                      </div>
+                      </Link>
                       <div className="text-sm text-white/70 truncate">
                         {w.winery_name} · {w.region} · {w.type}
                       </div>
@@ -298,7 +300,9 @@ export default async function Catalog({
             <div className="mt-8 flex items-center justify-center gap-2">
               {Array.from({ length: pages }, (_, i) => i + 1).map((p) => {
                 const params = new URLSearchParams({
-                  ...Object.fromEntries(Object.entries(searchParams).map(([k, v]) => [k, String(v ?? "")])),
+                  ...Object.fromEntries(
+                    Object.entries(searchParams).map(([k, v]) => [k, String(v ?? "")])
+                  ),
                   page: String(p),
                 });
                 return (
