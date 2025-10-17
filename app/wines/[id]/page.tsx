@@ -4,13 +4,17 @@ import Link from "next/link";
 import { createSupabaseServer } from "@/lib/supabase/server";
 import { ArrowLeft } from "lucide-react";
 
-const WC_BG =
+const BG =
   "radial-gradient(120% 120% at 50% -10%, #1c3e5e 0%, #0a1722 60%, #000 140%)";
 
-export default async function WineDetail({ params }: { params: { id: string } }) {
+export default async function WineDetail({
+  params,
+}: {
+  params: { id: string };
+}) {
   const supa = createSupabaseServer();
 
-  // === Fetch Wine Details ===
+  // Dettaglio vino dalla VIEW
   const { data: wine } = await supa
     .from("vw_wine_details")
     .select("*")
@@ -20,17 +24,17 @@ export default async function WineDetail({ params }: { params: { id: string } })
   if (!wine) {
     return (
       <div
-        className="min-h-screen flex items-center justify-center text-white"
-        style={{ background: WC_BG }}
+        className="min-h-screen grid place-items-center text-white/80"
+        style={{ background: BG }}
       >
-        <div className="rounded-xl border border-white/10 bg-white/[0.05] p-6">
+        <div className="rounded-xl border border-white/10 bg-white/[0.06] px-4 py-3">
           Wine not found.
         </div>
       </div>
     );
   }
 
-  // === Recommended Wines (stesso tipo e regione) ===
+  // Semplici "consigliati": stesso type, escluso quello attuale
   const { data: recommended } = await supa
     .from("vw_wine_details")
     .select("id, name, vintage, type, price_sample, wine_image_url, winery_name, winery_region")
@@ -39,8 +43,8 @@ export default async function WineDetail({ params }: { params: { id: string } })
     .limit(3);
 
   return (
-    <div className="min-h-screen" style={{ background: WC_BG }}>
-      {/* Header */}
+    <div className="min-h-screen" style={{ background: BG }}>
+      {/* Topbar */}
       <header className="h-14 flex items-center justify-between px-5">
         <Link href="/catalog" className="flex items-center gap-2 text-white">
           <img src="/wc-logo.png" alt="Wine Connect" className="h-6 w-auto" />
@@ -50,26 +54,38 @@ export default async function WineDetail({ params }: { params: { id: string } })
           <Link className="text-white/80 hover:text-white" href="/cart/samples">
             Sample Cart
           </Link>
-          <Link className="text-white/80 hover:text-white" href="/orders">
-            Orders
+          <Link className="text-white/80 hover:text-white" href="/profile">
+            Profile
           </Link>
         </nav>
       </header>
 
-      {/* Body */}
       <main className="px-5">
-        <div className="mx-auto max-w-6xl py-8 space-y-8">
-          {/* Back button */}
-          <Link
-            href="/catalog"
-            className="inline-flex items-center gap-2 text-white/70 hover:text-white text-sm"
-          >
-            <ArrowLeft size={14} /> Back to catalog
-          </Link>
+        <div className="mx-auto max-w-6xl py-6 space-y-6">
+          {/* Breadcrumb / back */}
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="text-xs uppercase tracking-wider text-white/60">
+                Catalog
+              </div>
+              <h1 className="text-3xl font-extrabold text-white">
+                {wine.name} {wine.vintage ? `(${wine.vintage})` : ""}
+              </h1>
+              <p className="text-white/70 text-sm">
+                {wine.winery_name} · {wine.winery_region || "—"} · {wine.type}
+              </p>
+            </div>
+            <Link
+              href="/catalog"
+              className="inline-flex items-center gap-2 rounded-xl bg-white/10 border border-white/10 px-3 py-2 text-sm text-white hover:bg-white/15"
+            >
+              <ArrowLeft size={16} /> Back to catalog
+            </Link>
+          </div>
 
-          {/* === TOP SECTION === */}
+          {/* HERO: immagine (sx) + winery/buy (dx) */}
           <div className="grid grid-cols-1 md:grid-cols-[380px_1fr] gap-6 items-start">
-            {/* Wine Image */}
+            {/* Image */}
             <div className="rounded-2xl border border-white/10 bg-white/[0.04] overflow-hidden">
               <div className="aspect-[3/4] bg-black/30">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -81,9 +97,9 @@ export default async function WineDetail({ params }: { params: { id: string } })
               </div>
             </div>
 
-            {/* RIGHT COLUMN */}
+            {/* Right column */}
             <div className="flex flex-col gap-4">
-              {/* Winery Card */}
+              {/* WINERY */}
               <Link
                 href={`/wineries/${wine.winery_id}`}
                 className="block rounded-2xl border border-white/10 bg-white/[0.05] p-4 hover:bg-white/[0.08] transition"
@@ -97,30 +113,32 @@ export default async function WineDetail({ params }: { params: { id: string } })
                 <div className="text-sm text-white/70">{wine.winery_region}</div>
               </Link>
 
-              {/* Buy Sample Card */}
+              {/* BUY SAMPLE */}
               <div className="rounded-2xl border border-white/10 bg-white/[0.05] p-4">
                 <div className="text-xs uppercase tracking-wider text-white/60 mb-2">
-                  Buy Sample
+                  Buy sample
                 </div>
-                <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
-                  <div>
-                    <div className="text-white text-sm">
-                      <span className="text-white/60">Ex-cellar:</span>{" "}
+
+                <div className="grid grid-cols-1 sm:grid-cols-[1fr_1fr_auto] gap-3 items-end">
+                  {/* Prezzi */}
+                  <div className="rounded-lg border border-white/10 bg-black/30 p-3">
+                    <div className="text-xs text-white/60">Ex-cellar</div>
+                    <div className="text-white font-medium">
                       €{Number(wine.price_ex_cellar ?? 0).toFixed(2)}
                     </div>
-                    <div className="text-white text-sm">
-                      <span className="text-white/60">Sample:</span>{" "}
+                  </div>
+                  <div className="rounded-lg border border-white/10 bg-black/30 p-3">
+                    <div className="text-xs text-white/60">Sample</div>
+                    <div className="text-white font-medium">
                       €{Number(wine.price_sample ?? 0).toFixed(2)}
-                    </div>
-                    <div className="text-white/70 text-xs mt-1">
-                      MOQ: {wine.moq || 0} bottles
                     </div>
                   </div>
 
+                  {/* Qty + Add */}
                   <form
                     action="/api/cart/add"
                     method="post"
-                    className="flex items-center gap-2"
+                    className="flex items-center gap-2 justify-end"
                   >
                     <input type="hidden" name="wineId" value={wine.id} />
                     <input type="hidden" name="listType" value="sample" />
@@ -135,42 +153,51 @@ export default async function WineDetail({ params }: { params: { id: string } })
                       className="rounded-lg px-3 py-2 text-sm font-semibold text-[#0f1720]"
                       style={{ background: "#E33955" }}
                     >
-                      Add
+                      Add sample
                     </button>
                   </form>
+                </div>
+
+                <div className="text-white/60 text-xs mt-2">
+                  MOQ: {wine.moq || 0} bottles
                 </div>
               </div>
             </div>
           </div>
 
-          {/* === DETAILS SECTION === */}
+          {/* DETTAGLI + DESCRIZIONE */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Technical Details */}
+            {/* Technical */}
             <div className="rounded-2xl border border-white/10 bg-white/[0.05] p-5">
-              <h2 className="text-lg font-semibold text-white mb-3">
-                Technical Details
-              </h2>
+              <div className="text-xs uppercase tracking-wider text-white/60 mb-2">
+                Wine details
+              </div>
               <ul className="space-y-1 text-sm text-white/80">
                 <li>
-                  <strong className="text-white">Type:</strong> {wine.type}
+                  <span className="text-white">Type:</span> {wine.type || "—"}
                 </li>
                 <li>
-                  <strong className="text-white">Vintage:</strong> {wine.vintage}
+                  <span className="text-white">Vintage:</span>{" "}
+                  {wine.vintage || "—"}
                 </li>
                 <li>
-                  <strong className="text-white">Grape variety:</strong>{" "}
-                  {wine.grape_variety}
+                  <span className="text-white">Region:</span>{" "}
+                  {wine.winery_region || "—"}
                 </li>
                 <li>
-                  <strong className="text-white">Alcohol:</strong>{" "}
-                  {wine.alcohol_percent}%
+                  <span className="text-white">Grape variety:</span>{" "}
+                  {wine.grape_variety || "—"}
                 </li>
                 <li>
-                  <strong className="text-white">Bottle size:</strong>{" "}
-                  {wine.bottle_size}
+                  <span className="text-white">Alcohol:</span>{" "}
+                  {wine.alcohol_percent ? `${wine.alcohol_percent}%` : "—"}
                 </li>
                 <li>
-                  <strong className="text-white">Certifications:</strong>{" "}
+                  <span className="text-white">Bottle size:</span>{" "}
+                  {wine.bottle_size || "—"}
+                </li>
+                <li>
+                  <span className="text-white">Certifications:</span>{" "}
                   {wine.certifications || "—"}
                 </li>
               </ul>
@@ -178,21 +205,21 @@ export default async function WineDetail({ params }: { params: { id: string } })
 
             {/* Description */}
             <div className="rounded-2xl border border-white/10 bg-white/[0.05] p-5">
-              <h2 className="text-lg font-semibold text-white mb-3">
+              <div className="text-xs uppercase tracking-wider text-white/60 mb-2">
                 Description
-              </h2>
+              </div>
               <p className="text-sm text-white/80 leading-relaxed">
-                {wine.description || "No description available."}
+                {wine.description || "—"}
               </p>
             </div>
           </div>
 
-          {/* === RECOMMENDED WINES === */}
+          {/* RECOMMENDED */}
           {recommended && recommended.length > 0 && (
-            <div>
-              <h2 className="text-xl font-bold text-white mb-3">
-                Recommended Wines
-              </h2>
+            <section>
+              <div className="text-xs uppercase tracking-wider text-white/60 mb-2">
+                Recommended
+              </div>
               <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {recommended.map((r) => (
                   <li
@@ -203,15 +230,17 @@ export default async function WineDetail({ params }: { params: { id: string } })
                       <div className="aspect-square bg-black/30 overflow-hidden">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
-                          src={r.wine_image_url}
+                          src={r.wine_image_url || "/placeholder.png"}
                           alt={r.name}
                           className="w-full h-full object-cover"
                         />
                       </div>
                       <div className="p-4 text-white">
-                        <div className="font-semibold truncate">{r.name}</div>
+                        <div className="font-semibold truncate">
+                          {r.name} {r.vintage ? `(${r.vintage})` : ""}
+                        </div>
                         <div className="text-sm text-white/70 truncate">
-                          {r.winery_name} · {r.winery_region}
+                          {r.winery_name} · {r.winery_region || "—"}
                         </div>
                         <div className="text-sm text-white mt-1">
                           €{Number(r.price_sample ?? 0).toFixed(2)} sample
@@ -221,7 +250,7 @@ export default async function WineDetail({ params }: { params: { id: string } })
                   </li>
                 ))}
               </ul>
-            </div>
+            </section>
           )}
         </div>
       </main>
