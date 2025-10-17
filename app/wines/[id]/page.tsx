@@ -9,6 +9,16 @@ const BG =
   "radial-gradient(120% 120% at 50% -10%, #1c3e5e 0%, #0a1722 60%, #000 140%)";
 const WC_PINK = "#E33955";
 
+type WineRow = {
+  id: string;
+  name: string | null;
+  winery_name: string | null; // se in schema è diverso, rimane null (ok)
+  vintage: string | null;
+  region: string | null;
+  type: string | null;
+  image_url: string | null;
+};
+
 type CatalogRow = {
   wine_id: string;
   wine_name: string | null;
@@ -22,34 +32,14 @@ type CatalogRow = {
   created_at?: string | null;
 };
 
-type WineRow = {
-  id: string;
-  name: string | null;
-  winery_name: string | null;
-  vintage: string | null;
-  region: string | null;
-  type: string | null;
-  image_url: string | null;
-  available?: boolean | null;
-};
-
-export default async function WineDetail({
-  params,
-}: {
-  params: { id: string };
-}) {
+export default async function WineDetail({ params }: { params: { id: string } }) {
   const supa = createSupabaseServer();
 
-  // Gate: richiedi login come il resto dell’area privata
-  const {
-    data: { user },
-  } = await supa.auth.getUser();
+  // richiede login coerente con area privata
+  const { data: { user } } = await supa.auth.getUser();
   if (!user) {
     return (
-      <div
-        className="min-h-screen grid place-items-center text-white"
-        style={{ background: BG }}
-      >
+      <div className="min-h-screen grid place-items-center text-white" style={{ background: BG }}>
         <div className="rounded-2xl border border-white/10 bg-white/[0.06] p-6">
           Please <a className="underline" href="/login">sign in</a> to view this wine.
         </div>
@@ -59,64 +49,46 @@ export default async function WineDetail({
 
   const wineId = params.id;
 
-  // 1) Prova dalla vista "vw_catalog" (contiene prezzi + image_url consolidata)
-  let wine: CatalogRow | null = null;
-  {
-    const { data, error } = await supa
-      .from("vw_catalog")
-      .select(
-        "wine_id,wine_name,winery_name,vintage,region,type,price_ex_cellar,price_sample,image_url,created_at"
-      )
-      .eq("wine_id", wineId)
-      .limit(1);
+  // 1) Base: prendo SEMPRE la riga da "wines" per garantire il dettaglio
+  const { data: baseWine } = await supa
+    .from("wines")
+    .select("id,name,winery_name,vintage,region,type,image_url")
+    .eq("id", wineId)
+    .maybeSingle<WineRow>();
 
-    if (!error && data && data.length > 0) {
-      wine = data[0] as CatalogRow;
-    }
-  }
-
-  // 2) Fallback su "wines" (se la vista non ha la riga o RLS blocca)
-  let fallbackWine: WineRow | null = null;
-  if (!wine) {
-    const { data } = await supa
-      .from("wines")
-      .select("id,name,winery_name,vintage,region,type,image_url,available")
-      .eq("id", wineId)
-      .maybeSingle();
-    if (data) {
-      fallbackWine = data as WineRow;
-    }
-  }
-
-  // Se proprio nulla
-  if (!wine && !fallbackWine) {
+  if (!baseWine) {
     return (
-      <div
-        className="min-h-screen grid place-items-center text-white"
-        style={{ background: BG }}
-      >
+      <div className="min-h-screen grid place-items-center text-white" style={{ background: BG }}>
         <div className="rounded-2xl border border-white/10 bg-white/[0.06] px-5 py-4 text-center">
-          Wine not found.{" "}
-          <a className="underline" href="/catalog">
-            Back to catalog
-          </a>
+          Wine not found. <a className="underline" href="/catalog">Back to catalog</a>
         </div>
       </div>
     );
   }
 
-  // Normalizza i dati per la view
+  // 2) Extra: prezzi/immagine consolidata dalla vista (se disponibile)
+  let cat: CatalogRow | null = null;
+  {
+    const { data } = await supa
+      .from("vw_catalog")
+      .select("wine_id,wine_name,winery_name,vintage,region,type,price_ex_cellar,price_sample,image_url,created_at")
+      .eq("wine_id", wineId)
+      .maybeSingle<CatalogRow>();
+    cat = data ?? null;
+  }
+
+  // 3) Merge dei dati (fallback su wines, override con vw_catalog se presenti)
   const model = {
-    id: wine?.wine_id ?? (fallbackWine?.id as string),
-    name: wine?.wine_name ?? fallbackWine?.name ?? "Wine",
-    winery: wine?.winery_name ?? fallbackWine?.winery_name ?? "",
-    vintage: wine?.vintage ?? fallbackWine?.vintage ?? "",
-    region: wine?.region ?? fallbackWine?.region ?? "",
-    type: wine?.type ?? fallbackWine?.type ?? "",
-    img: wine?.image_url ?? fallbackWine?.image_url ?? null,
-    priceEx: wine?.price_ex_cellar ?? null,
-    priceSample: wine?.price_sample ?? null,
-    createdAt: wine?.created_at ?? null,
+    id: wineId,
+    name: cat?.wine_name ?? baseWine.name ?? "Wine",
+    winery: cat?.winery_name ?? baseWine.winery_name ?? "",
+    vintage: cat?.vintage ?? baseWine.vintage ?? "",
+    region: cat?.region ?? baseWine.region ?? "",
+    type: cat?.type ?? baseWine.type ?? "",
+    img: (cat?.image_url ?? baseWine.image_url) || null,
+    priceEx: cat?.price_ex_cellar ?? null,
+    priceSample: cat?.price_sample ?? null,
+    createdAt: cat?.created_at ?? null,
   };
 
   return (
@@ -128,15 +100,9 @@ export default async function WineDetail({
           <span className="font-semibold">Wine Connect</span>
         </Link>
         <nav className="flex items-center gap-5 text-sm">
-          <Link className="text-white/80 hover:text-white" href="/catalog">
-            Catalog
-          </Link>
-          <Link className="text-white/80 hover:text-white" href="/cart/samples">
-            Sample Cart
-          </Link>
-          <Link className="text-white/80 hover:text-white" href="/profile">
-            Profile
-          </Link>
+          <Link className="text-white/80 hover:text-white" href="/catalog">Catalog</Link>
+          <Link className="text-white/80 hover:text-white" href="/cart/samples">Sample Cart</Link>
+          <Link className="text-white/80 hover:text-white" href="/profile">Profile</Link>
         </nav>
       </header>
 
@@ -147,122 +113,64 @@ export default async function WineDetail({
           <section className="rounded-2xl border border-white/10 bg-white/[0.04] p-5 md:p-6">
             <div className="flex items-start justify-between gap-4">
               <div className="min-w-0">
-                <div className="text-xs uppercase tracking-wider text-white/60">
-                  Catalog
-                </div>
+                <div className="text-xs uppercase tracking-wider text-white/60">Catalog</div>
                 <h1 className="mt-1 text-3xl md:text-4xl font-extrabold text-white">
-                  {model.name}
-                  {model.vintage ? (
-                    <span className="text-white/70"> ({model.vintage})</span>
-                  ) : null}
+                  {model.name}{model.vintage ? <span className="text-white/70"> ({model.vintage})</span> : null}
                 </h1>
                 <p className="mt-1 text-sm text-white/70">
-                  {model.winery ? `${model.winery} · ` : ""}
-                  {model.region || ""}
-                  {model.type ? ` · ${model.type}` : ""}
+                  {model.winery ? `${model.winery} · ` : ""}{model.region || ""}{model.type ? ` · ${model.type}` : ""}
                 </p>
               </div>
-              <Link
-                href="/catalog"
-                className="inline-flex items-center gap-2 rounded-xl bg-black/40 border border-white/10 px-3 py-2 text-sm text-white hover:bg-black/50 shrink-0"
-              >
+              <Link href="/catalog"
+                className="inline-flex items-center gap-2 rounded-xl bg-black/40 border border-white/10 px-3 py-2 text-sm text-white hover:bg-black/50 shrink-0">
                 <ArrowLeft size={16} /> Back to catalog
               </Link>
             </div>
 
-            {/* Content */}
             <div className="mt-6 grid gap-6 md:grid-cols-2">
               {/* Image */}
               <div className="rounded-2xl border border-white/10 bg-black/30 p-4 flex items-center justify-center">
                 {model.img ? (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={model.img}
-                    alt={model.name}
-                    className="max-h-[520px] w-auto object-contain"
-                  />
+                  <img src={model.img} alt={model.name} className="max-h-[520px] w-auto object-contain" />
                 ) : (
-                  <div className="w-full h-[420px] grid place-items-center text-white/50">
-                    No image
-                  </div>
+                  <div className="w-full h-[420px] grid place-items-center text-white/50">No image</div>
                 )}
               </div>
 
               {/* Info + Add sample */}
               <div className="space-y-4">
                 <div className="rounded-2xl border border-white/10 bg-black/30 p-4">
-                  <div className="text-xs uppercase tracking-wider text-white/60">
-                    Prices
-                  </div>
+                  <div className="text-xs uppercase tracking-wider text-white/60">Prices</div>
                   <div className="mt-2 text-white/90 space-y-1">
-                    <div>
-                      Ex-cellar:{" "}
-                      <span className="font-semibold">
-                        € {Number(model.priceEx ?? 0).toFixed(2)}
-                      </span>
-                    </div>
-                    <div>
-                      Sample:{" "}
-                      <span className="font-semibold">
-                        € {Number(model.priceSample ?? 0).toFixed(2)}
-                      </span>
-                    </div>
+                    <div>Ex-cellar: <span className="font-semibold">€ {Number(model.priceEx ?? 0).toFixed(2)}</span></div>
+                    <div>Sample: <span className="font-semibold">€ {Number(model.priceSample ?? 0).toFixed(2)}</span></div>
                   </div>
                 </div>
 
-                {/* Add sample form (inline, compatibile con /api/cart/add) */}
-                <form
-                  action="/api/cart/add"
-                  method="post"
-                  className="rounded-2xl border border-white/10 bg-black/30 p-4 space-y-3"
-                >
+                {/* Add sample form */}
+                <form action="/api/cart/add" method="post" className="rounded-2xl border border-white/10 bg-black/30 p-4 space-y-3">
                   <input type="hidden" name="listType" value="sample" />
                   <input type="hidden" name="wineId" value={model.id} />
                   <label className="block text-sm text-white/80">Quantity</label>
                   <div className="flex items-center gap-3">
-                    <input
-                      type="number"
-                      name="qty"
-                      min={1}
-                      defaultValue={1}
-                      className="w-24 rounded-lg bg-black/30 border border-white/10 px-3 py-2 text-white"
-                    />
-                    <button
-                      className="inline-flex items-center gap-2 rounded-xl px-4 py-2 font-semibold text-[#0f1720]"
-                      style={{ background: WC_PINK }}
-                    >
+                    <input type="number" name="qty" min={1} defaultValue={1}
+                      className="w-24 rounded-lg bg-black/30 border border-white/10 px-3 py-2 text-white" />
+                    <button className="inline-flex items-center gap-2 rounded-xl px-4 py-2 font-semibold text-[#0f1720]"
+                      style={{ background: WC_PINK }}>
                       <ShoppingBasket size={16} /> Add sample
                     </button>
                   </div>
-                  <p className="text-xs text-white/60">
-                    Adding a sample puts this wine into your sample cart.
-                  </p>
+                  <p className="text-xs text-white/60">Adding a sample puts this wine into your sample cart.</p>
                 </form>
 
-                {/* Meta */}
                 <div className="rounded-2xl border border-white/10 bg-black/30 p-4">
-                  <div className="text-xs uppercase tracking-wider text-white/60">
-                    Details
-                  </div>
+                  <div className="text-xs uppercase tracking-wider text-white/60">Details</div>
                   <ul className="mt-2 text-sm text-white/90 space-y-1">
-                    <li>
-                      <span className="text-white/60">Winery:</span>{" "}
-                      {model.winery || "—"}
-                    </li>
-                    <li>
-                      <span className="text-white/60">Region:</span>{" "}
-                      {model.region || "—"}
-                    </li>
-                    <li>
-                      <span className="text-white/60">Type:</span>{" "}
-                      {model.type || "—"}
-                    </li>
-                    <li>
-                      <span className="text-white/60">Catalog since:</span>{" "}
-                      {model.createdAt
-                        ? new Date(model.createdAt).toLocaleDateString()
-                        : "—"}
-                    </li>
+                    <li><span className="text-white/60">Winery:</span> {model.winery || "—"}</li>
+                    <li><span className="text-white/60">Region:</span> {model.region || "—"}</li>
+                    <li><span className="text-white/60">Type:</span> {model.type || "—"}</li>
+                    <li><span className="text-white/60">Catalog since:</span> {model.createdAt ? new Date(model.createdAt).toLocaleDateString() : "—"}</li>
                   </ul>
                 </div>
               </div>
@@ -271,7 +179,6 @@ export default async function WineDetail({
         </div>
       </main>
 
-      {/* Footer */}
       <footer className="mt-auto py-6 px-5 text-right text-white/70 text-xs">
         © {new Date().getFullYear()} Wine Connect — SPST
       </footer>
