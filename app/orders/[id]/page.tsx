@@ -17,7 +17,7 @@ type Order = {
   created_at: string | null;
   tracking_code?: string | null;
   shipping_address_id?: string | null;
-  totals?: number | null;          // <-- usa 'totals'
+  totals?: number | null;          // usa 'totals'
   order_code?: string | null;
 };
 
@@ -103,7 +103,6 @@ export default async function OrderDetail({ params }: { params: { id: string } }
       .eq("order_id", order.id);
     if (oi?.length) items = oi as Item[];
   }
-
   // 2) Fallback a cart_items (legacy)
   if ((!items || items.length === 0) && order.cart_id) {
     const { data: ci } = await supa
@@ -113,16 +112,36 @@ export default async function OrderDetail({ params }: { params: { id: string } }
     items = (ci || []) as Item[];
   }
 
-  // 3) Lookup wines (query separata, niente join implicite)
+  // 3) Lookup wines tramite vw_catalog (no RLS, include image_url e wine_name)
   const winesById: Map<string, Wine> = new Map();
   if (items.length > 0) {
     const wineIds = Array.from(new Set(items.map((i) => i.wine_id))).filter(Boolean);
+
     if (wineIds.length > 0) {
-      const { data: wines } = await supa
-        .from("wines")
-        .select("id, name, winery_name, vintage, region, image_url")
-        .in("id", wineIds);
-      (wines || []).forEach((w) => winesById.set((w as any).id, w as Wine));
+      type CatalogRow = {
+        wine_id: string;
+        wine_name: string | null;
+        winery_name: string | null;
+        vintage: string | null;
+        region: string | null;
+        image_url: string | null;
+      };
+
+      const { data: vwc } = await supa
+        .from("vw_catalog")
+        .select("wine_id, wine_name, winery_name, vintage, region, image_url")
+        .in("wine_id", wineIds);
+
+      (vwc as CatalogRow[] | null || []).forEach((r) => {
+        winesById.set(r.wine_id, {
+          id: r.wine_id,
+          name: r.wine_name,
+          winery_name: r.winery_name,
+          vintage: r.vintage,
+          region: r.region,
+          image_url: r.image_url,
+        });
+      });
     }
   }
 
@@ -233,7 +252,7 @@ export default async function OrderDetail({ params }: { params: { id: string } }
             </div>
 
             {items.length === 0 ? (
-              <div className="mt-4 rounded-xl border border-white/10 bg-black/30 p-4 text-sm text-white/80">
+              <div className="mt-4 rounded-2xl border border-white/10 bg-black/30 p-4 text-sm text-white/80">
                 No items found for this order.
               </div>
             ) : (
@@ -249,7 +268,7 @@ export default async function OrderDetail({ params }: { params: { id: string } }
                           {w?.image_url ? (
                             // eslint-disable-next-line @next/next/no-img-element
                             <img
-                              src={w.image_url || ""}
+                              src={w.image_url}
                               alt={w?.name || "Wine"}
                               className="h-full w-full object-cover"
                             />
@@ -288,7 +307,7 @@ function StatusBadge({ status }: { status: string }) {
   const map: Record<string, string> = {
     pending: "bg-yellow-500/15 text-yellow-300 border-yellow-500/30",
     processing: "bg-blue-500/15 text-blue-300 border-blue-500/30",
-    shipped: "bg-purple-500/15 text-purple-500 border-purple-500/30",
+    shipped: "bg-purple-500/15 text-purple-300 border-purple-500/30",
     completed: "bg-emerald-500/15 text-emerald-300 border-emerald-500/30",
     cancelled: "bg-red-500/15 text-red-300 border-red-500/30",
   };
