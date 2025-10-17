@@ -157,21 +157,21 @@ export default async function OrdersPage() {
 
                       <div className="flex items-center gap-3 shrink-0">
                         <StatusBadge status={o.status} />
-                        {o.tracking_code ? (
-                          <a
-                            href={`/orders/${o.id}`}
-                            className="inline-flex items-center gap-1 text-sm underline"
-                          >
-                            <Truck size={14} /> Track
-                          </a>
-                        ) : (
-                          <Link
-                            href={`/orders/${o.id}`}
-                            className="text-sm underline"
-                          >
-                            Details
-                          </Link>
-                        )}
+                       { o.tracking_code ? (
+  <a
+    href={`/orders/${o.id}`}
+    className="inline-flex items-center gap-1 text-sm underline text-white"
+  >
+    <Truck size={14} /> Track
+  </a>
+) : (
+  <Link
+    href={`/orders/${o.id}`}
+    className="text-sm underline text-white"
+  >
+    Details
+  </Link>
+)}
                       </div>
                     </div>
                   </li>
@@ -195,7 +195,7 @@ export default async function OrdersPage() {
 function StatusBadge({
   status,
 }: {
-  status: OrderRow["status"];
+  status: string;
 }) {
   const map: Record<string, string> = {
     pending: "bg-yellow-500/15 text-yellow-300 border-yellow-500/30",
@@ -205,11 +205,11 @@ function StatusBadge({
     cancelled: "bg-red-500/15 text-red-300 border-red-500/30",
   };
   const cls =
-    map[status] ??
-    "bg-white/10 text-white/80 border-white/20";
-  return (
+    map[status] ?? "bg-white/10 text-white/80 border-white/20";
+
+ return (
     <span className={`text-xs px-2.5 py-1 rounded-full border ${cls}`}>
-      {status}
+      {String(status).toUpperCase()}
     </span>
   );
 }
