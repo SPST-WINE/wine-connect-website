@@ -1,4 +1,3 @@
-// app/wines/[id]/page.tsx
 export const dynamic = "force-dynamic";
 
 import Link from "next/link";
@@ -9,7 +8,7 @@ const BG =
   "radial-gradient(120% 120% at 50% -10%, #1c3e5e 0%, #0a1722 60%, #000 140%)";
 const WC_PINK = "#E33955";
 
-/* ----------------- Types (elastici) ----------------- */
+/* ----------------- Types ----------------- */
 type CatalogRow = {
   wine_id: string;
   wine_name: string | null;
@@ -48,7 +47,6 @@ type WineryRow = {
 export default async function WineDetail({ params }: { params: { id: string } }) {
   const supa = createSupabaseServer();
 
-  // auth req
   const { data: { user } } = await supa.auth.getUser();
   if (!user) {
     return (
@@ -62,7 +60,7 @@ export default async function WineDetail({ params }: { params: { id: string } })
 
   const wineId = params.id;
 
-  // 1) dalla view (RPC)
+  // dalla view
   let cat: CatalogRow | null = null;
   {
     const { data } = await supa
@@ -71,7 +69,7 @@ export default async function WineDetail({ params }: { params: { id: string } })
     cat = data ?? null;
   }
 
-  // 2) arricchimento da wines
+  // arricchimento
   let baseWine: WineRow | null = null;
   {
     const { data } = await supa
@@ -82,7 +80,7 @@ export default async function WineDetail({ params }: { params: { id: string } })
     baseWine = data ?? null;
   }
 
-  // 3) winery details (se c'è)
+  // winery
   let winery: WineryRow | null = null;
   if (baseWine?.winery_id) {
     const { data } = await supa
@@ -103,7 +101,6 @@ export default async function WineDetail({ params }: { params: { id: string } })
     );
   }
 
-  // modello consolidato
   const model = {
     id: wineId,
     name: (cat?.wine_name ?? baseWine?.name) || "Wine",
@@ -124,10 +121,7 @@ export default async function WineDetail({ params }: { params: { id: string } })
     wineryImage: winery?.image_url || winery?.logo_url || null,
   };
 
-  /* 4) Recommended: 3 elementi
-       - prima per stessa winery_name (escludendo questo vino)
-       - fallback: stesso type o stessa region
-  */
+  // Recommended
   let recs: CatalogRow[] = [];
   if (model.wineryName) {
     const { data } = await supa
@@ -146,7 +140,6 @@ export default async function WineDetail({ params }: { params: { id: string } })
       .or(`type.ilike.${model.type || " "},region.ilike.${model.region || " "}`)
       .limit(3);
     const fallback = (data as CatalogRow[]) ?? [];
-    // evita duplicati
     const ids = new Set(recs.map(r => r.wine_id));
     recs.push(...fallback.filter(f => !ids.has(f.wine_id)).slice(0, 3 - recs.length));
   }
@@ -195,7 +188,8 @@ export default async function WineDetail({ params }: { params: { id: string } })
               </Link>
             </div>
 
-            <div className="mt-6 grid gap-6 md:grid-cols-2">
+            {/* Top grid */}
+            <div className="mt-6 grid gap-6 md:grid-cols-2 items-start">
               {/* IMAGE (più piccola) */}
               <div className="rounded-2xl border border-white/10 bg-black/30 p-4 flex items-center justify-center">
                 {model.img ? (
@@ -203,18 +197,18 @@ export default async function WineDetail({ params }: { params: { id: string } })
                   <img
                     src={model.img}
                     alt={model.name}
-                    className="max-h-[360px] w-auto object-contain"
+                    className="max-h-[300px] w-auto object-contain"
                   />
                 ) : (
-                  <div className="w-full h-[320px] grid place-items-center text-white/50">
+                  <div className="w-full h-[260px] grid place-items-center text-white/50">
                     No image
                   </div>
                 )}
               </div>
 
-              {/* RIGHT COLUMN */}
+              {/* RIGHT column: Winery + Buy sample */}
               <div className="space-y-4">
-                {/* WINERY (sopra) */}
+                {/* WINERY */}
                 <div className="rounded-2xl border border-white/10 bg-black/30 p-4">
                   <div className="text-xs uppercase tracking-wider text-white/60">
                     Winery
@@ -243,7 +237,7 @@ export default async function WineDetail({ params }: { params: { id: string } })
                   </div>
                 </div>
 
-                {/* BUY SAMPLE (prezzi + qty + CTA ben distribuiti) */}
+                {/* BUY SAMPLE */}
                 <form
                   action="/api/cart/add"
                   method="post"
@@ -257,13 +251,13 @@ export default async function WineDetail({ params }: { params: { id: string } })
                   </div>
 
                   <div className="mt-3 grid grid-cols-2 gap-3">
-                    <div className="rounded-xl border border-white/10 bg-white/[0.02] p-3">
+                    <div className="rounded-xl border border-white/10 bg-white/[0.02] p-3 text-white">
                       <div className="text-white/60 text-xs">Ex-cellar</div>
                       <div className="mt-1 font-semibold">
                         € {Number(model.priceEx ?? 0).toFixed(2)}
                       </div>
                     </div>
-                    <div className="rounded-xl border border-white/10 bg-white/[0.02] p-3">
+                    <div className="rounded-xl border border-white/10 bg-white/[0.02] p-3 text-white">
                       <div className="text-white/60 text-xs">Sample</div>
                       <div className="mt-1 font-semibold">
                         € {Number(model.priceSample ?? 0).toFixed(2)}
@@ -291,26 +285,20 @@ export default async function WineDetail({ params }: { params: { id: string } })
                     </button>
                   </div>
                 </form>
+              </div>
 
-                {/* WINE DETAILS */}
-                <div className="rounded-2xl border border-white/10 bg-black/30 p-4">
-                  <div className="text-xs uppercase tracking-wider text-white/60">
-                    Wine details
-                  </div>
+              {/* WINE DETAILS — FULL WIDTH (span 2) */}
+              <div className="md:col-span-2 rounded-2xl border border-white/10 bg-black/30 p-4">
+                <div className="text-xs uppercase tracking-wider text-white/60">
+                  Wine details
+                </div>
 
-                  <div className="mt-2 text-sm text-white/90 space-y-2">
-                    <div>
-                      <span className="text-white/60">Type:</span>{" "}
-                      {model.type || "—"}
-                    </div>
-
-                    <div>
-                      <span className="text-white/60">Description:</span>
-                      <p className="mt-1 whitespace-pre-wrap">
-                        {model.description?.trim() || "—"}
-                      </p>
-                    </div>
-
+                <div className="mt-3 grid gap-6 md:grid-cols-2">
+                  {/* LEFT: tecnico */}
+                  <div className="text-sm text-white/90 space-y-2">
+                    <Row label="Type" value={model.type || "—"} />
+                    <Row label="Vintage" value={model.vintage || "—"} />
+                    <Row label="Region" value={model.region || "—"} />
                     <div>
                       <span className="text-white/60">Certifications:</span>
                       {model.certifications.length === 0 ? (
@@ -328,6 +316,14 @@ export default async function WineDetail({ params }: { params: { id: string } })
                         </div>
                       )}
                     </div>
+                  </div>
+
+                  {/* RIGHT: descrizione */}
+                  <div className="text-sm text-white/90">
+                    <div className="text-white/60">Description</div>
+                    <p className="mt-1 whitespace-pre-wrap">
+                      {model.description?.trim() || "—"}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -399,6 +395,15 @@ export default async function WineDetail({ params }: { params: { id: string } })
 }
 
 /* ---------- helpers ---------- */
+function Row({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <span className="text-white/60">{label}:</span>{" "}
+      <span>{value || "—"}</span>
+    </div>
+  );
+}
+
 function normalizeCerts(raw: any): string[] {
   if (!raw) return [];
   try {
