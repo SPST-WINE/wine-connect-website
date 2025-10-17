@@ -1,29 +1,50 @@
 export const dynamic = "force-dynamic";
 
 import Link from "next/link";
-import { createSupabaseServer } from "@/lib/supabase/server";
 import { ArrowLeft } from "lucide-react";
-
-type WineRow = {
-  id: string;
-  name: string | null;
-  vintage: string | null;
-  type: string | null;
-  grape_variety: string | null;
-  alcohol_percent: string | null;
-  bottle_size: string | null;
-  certifications: string | null;
-  price_ex_cellar: string | null;
-  price_sample: string | null;
-  description: string | null;
-  wine_image_url: string | null;
-  winery_id: string | null;
-  winery_name: string | null;
-  winery_region: string | null;
-};
+import { createSupabaseServer } from "@/lib/supabase/server";
 
 const BG =
   "radial-gradient(120% 120% at 50% -10%, #1c3e5e 0%, #0a1722 60%, #000 140%)";
+
+type Wine = {
+  id: string;
+  winery_id: string | null;
+  name: string | null;
+  vintage: string | null;
+  type: string | null;
+  grape_varieties: string[] | null; // array nel DB
+  alcohol: number | null;
+  bottle_size_ml: number | null;
+  certifications: string[] | null;  // array nel DB
+  price_ex_cellar: number | null;
+  price_sample: number | null;
+  description: string | null;
+  image_url: string | null;
+  available: boolean | null;
+};
+
+type Winery = {
+  id: string;
+  name: string | null;
+  region: string | null;
+  country: string | null;
+};
+
+function fmtMoney(n?: number | null) {
+  const v = Number(n ?? 0);
+  return v.toFixed(2);
+}
+
+function joinArr(a?: string[] | null) {
+  if (!a || a.length === 0) return "—";
+  return a.filter(Boolean).join(", ");
+}
+
+function mlToText(n?: number | null) {
+  if (!n) return "—";
+  return `${n} ml`;
+}
 
 export default async function WineDetail({
   params,
@@ -31,24 +52,17 @@ export default async function WineDetail({
   params: { id: string };
 }) {
   const supa = createSupabaseServer();
-  const {
-    data: { user },
-  } = await supa.auth.getUser();
 
-  // se serve login, mostriamo lo stesso la pagina (solo “Add sample” richiederà login nel submit)
-  // fetch wine (usa la vista/materialized o la query server-side già impostata)
-  const { data: wine } = await supa
-    .from("vw_wine_full") // se non hai creato la view, sostituisci con "wines" + join client come già fatto
+  // 1) Vino
+  const { data: wine, error: wErr } = await supa
+    .from("wines")
     .select(
-      `
-      id,name,vintage,type,grape_variety,alcohol_percent,bottle_size,certifications,
-      price_ex_cellar,price_sample,description,wine_image_url,winery_id,winery_name,winery_region
-    `
+      "id,winery_id,name,vintage,type,grape_varieties,alcohol,bottle_size_ml,certifications,price_ex_cellar,price_sample,description,image_url,available"
     )
     .eq("id", params.id)
-    .maybeSingle<WineRow>();
+    .maybeSingle<Wine>();
 
-  if (!wine) {
+  if (wErr || !wine) {
     return (
       <div
         className="min-h-screen grid place-items-center text-white/80"
@@ -65,11 +79,28 @@ export default async function WineDetail({
     );
   }
 
+  // 2) Cantina (se presente)
+  let winery: Winery | null = null;
+  if (wine.winery_id) {
+    const { data: wn } = await supa
+      .from("wineries")
+      .select("id,name,region,country")
+      .eq("id", wine.winery_id)
+      .maybeSingle<Winery>();
+    winery = wn ?? null;
+  }
+
+  // Derivati per UI
   const title = `${wine.name ?? "Wine"}${
     wine.vintage ? ` (${wine.vintage})` : ""
   }`;
-  const exCellar = Number(wine.price_ex_cellar ?? 0).toFixed(2);
-  const sample = Number(wine.price_sample ?? 0).toFixed(2);
+  const wineryName = winery?.name ?? "—";
+  const wineryRegionCountry = [winery?.region, winery?.country]
+    .filter(Boolean)
+    .join(" — ") || "—";
+
+  const grapeVariety = joinArr(wine.grape_varieties);
+  const certs = joinArr(wine.certifications);
 
   return (
     <div className="min-h-screen" style={{ background: BG }}>
@@ -99,8 +130,7 @@ export default async function WineDetail({
               </div>
               <h1 className="text-3xl font-extrabold text-white">{title}</h1>
               <p className="text-white/70 text-sm">
-                {wine.winery_name ?? "—"} · {wine.winery_region ?? "—"} ·{" "}
-                {wine.type ?? "—"}
+                {wineryName} · {wineryRegionCountry} · {wine.type ?? "—"}
               </p>
             </div>
             <Link
@@ -112,15 +142,15 @@ export default async function WineDetail({
             </Link>
           </div>
 
-          {/* HERO: image left + right column (winery + buy) */}
+          {/* HERO: immagine a sinistra, colonna destra con Winery + Buy sample */}
           <div className="mt-5 grid grid-cols-1 md:grid-cols-[420px,1fr] gap-4 items-stretch">
-            {/* LEFT: image card (fixed square) */}
+            {/* LEFT: image (square 1:1) */}
             <section className="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
               <div className="mx-auto w-full aspect-square rounded-xl bg-black/30 grid place-items-center overflow-hidden">
-                {wine.wine_image_url ? (
+                {wine.image_url ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
-                    src={wine.wine_image_url}
+                    src={wine.image_url}
                     alt={wine.name ?? "Wine"}
                     className="h-full w-full object-contain"
                   />
@@ -130,7 +160,7 @@ export default async function WineDetail({
               </div>
             </section>
 
-            {/* RIGHT: same height column; buy card aligned to bottom */}
+            {/* RIGHT column: stessa altezza della sinistra grazie a flex-1 nella seconda card */}
             <div className="flex flex-col gap-4">
               {/* Winery */}
               <section className="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
@@ -141,61 +171,55 @@ export default async function WineDetail({
                   <div className="h-9 w-9 rounded-lg bg-black/30 grid place-items-center text-[10px] text-white/50">
                     No image
                   </div>
-                  {wine.winery_id ? (
-                    <Link
-                      href={`/wineries/${wine.winery_id}`}
-                      className="group"
-                    >
+                  {winery?.id ? (
+                    <Link href={`/wineries/${winery.id}`} className="group">
                       <div className="font-semibold text-white group-hover:underline">
-                        {wine.winery_name ?? "—"}
+                        {wineryName}
                       </div>
                       <div className="text-sm text-white/70">
-                        {wine.winery_region ?? "—"}
+                        {wineryRegionCountry}
                       </div>
                     </Link>
                   ) : (
                     <div>
-                      <div className="font-semibold text-white">
-                        {wine.winery_name ?? "—"}
-                      </div>
+                      <div className="font-semibold text-white">{wineryName}</div>
                       <div className="text-sm text-white/70">
-                        {wine.winery_region ?? "—"}
+                        {wineryRegionCountry}
                       </div>
                     </div>
                   )}
                 </div>
               </section>
 
-              {/* Buy sample (grows to align with image card bottom) */}
+              {/* Buy sample — prende lo spazio rimanente per allinearsi al fondo dell’immagine */}
               <section className="rounded-2xl border border-white/10 bg-white/[0.04] p-4 flex-1 flex">
                 <div className="w-full">
                   <div className="text-[11px] uppercase tracking-wider text-white/60">
                     Buy sample
                   </div>
 
-                  {/* Single row, same heights */}
+                  {/* Unica riga, stessa altezza (h-12) per tutti i blocchi */}
                   <div className="mt-3 flex items-stretch gap-3">
-                    {/* Ex-cellar box */}
+                    {/* Ex-cellar */}
                     <div className="flex-1 rounded-xl border border-white/10 bg-black/30 px-4 h-12 flex flex-col justify-center">
                       <div className="text-[11px] text-white/60 leading-none">
                         Ex-cellar
                       </div>
                       <div className="text-white font-semibold leading-tight">
-                        € {exCellar}
+                        € {fmtMoney(wine.price_ex_cellar)}
                       </div>
                     </div>
-
-                    {/* Sample box */}
+                    {/* Sample */}
                     <div className="flex-1 rounded-xl border border-white/10 bg-black/30 px-4 h-12 flex flex-col justify-center">
                       <div className="text-[11px] text-white/60 leading-none">
                         Sample
                       </div>
                       <div className="text-white font-semibold leading-tight">
-                        € {sample}
+                        € {fmtMoney(wine.price_sample)}
                       </div>
                     </div>
 
-                    {/* Qty */}
+                    {/* Qty + Add */}
                     <form
                       action="/api/cart/add"
                       method="post"
@@ -208,6 +232,7 @@ export default async function WineDetail({
                         type="number"
                         min={1}
                         defaultValue={1}
+                        required
                         className="w-16 h-12 rounded-lg bg-black/30 border border-white/10 px-3 text-white text-center"
                       />
                       <button
@@ -223,7 +248,7 @@ export default async function WineDetail({
             </div>
           </div>
 
-          {/* DETAILS: full width split in 2 */}
+          {/* DETAILS */}
           <div className="mt-5 grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Technical */}
             <section className="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
@@ -233,11 +258,17 @@ export default async function WineDetail({
               <dl className="mt-3 grid grid-cols-1 gap-1 text-sm">
                 <Detail label="Type" value={wine.type} />
                 <Detail label="Vintage" value={wine.vintage} />
-                <Detail label="Region" value={wine.winery_region} />
-                <Detail label="Grape variety" value={wine.grape_variety} />
-                <Detail label="Alcohol" value={wine.alcohol_percent} suffix="%" />
-                <Detail label="Bottle size" value={wine.bottle_size} />
-                <Detail label="Certifications" value={wine.certifications} />
+                <Detail label="Region" value={wineryRegionCountry} />
+                <Detail label="Grape variety" value={grapeVariety} />
+                <Detail
+                  label="Alcohol"
+                  value={
+                    wine.alcohol != null ? String(Number(wine.alcohol)) : null
+                  }
+                  suffix="%"
+                />
+                <Detail label="Bottle size" value={mlToText(wine.bottle_size_ml)} />
+                <Detail label="Certifications" value={certs} />
               </dl>
             </section>
 
@@ -247,7 +278,9 @@ export default async function WineDetail({
                 Description
               </div>
               <p className="mt-3 text-white/85 text-sm leading-relaxed">
-                {wine.description || "—"}
+                {wine.description && wine.description.trim() !== ""
+                  ? wine.description
+                  : "—"}
               </p>
             </section>
           </div>
@@ -275,7 +308,9 @@ function Detail({
   return (
     <div className="flex items-start justify-between gap-3 text-white/85">
       <dt className="text-white/60">{label}:</dt>
-      <dd className="font-medium">{suffix && show !== "—" ? `${show} ${suffix}` : show}</dd>
+      <dd className="font-medium">
+        {suffix && show !== "—" ? `${show} ${suffix}` : show}
+      </dd>
     </div>
   );
 }
