@@ -30,10 +30,10 @@ export async function POST(req: Request) {
 
     // Body parser (JSON o x-www-form-urlencoded)
     let body: Body = {};
-    const ctype = req.headers.get("content-type") || "";
-    if (ctype.includes("application/json")) {
+    const ctypeHeader = (req.headers.get("content-type") || "").toLowerCase();
+    if (ctypeHeader.includes("application/json")) {
       body = await req.json();
-    } else if (ctype.includes("application/x-www-form-urlencoded")) {
+    } else if (ctypeHeader.includes("application/x-www-form-urlencoded")) {
       const form = await req.formData();
       body = {
         shipping_address_id: String(form.get("shipping_address_id") || ""),
@@ -47,7 +47,7 @@ export async function POST(req: Request) {
     const listType = body.type || "sample";
     let shipping_address_id = body.shipping_address_id;
 
-    // Fallback: se il form non passa l'ID, usa default attivo o primo attivo
+    // Fallback: se non passato, usa default attivo o primo attivo
     if (!shipping_address_id) {
       const { data: defAddr } = await supa
         .from("addresses")
@@ -116,7 +116,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "cart_empty" }, { status: 400 });
     }
 
-    // Crea ordine (usa 'totals' numeric — inizializzato a 0)
+    // Crea ordine (inizializza 'totals' a 0)
     const { data: order, error: orderErr } = await supa
       .from("orders")
       .insert({
@@ -141,7 +141,6 @@ export async function POST(req: Request) {
       unit_price: ci.unit_price ?? 0,
       list_type: ci.list_type ?? listType,
     }));
-
     const { error: oiErr } = await supa.from("order_items").insert(rows);
     if (oiErr) {
       return NextResponse.json(
@@ -157,11 +156,20 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "order_update_totals_failed", details: upTotErr.message }, { status: 500 });
     }
 
-    // Chiudi carrello
+    // Chiudi carrello (non blocca il flow se fallisce)
     const { error: closeErr } = await supa.from("carts").update({ status: "checked_out" }).eq("id", cartId);
-    if (closeErr) {
-      // Non blocchiamo l'ordine se il cart non si chiude; lo segnaliamo soltanto.
-      console.warn("cart_close_failed", closeErr.message);
+    if (closeErr) console.warn("cart_close_failed", closeErr.message);
+
+    // Redirect vs JSON: se form/HTML → redirect all'ordine, altrimenti JSON
+    const accept = (req.headers.get("accept") || "").toLowerCase();
+    const wantsHtml =
+      accept.includes("text/html") ||
+      ctypeHeader.includes("application/x-www-form-urlencoded");
+
+    if (wantsHtml) {
+      const origin = process.env.NEXT_PUBLIC_SITE_URL || new URL(req.url).origin;
+      const url = new URL(`/orders/${order.id}`, origin);
+      return NextResponse.redirect(url, { status: 303 });
     }
 
     return NextResponse.json({
@@ -171,6 +179,9 @@ export async function POST(req: Request) {
     });
   } catch (err: any) {
     console.error("checkout error", err);
-    return NextResponse.json({ error: "unexpected_error", details: String(err?.message || err) }, { status: 500 });
+    return NextResponse.json(
+      { error: "unexpected_error", details: String(err?.message || err) },
+      { status: 500 }
+    );
   }
 }
