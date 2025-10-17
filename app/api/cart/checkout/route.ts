@@ -22,7 +22,7 @@ export async function POST(req: Request) {
       .maybeSingle();
     if (!buyer) return NextResponse.json({ error: "buyer_not_found" }, { status: 400 });
 
-    // body
+    // Body parser (JSON o urlencoded)
     let body: Body = {};
     const ctype = req.headers.get("content-type") || "";
     if (ctype.includes("application/json")) {
@@ -38,23 +38,50 @@ export async function POST(req: Request) {
       try { body = await req.json(); } catch {}
     }
 
-    const shipping_address_id = body.shipping_address_id;
     const listType = body.type || "sample";
+    let shipping_address_id = body.shipping_address_id;
+
+    // Fallback automatico: se non passato dal form, usa default attivo o primo attivo
+    if (!shipping_address_id) {
+      const { data: defAddr } = await supa
+        .from("addresses")
+        .select("id")
+        .eq("buyer_id", buyer.id)
+        .eq("is_active", true)
+        .eq("is_default", true)
+        .order("created_at", { ascending: false })
+        .maybeSingle();
+
+      if (defAddr?.id) {
+        shipping_address_id = defAddr.id;
+      } else {
+        const { data: anyAddr } = await supa
+          .from("addresses")
+          .select("id")
+          .eq("buyer_id", buyer.id)
+          .eq("is_active", true)
+          .order("created_at", { ascending: true })
+          .limit(1)
+          .maybeSingle();
+        if (anyAddr?.id) shipping_address_id = anyAddr.id;
+      }
+    }
+
     if (!shipping_address_id) {
       return NextResponse.json({ error: "missing_shipping_address" }, { status: 400 });
     }
 
-    // check address
+    // Verifica indirizzo: appartenenza e attivo
     const { data: address, error: addrErr } = await supa
       .from("addresses")
-      .select("id,is_active")
+      .select("id,is_active,buyer_id")
       .eq("id", shipping_address_id)
       .maybeSingle();
-    if (addrErr || !address || address.is_active === false) {
+    if (addrErr || !address || address.is_active === false || address.buyer_id !== buyer.id) {
       return NextResponse.json({ error: "invalid_address" }, { status: 400 });
     }
 
-    // find cart
+    // Trova cart
     let cartId = body.cart_id;
     if (!cartId) {
       const { data: cart } = await supa
@@ -69,7 +96,7 @@ export async function POST(req: Request) {
     }
     if (!cartId) return NextResponse.json({ error: "no_open_cart" }, { status: 400 });
 
-    // cart items
+    // Items del carrello
     const { data: cartItems, error: ciErr } = await supa
       .from("cart_items")
       .select("wine_id, quantity, unit_price, list_type")
@@ -77,7 +104,7 @@ export async function POST(req: Request) {
     if (ciErr) return NextResponse.json({ error: "cart_items_fetch_failed" }, { status: 500 });
     if (!cartItems?.length) return NextResponse.json({ error: "cart_empty" }, { status: 400 });
 
-    // create order (collego cart_id)
+    // Crea ordine
     const { data: order, error: orderErr } = await supa
       .from("orders")
       .insert({
@@ -85,14 +112,14 @@ export async function POST(req: Request) {
         cart_id: cartId,
         shipping_address_id,
         status: "pending",
-        totals: 0,        // <-- usa 'totals'
-        type: listType,   // se la colonna esiste in orders
+        totals: 0,
+        type: listType,
       } as any)
       .select("*")
       .single();
     if (orderErr || !order) return NextResponse.json({ error: "order_create_failed" }, { status: 500 });
 
-    // copy to order_items
+    // Copia in order_items
     const rows = cartItems.map(ci => ({
       order_id: order.id,
       wine_id: ci.wine_id,
@@ -103,11 +130,11 @@ export async function POST(req: Request) {
     const { error: oiErr } = await supa.from("order_items").insert(rows);
     if (oiErr) return NextResponse.json({ error: "order_items_insert_failed" }, { status: 500 });
 
-    // compute totals
+    // Totale
     const totals = rows.reduce((s, r) => s + (Number(r.unit_price) || 0) * (Number(r.quantity) || 0), 0);
-    await supa.from("orders").update({ totals }).eq("id", order.id);  // <-- 'totals'
+    await supa.from("orders").update({ totals }).eq("id", order.id);
 
-    // close cart
+    // Chiudi cart
     await supa.from("carts").update({ status: "checked_out" }).eq("id", cartId);
 
     return NextResponse.json({
