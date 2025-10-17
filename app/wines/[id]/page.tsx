@@ -14,7 +14,6 @@ export default async function WineDetail({
 }) {
   const supa = createSupabaseServer();
 
-  // Dettaglio vino dalla VIEW
   const { data: wine } = await supa
     .from("vw_wine_details")
     .select("*")
@@ -34,7 +33,6 @@ export default async function WineDetail({
     );
   }
 
-  // Semplici "consigliati": stesso type, escluso quello attuale
   const { data: recommended } = await supa
     .from("vw_wine_details")
     .select("id, name, vintage, type, price_sample, wine_image_url, winery_name, winery_region")
@@ -44,7 +42,7 @@ export default async function WineDetail({
 
   return (
     <div className="min-h-screen" style={{ background: BG }}>
-      {/* Topbar */}
+      {/* HEADER */}
       <header className="h-14 flex items-center justify-between px-5">
         <Link href="/catalog" className="flex items-center gap-2 text-white">
           <img src="/wc-logo.png" alt="Wine Connect" className="h-6 w-auto" />
@@ -60,9 +58,10 @@ export default async function WineDetail({
         </nav>
       </header>
 
+      {/* MAIN */}
       <main className="px-5">
         <div className="mx-auto max-w-6xl py-6 space-y-6">
-          {/* Breadcrumb / back */}
+          {/* TITLE */}
           <div className="flex items-center justify-between">
             <div>
               <div className="text-xs uppercase tracking-wider text-white/60">
@@ -83,22 +82,21 @@ export default async function WineDetail({
             </Link>
           </div>
 
-          {/* HERO: immagine (sx) + winery/buy (dx) */}
-          <div className="grid grid-cols-1 md:grid-cols-[380px_1fr] gap-6 items-start">
-            {/* Image */}
-            <div className="rounded-2xl border border-white/10 bg-white/[0.04] overflow-hidden">
-              <div className="aspect-[3/4] bg-black/30">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
+          {/* HERO SECTION */}
+          <div className="grid grid-cols-1 md:grid-cols-[360px_1fr] gap-6 items-start">
+            {/* FOTO 1:1 */}
+            <div className="rounded-2xl border border-white/10 bg-white/[0.04] overflow-hidden h-full flex items-center justify-center">
+              <div className="aspect-square w-full bg-black/20">
                 <img
                   src={wine.wine_image_url}
                   alt={wine.name}
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-contain p-6"
                 />
               </div>
             </div>
 
-            {/* Right column */}
-            <div className="flex flex-col gap-4">
+            {/* RIGHT COLUMN */}
+            <div className="flex flex-col gap-4 h-full">
               {/* WINERY */}
               <Link
                 href={`/wineries/${wine.winery_id}`}
@@ -114,8 +112,8 @@ export default async function WineDetail({
               </Link>
 
               {/* BUY SAMPLE */}
-              <div className="rounded-2xl border border-white/10 bg-white/[0.05] p-4">
-                <div className="text-xs uppercase tracking-wider text-white/60 mb-2">
+              <div className="rounded-2xl border border-white/10 bg-white/[0.05] p-5">
+                <div className="text-xs uppercase tracking-wider text-white/60 mb-3">
                   Buy sample
                 </div>
 
@@ -138,7 +136,7 @@ export default async function WineDetail({
                   <form
                     action="/api/cart/add"
                     method="post"
-                    className="flex items-center gap-2 justify-end"
+                    className="flex items-center gap-2"
                   >
                     <input type="hidden" name="wineId" value={wine.id} />
                     <input type="hidden" name="listType" value="sample" />
@@ -165,9 +163,9 @@ export default async function WineDetail({
             </div>
           </div>
 
-          {/* DETTAGLI + DESCRIZIONE */}
+          {/* DETTAGLI */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Technical */}
+            {/* TECHNICAL */}
             <div className="rounded-2xl border border-white/10 bg-white/[0.05] p-5">
               <div className="text-xs uppercase tracking-wider text-white/60 mb-2">
                 Wine details
@@ -203,7 +201,7 @@ export default async function WineDetail({
               </ul>
             </div>
 
-            {/* Description */}
+            {/* DESCRIPTION */}
             <div className="rounded-2xl border border-white/10 bg-white/[0.05] p-5">
               <div className="text-xs uppercase tracking-wider text-white/60 mb-2">
                 Description
@@ -228,7 +226,6 @@ export default async function WineDetail({
                   >
                     <Link href={`/wines/${r.id}`}>
                       <div className="aspect-square bg-black/30 overflow-hidden">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
                           src={r.wine_image_url || "/placeholder.png"}
                           alt={r.name}
