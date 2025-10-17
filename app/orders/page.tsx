@@ -143,11 +143,9 @@ export default async function OrdersPage() {
                     <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
                       <div className="min-w-0">
                         <div className="font-semibold text-white truncate">
-                          #{o.id.slice(0, 8)}{" "}
-                          {o.type ? (
-                            <span className="text-white/70">· {o.type.toUpperCase()}</span>
-                          ) : null}
-                        </div>
+  #{(o as any).order_code || o.id.slice(0, 8)}{" "}
+  {o.type ? <span className="text-white/70">· {o.type.toUpperCase()}</span> : null}
+</div>
                         <div className="text-xs text-white/70 mt-0.5">
                           {o.created_at
                             ? new Date(o.created_at).toLocaleString()
