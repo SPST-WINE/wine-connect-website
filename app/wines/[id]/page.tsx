@@ -9,16 +9,6 @@ const BG =
   "radial-gradient(120% 120% at 50% -10%, #1c3e5e 0%, #0a1722 60%, #000 140%)";
 const WC_PINK = "#E33955";
 
-type WineRow = {
-  id: string;
-  name: string | null;
-  winery_name: string | null; // se in schema è diverso, rimane null (ok)
-  vintage: string | null;
-  region: string | null;
-  type: string | null;
-  image_url: string | null;
-};
-
 type CatalogRow = {
   wine_id: string;
   wine_name: string | null;
@@ -32,10 +22,21 @@ type CatalogRow = {
   created_at?: string | null;
 };
 
+type WineRow = {
+  id: string;
+  name: string | null;
+  // NB: se "winery_name" non esiste su "wines", rimarrà null (ok)
+  winery_name: string | null;
+  vintage: string | null;
+  region: string | null;
+  type: string | null;
+  image_url: string | null;
+};
+
 export default async function WineDetail({ params }: { params: { id: string } }) {
   const supa = createSupabaseServer();
 
-  // richiede login coerente con area privata
+  // richiede login
   const { data: { user } } = await supa.auth.getUser();
   if (!user) {
     return (
@@ -49,24 +50,7 @@ export default async function WineDetail({ params }: { params: { id: string } })
 
   const wineId = params.id;
 
-  // 1) Base: prendo SEMPRE la riga da "wines" per garantire il dettaglio
-  const { data: baseWine } = await supa
-    .from("wines")
-    .select("id,name,winery_name,vintage,region,type,image_url")
-    .eq("id", wineId)
-    .maybeSingle<WineRow>();
-
-  if (!baseWine) {
-    return (
-      <div className="min-h-screen grid place-items-center text-white" style={{ background: BG }}>
-        <div className="rounded-2xl border border-white/10 bg-white/[0.06] px-5 py-4 text-center">
-          Wine not found. <a className="underline" href="/catalog">Back to catalog</a>
-        </div>
-      </div>
-    );
-  }
-
-  // 2) Extra: prezzi/immagine consolidata dalla vista (se disponibile)
+  // 1) PRIMA: prendo dalla vista (stessa fonte del catalogo)
   let cat: CatalogRow | null = null;
   {
     const { data } = await supa
@@ -77,15 +61,35 @@ export default async function WineDetail({ params }: { params: { id: string } })
     cat = data ?? null;
   }
 
-  // 3) Merge dei dati (fallback su wines, override con vw_catalog se presenti)
+  // 2) FALLBACK: prendo da "wines" (può essere bloccato da RLS o avere meno campi)
+  let baseWine: WineRow | null = null;
+  if (!cat) {
+    const { data } = await supa
+      .from("wines")
+      .select("id,name,winery_name,vintage,region,type,image_url")
+      .eq("id", wineId)
+      .maybeSingle<WineRow>();
+    baseWine = data ?? null;
+  }
+
+  if (!cat && !baseWine) {
+    return (
+      <div className="min-h-screen grid place-items-center text-white" style={{ background: BG }}>
+        <div className="rounded-2xl border border-white/10 bg-white/[0.06] px-5 py-4 text-center">
+          Wine not found. <a className="underline" href="/catalog">Back to catalog</a>
+        </div>
+      </div>
+    );
+  }
+
   const model = {
     id: wineId,
-    name: cat?.wine_name ?? baseWine.name ?? "Wine",
-    winery: cat?.winery_name ?? baseWine.winery_name ?? "",
-    vintage: cat?.vintage ?? baseWine.vintage ?? "",
-    region: cat?.region ?? baseWine.region ?? "",
-    type: cat?.type ?? baseWine.type ?? "",
-    img: (cat?.image_url ?? baseWine.image_url) || null,
+    name: (cat?.wine_name ?? baseWine?.name) || "Wine",
+    winery: (cat?.winery_name ?? baseWine?.winery_name) || "",
+    vintage: (cat?.vintage ?? baseWine?.vintage) || "",
+    region: (cat?.region ?? baseWine?.region) || "",
+    type: (cat?.type ?? baseWine?.type) || "",
+    img: (cat?.image_url ?? baseWine?.image_url) || null,
     priceEx: cat?.price_ex_cellar ?? null,
     priceSample: cat?.price_sample ?? null,
     createdAt: cat?.created_at ?? null,
@@ -106,10 +110,8 @@ export default async function WineDetail({ params }: { params: { id: string } })
         </nav>
       </header>
 
-      {/* Body */}
       <main className="flex-1 px-5">
         <div className="mx-auto max-w-5xl py-8 space-y-6">
-          {/* Hero */}
           <section className="rounded-2xl border border-white/10 bg-white/[0.04] p-5 md:p-6">
             <div className="flex items-start justify-between gap-4">
               <div className="min-w-0">
@@ -121,8 +123,7 @@ export default async function WineDetail({ params }: { params: { id: string } })
                   {model.winery ? `${model.winery} · ` : ""}{model.region || ""}{model.type ? ` · ${model.type}` : ""}
                 </p>
               </div>
-              <Link href="/catalog"
-                className="inline-flex items-center gap-2 rounded-xl bg-black/40 border border-white/10 px-3 py-2 text-sm text-white hover:bg-black/50 shrink-0">
+              <Link href="/catalog" className="inline-flex items-center gap-2 rounded-xl bg-black/40 border border-white/10 px-3 py-2 text-sm text-white hover:bg-black/50 shrink-0">
                 <ArrowLeft size={16} /> Back to catalog
               </Link>
             </div>
@@ -148,7 +149,6 @@ export default async function WineDetail({ params }: { params: { id: string } })
                   </div>
                 </div>
 
-                {/* Add sample form */}
                 <form action="/api/cart/add" method="post" className="rounded-2xl border border-white/10 bg-black/30 p-4 space-y-3">
                   <input type="hidden" name="listType" value="sample" />
                   <input type="hidden" name="wineId" value={model.id} />
@@ -161,7 +161,6 @@ export default async function WineDetail({ params }: { params: { id: string } })
                       <ShoppingBasket size={16} /> Add sample
                     </button>
                   </div>
-                  <p className="text-xs text-white/60">Adding a sample puts this wine into your sample cart.</p>
                 </form>
 
                 <div className="rounded-2xl border border-white/10 bg-black/30 p-4">
