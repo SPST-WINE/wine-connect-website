@@ -130,9 +130,9 @@ export default async function OrderDetail({ params }: { params: { id: string } }
               <div>
                 <div className="text-xs tracking-wider uppercase text-white/60">Order</div>
                 <h1 className="mt-1 text-3xl md:text-4xl font-extrabold text-white">
-                  #{order.id.slice(0, 8)}{" "}
-                  {order.type ? <span className="text-white/70">· {String(order.type).toUpperCase()}</span> : null}
-                </h1>
+  #{(order as any).order_code || order.id.slice(0, 8)}{" "}
+  {order.type ? <span className="text-white/70">· {String(order.type).toUpperCase()}</span> : null}
+</h1>
                 <p className="mt-1 text-sm text-white/70">
                   {order.created_at ? new Date(order.created_at).toLocaleString() : "—"}
                 </p>
