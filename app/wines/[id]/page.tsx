@@ -8,7 +8,7 @@ const BG =
   "radial-gradient(120% 120% at 50% -10%, #1c3e5e 0%, #0a1722 60%, #000 140%)";
 const WC_PINK = "#E33955";
 
-/* ----------------- Types ----------------- */
+/* -------- Types (lasciati permissivi per compatibilità colonne) -------- */
 type CatalogRow = {
   wine_id: string;
   wine_name: string | null;
@@ -33,6 +33,9 @@ type WineRow = {
   image_url?: string | null;
   description?: string | null;
   certifications?: any;
+  grape_variety?: string | null;
+  alcohol_percent?: number | null;
+  bottle_size?: string | null; // es: "750 ml"
 };
 
 type WineryRow = {
@@ -60,7 +63,7 @@ export default async function WineDetail({ params }: { params: { id: string } })
 
   const wineId = params.id;
 
-  // dalla view
+  // Dalla view catalogo (prezzi, immagine, ecc.)
   let cat: CatalogRow | null = null;
   {
     const { data } = await supa
@@ -69,18 +72,21 @@ export default async function WineDetail({ params }: { params: { id: string } })
     cat = data ?? null;
   }
 
-  // arricchimento
+  // Record base del vino (dettagli tecnici)
   let baseWine: WineRow | null = null;
   {
     const { data } = await supa
       .from("wines")
-      .select("id,name,winery_id,winery_name,vintage,region,type,image_url,description,certifications")
+      .select(`
+        id, name, winery_id, winery_name, vintage, region, type, image_url,
+        description, certifications, grape_variety, alcohol_percent, bottle_size
+      `)
       .eq("id", wineId)
       .maybeSingle<WineRow>();
     baseWine = data ?? null;
   }
 
-  // winery
+  // Winery
   let winery: WineryRow | null = null;
   if (baseWine?.winery_id) {
     const { data } = await supa
@@ -101,6 +107,7 @@ export default async function WineDetail({ params }: { params: { id: string } })
     );
   }
 
+  // Modello aggregato per UI
   const model = {
     id: wineId,
     name: (cat?.wine_name ?? baseWine?.name) || "Wine",
@@ -119,29 +126,27 @@ export default async function WineDetail({ params }: { params: { id: string } })
     certifications: normalizeCerts(baseWine?.certifications),
     createdAt: cat?.created_at ?? null,
     wineryImage: winery?.image_url || winery?.logo_url || null,
+    grape: baseWine?.grape_variety || "",
+    alcohol: baseWine?.alcohol_percent ?? null,
+    bottleSize: baseWine?.bottle_size || "",
   };
 
   // Recommended
   let recs: CatalogRow[] = [];
-  if (model.wineryName) {
+  {
     const { data } = await supa
       .from("vw_catalog")
       .select("*")
       .neq("wine_id", model.id)
-      .ilike("winery_name", model.wineryName)
+      .or(
+        [
+          model.wineryName ? `winery_name.ilike.${model.wineryName}` : "",
+          model.type ? `type.ilike.${model.type}` : "",
+          model.region ? `region.ilike.${model.region}` : "",
+        ].filter(Boolean).join(",")
+      )
       .limit(3);
     recs = (data as CatalogRow[]) ?? [];
-  }
-  if (recs.length < 3) {
-    const { data } = await supa
-      .from("vw_catalog")
-      .select("*")
-      .neq("wine_id", model.id)
-      .or(`type.ilike.${model.type || " "},region.ilike.${model.region || " "}`)
-      .limit(3);
-    const fallback = (data as CatalogRow[]) ?? [];
-    const ids = new Set(recs.map(r => r.wine_id));
-    recs.push(...fallback.filter(f => !ids.has(f.wine_id)).slice(0, 3 - recs.length));
   }
 
   return (
@@ -161,7 +166,7 @@ export default async function WineDetail({ params }: { params: { id: string } })
 
       <main className="flex-1 px-5">
         <div className="mx-auto max-w-5xl py-8 space-y-8">
-          {/* Title */}
+          {/* TITLE */}
           <section className="rounded-2xl border border-white/10 bg-white/[0.04] p-5 md:p-6">
             <div className="flex items-start justify-between gap-4">
               <div className="min-w-0">
@@ -188,68 +193,65 @@ export default async function WineDetail({ params }: { params: { id: string } })
               </Link>
             </div>
 
-            {/* Top grid */}
-            <div className="mt-6 grid gap-6 md:grid-cols-2 items-start">
-              {/* IMAGE (più piccola) */}
-              <div className="rounded-2xl border border-white/10 bg-black/30 p-4 flex items-center justify-center">
-                {model.img ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={model.img}
-                    alt={model.name}
-                    className="max-h-[300px] w-auto object-contain"
-                  />
-                ) : (
-                  <div className="w-full h-[260px] grid place-items-center text-white/50">
-                    No image
+            {/* LAYOUT A DUE RIGHE */}
+            <div className="mt-6 grid gap-6">
+              {/* RIGA 1: WINERY (full width) */}
+              <div className="rounded-2xl border border-white/10 bg-black/30 p-4">
+                <div className="text-xs uppercase tracking-wider text-white/60">Winery</div>
+                <div className="mt-3 flex items-center gap-3">
+                  <div className="h-14 w-14 rounded-lg overflow-hidden border border-white/10 bg-white/5 grid place-items-center shrink-0">
+                    {model.wineryImage ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={model.wineryImage}
+                        alt={model.wineryName || "Winery"}
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      <span className="text-[10px] text-white/50">No image</span>
+                    )}
                   </div>
-                )}
+                  <div className="min-w-0">
+                    <div className="font-semibold text-white truncate">
+                      {model.wineryName || "—"}
+                    </div>
+                    <div className="text-sm text-white/70">
+                      {model.region || "—"}
+                    </div>
+                  </div>
+                </div>
               </div>
 
-              {/* RIGHT column: Winery + Buy sample */}
-              <div className="space-y-4">
-                {/* WINERY */}
-                <div className="rounded-2xl border border-white/10 bg-black/30 p-4">
-                  <div className="text-xs uppercase tracking-wider text-white/60">
-                    Winery
-                  </div>
-                  <div className="mt-3 flex items-center gap-3">
-                    <div className="h-14 w-14 rounded-lg overflow-hidden border border-white/10 bg-white/5 grid place-items-center shrink-0">
-                      {model.wineryImage ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                          src={model.wineryImage}
-                          alt={model.wineryName || "Winery"}
-                          className="h-full w-full object-cover"
-                        />
-                      ) : (
-                        <span className="text-[10px] text-white/50">No image</span>
-                      )}
+              {/* RIGA 2: IMMAGINE (sx) + BUY (dx) STESSA ALTEZZA */}
+              <div className="grid gap-6 md:grid-cols-2 items-stretch">
+                {/* IMMAGINE */}
+                <div className="rounded-2xl border border-white/10 bg-black/30 p-4 flex items-center justify-center">
+                  {model.img ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={model.img}
+                      alt={model.name}
+                      className="max-h-[300px] w-auto object-contain"
+                    />
+                  ) : (
+                    <div className="w-full h-[260px] grid place-items-center text-white/50">
+                      No image
                     </div>
-                    <div className="min-w-0">
-                      <div className="font-semibold text-white truncate">
-                        {model.wineryName || "—"}
-                      </div>
-                      <div className="text-sm text-white/70">
-                        {model.region || "—"}
-                      </div>
-                    </div>
-                  </div>
+                  )}
                 </div>
 
                 {/* BUY SAMPLE */}
                 <form
                   action="/api/cart/add"
                   method="post"
-                  className="rounded-2xl border border-white/10 bg-black/30 p-4"
+                  className="rounded-2xl border border-white/10 bg-black/30 p-4 flex flex-col"
                 >
                   <input type="hidden" name="listType" value="sample" />
                   <input type="hidden" name="wineId" value={model.id} />
 
-                  <div className="text-xs uppercase tracking-wider text-white/60">
-                    Buy sample
-                  </div>
+                  <div className="text-xs uppercase tracking-wider text-white/60">Buy sample</div>
 
+                  {/* prezzi */}
                   <div className="mt-3 grid grid-cols-2 gap-3">
                     <div className="rounded-xl border border-white/10 bg-white/[0.02] p-3 text-white">
                       <div className="text-white/60 text-xs">Ex-cellar</div>
@@ -265,10 +267,9 @@ export default async function WineDetail({ params }: { params: { id: string } })
                     </div>
                   </div>
 
+                  {/* qty + CTA */}
                   <div className="mt-3 flex items-center gap-3">
-                    <label className="text-sm text-white/80 min-w-[72px]">
-                      Quantity
-                    </label>
+                    <label className="text-sm text-white/80 min-w-[72px]">Quantity</label>
                     <input
                       type="number"
                       name="qty"
@@ -284,21 +285,32 @@ export default async function WineDetail({ params }: { params: { id: string } })
                       <ShoppingBasket size={16} /> Add sample
                     </button>
                   </div>
+
+                  {/* spingi la card per occupare tutta l'altezza della riga */}
+                  <div className="mt-auto" />
                 </form>
               </div>
 
-              {/* WINE DETAILS — FULL WIDTH (span 2) */}
-              <div className="md:col-span-2 rounded-2xl border border-white/10 bg-black/30 p-4">
-                <div className="text-xs uppercase tracking-wider text-white/60">
-                  Wine details
-                </div>
+              {/* WINE DETAILS FULL-WIDTH (2 colonne interne) */}
+              <div className="rounded-2xl border border-white/10 bg-black/30 p-4">
+                <div className="text-xs uppercase tracking-wider text-white/60">Wine details</div>
 
                 <div className="mt-3 grid gap-6 md:grid-cols-2">
-                  {/* LEFT: tecnico */}
+                  {/* SX: tecnico */}
                   <div className="text-sm text-white/90 space-y-2">
                     <Row label="Type" value={model.type || "—"} />
                     <Row label="Vintage" value={model.vintage || "—"} />
                     <Row label="Region" value={model.region || "—"} />
+                    <Row label="Grape variety" value={model.grape || "—"} />
+                    <Row
+                      label="Alcohol"
+                      value={
+                        typeof model.alcohol === "number"
+                          ? `${Number(model.alcohol).toFixed(1)}%`
+                          : "—"
+                      }
+                    />
+                    <Row label="Bottle size" value={model.bottleSize || "—"} />
                     <div>
                       <span className="text-white/60">Certifications:</span>
                       {model.certifications.length === 0 ? (
@@ -318,7 +330,7 @@ export default async function WineDetail({ params }: { params: { id: string } })
                     </div>
                   </div>
 
-                  {/* RIGHT: descrizione */}
+                  {/* DX: descrizione */}
                   <div className="text-sm text-white/90">
                     <div className="text-white/60">Description</div>
                     <p className="mt-1 whitespace-pre-wrap">
@@ -330,14 +342,12 @@ export default async function WineDetail({ params }: { params: { id: string } })
             </div>
           </section>
 
-          {/* Recommended */}
+          {/* RECOMMENDED (come prima) */}
           <section className="rounded-2xl border border-white/10 bg-white/[0.04] p-5 md:p-6">
             <div className="text-xs uppercase tracking-wider text-white/60">
               Recommended
             </div>
-            <h3 className="mt-1 text-xl font-extrabold text-white">
-              You may also like
-            </h3>
+            <h3 className="mt-1 text-xl font-extrabold text-white">You may also like</h3>
 
             {recs.length === 0 ? (
               <div className="mt-4 rounded-xl border border-white/10 bg-black/30 p-4 text-sm text-white/75">
@@ -394,7 +404,7 @@ export default async function WineDetail({ params }: { params: { id: string } })
   );
 }
 
-/* ---------- helpers ---------- */
+/* -------- Helpers -------- */
 function Row({ label, value }: { label: string; value: string }) {
   return (
     <div>
