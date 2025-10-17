@@ -11,10 +11,20 @@ const LOGO_PNG = "/wc-logo.png";
 
 export default async function BuyerHome() {
   const supa = createSupabaseServer();
-  const { data: { user } } = await supa.auth.getUser();
+  const {
+    data: { user },
+  } = await supa.auth.getUser();
   if (!user) redirect("/login");
 
+  // Fetch buyer profile to get contact_name for greeting
+  const { data: buyer } = await supa
+    .from("buyers")
+    .select("contact_name")
+    .eq("auth_user_id", user.id)
+    .maybeSingle();
+
   const displayName =
+    (buyer?.contact_name as string | undefined) ||
     (user.user_metadata?.name as string | undefined) ||
     (user.user_metadata?.company_name as string | undefined) ||
     user.email?.split("@")[0] ||
@@ -35,9 +45,15 @@ export default async function BuyerHome() {
           <span className="font-semibold">Wine Connect</span>
         </Link>
         <nav className="flex items-center gap-5 text-sm">
-          <Link className="text-white/80 hover:text-white" href="/catalog">Catalog</Link>
-          <Link className="text-white/80 hover:text-white" href="/cart/samples">Sample Cart</Link>
-          <Link className="text-white/80 hover:text-white" href="/profile">Profile</Link>
+          <Link className="text-white/80 hover:text-white" href="/catalog">
+            Catalog
+          </Link>
+          <Link className="text-white/80 hover:text-white" href="/cart/samples">
+            Sample Cart
+          </Link>
+          <Link className="text-white/80 hover:text-white" href="/profile">
+            Profile
+          </Link>
         </nav>
       </header>
 
@@ -54,13 +70,15 @@ export default async function BuyerHome() {
                   Hi {displayName} —{" "}
                   <span
                     className="bg-clip-text text-transparent"
-                    style={{ backgroundImage: `linear-gradient(90deg, ${WC_PINK}, #ffffff)` }}
+                    style={{
+                      backgroundImage: `linear-gradient(90deg, ${WC_PINK}, #ffffff)`,
+                    }}
                   >
                     choose how you want to work today
                   </span>
                 </h1>
                 <p className="mt-1 text-sm text-white/70">
-                  — Compliance: Self-managed
+                  Compliance: Self-managed
                 </p>
               </div>
 
@@ -86,10 +104,12 @@ export default async function BuyerHome() {
                 <div className="text-[11px] uppercase tracking-wider text-white/60 mb-2">
                   Tailored service
                 </div>
-                <h3 className="text-xl font-bold text-white">Get a curated shortlist</h3>
+                <h3 className="text-xl font-bold text-white">
+                  Get a curated shortlist
+                </h3>
                 <p className="text-sm text-white/75 mt-1">
-                  Give us your brief (styles, price points, volumes).
-                  We’ll build the shortlist and ship a tasting kit.
+                  Give us your brief (styles, price points, volumes). We’ll
+                  build the shortlist and ship a tasting kit.
                 </p>
                 <Link
                   href="/brief/start"
@@ -105,10 +125,12 @@ export default async function BuyerHome() {
                 <div className="text-[11px] uppercase tracking-wider text-white/60 mb-2">
                   Browse yourself
                 </div>
-                <h3 className="text-xl font-bold text-white">Explore wines & add samples</h3>
+                <h3 className="text-xl font-bold text-white">
+                  Explore wines & add samples
+                </h3>
                 <p className="text-sm text-white/75 mt-1">
-                  Filter by region, type, certifications and price. Add samples to cart and
-                  request shipment.
+                  Filter by region, type, certifications and price. Add samples
+                  to cart and request shipment.
                 </p>
                 <Link
                   href="/catalog"
@@ -146,7 +168,9 @@ export default async function BuyerHome() {
               >
                 <UserCog size={18} className="text-white/80" />
                 <div>
-                  <div className="font-semibold text-white">Profile & compliance</div>
+                  <div className="font-semibold text-white">
+                    Profile & compliance
+                  </div>
                   <div className="text-xs text-white/70">
                     Account, addresses, compliance data.
                   </div>
