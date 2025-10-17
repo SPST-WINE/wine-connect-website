@@ -4,8 +4,6 @@ import Link from "next/link";
 import { createSupabaseServer } from "@/lib/supabase/server";
 import { ArrowLeft, Truck, Rows3 } from "lucide-react";
 
-/** WC palette */
-const WC_PINK = "#E33955";
 const WC_BG =
   "radial-gradient(120% 120% at 50% -10%, #1c3e5e 0%, #0a1722 60%, #000 140%)";
 
@@ -19,6 +17,24 @@ type Order = {
   tracking_code?: string | null;
   shipping_address_id?: string | null;
   total?: number | null;
+  order_code?: string | null;
+};
+
+type Item = {
+  id: string;
+  wine_id: string;
+  quantity: number;
+  unit_price: number | null;
+  list_type: string | null;
+};
+
+type Wine = {
+  id: string;
+  name: string | null;
+  winery_name: string | null;
+  vintage: string | null;
+  region: string | null;
+  image_url: string | null;
 };
 
 export default async function OrderDetail({ params }: { params: { id: string } }) {
@@ -34,7 +50,7 @@ export default async function OrderDetail({ params }: { params: { id: string } }
     );
   }
 
-  // Buyer id
+  // Buyer
   const { data: buyer } = await supa
     .from("buyers")
     .select("id")
@@ -48,14 +64,13 @@ export default async function OrderDetail({ params }: { params: { id: string } }
     );
   }
 
-  // Ordine
+  // Order
   const { data: order } = await supa
     .from("orders")
     .select("*")
     .eq("id", params.id)
     .eq("buyer_id", buyer.id)
     .maybeSingle<Order>();
-
   if (!order) {
     return (
       <div className="min-h-screen flex items-center justify-center text-white" style={{ background: WC_BG }}>
@@ -64,7 +79,7 @@ export default async function OrderDetail({ params }: { params: { id: string } }
     );
   }
 
-  // Address snapshot (se presente)
+  // Address (snapshot)
   let address: any = null;
   if (order.shipping_address_id) {
     const { data: addr } = await supa
@@ -75,37 +90,37 @@ export default async function OrderDetail({ params }: { params: { id: string } }
     address = addr || null;
   }
 
-  // 1) Prova a leggere da order_items (schema corrente)
-  let items: any[] = [];
+  // Items: prima order_items, fallback cart_items
+  let items: Item[] = [];
   {
     const { data: oi } = await supa
       .from("order_items")
-      .select(`
-        id, quantity, unit_price, list_type,
-        wines:wine_id ( name, winery_name, vintage, region, image_url )
-      `)
+      .select("id, wine_id, quantity, unit_price, list_type")
       .eq("order_id", order.id);
-    items = oi || [];
+    if (oi?.length) items = oi as Item[];
+  }
+  if ((!items || items.length === 0) && order.cart_id) {
+    const { data: ci } = await supa
+      .from("cart_items")
+      .select("id, wine_id, quantity, unit_price, list_type")
+      .eq("cart_id", order.cart_id);
+    items = (ci || []) as Item[];
   }
 
-  // 2) Fallback: cart_items (ordini più vecchi creati dal carrello)
-  if (!items || items.length === 0) {
-    if (order.cart_id) {
-      const { data: ci } = await supa
-        .from("cart_items")
-        .select(`
-          id, quantity, unit_price, list_type,
-          wines:wine_id ( name, winery_name, vintage, region, image_url )
-        `)
-        .eq("cart_id", order.cart_id);
-      items = ci || [];
+  // Enrich wines (no join implicita)
+  const winesById = new Map<string, Wine>();
+  if (items.length > 0) {
+    const wineIds = Array.from(new Set(items.map(i => i.wine_id))).filter(Boolean);
+    if (wineIds.length > 0) {
+      const { data: wines } = await supa
+        .from("wines")
+        .select("id, name, winery_name, vintage, region, image_url")
+        .in("id", wineIds);
+      (wines || []).forEach(w => winesById.set(w.id, w as Wine));
     }
   }
 
-  const subtotal = (items || []).reduce(
-    (acc: number, it: any) => acc + (Number(it.unit_price) || 0) * (Number(it.quantity) || 0),
-    0
-  );
+  const subtotal = items.reduce((acc, it) => acc + (Number(it.unit_price) || 0) * (Number(it.quantity) || 0), 0);
 
   return (
     <div className="min-h-screen flex flex-col" style={{ background: WC_BG }}>
@@ -130,9 +145,9 @@ export default async function OrderDetail({ params }: { params: { id: string } }
               <div>
                 <div className="text-xs tracking-wider uppercase text-white/60">Order</div>
                 <h1 className="mt-1 text-3xl md:text-4xl font-extrabold text-white">
-  #{(order as any).order_code || order.id.slice(0, 8)}{" "}
-  {order.type ? <span className="text-white/70">· {String(order.type).toUpperCase()}</span> : null}
-</h1>
+                  #{order.order_code || order.id.slice(0, 8)}{" "}
+                  {order.type ? <span className="text-white/70">· {String(order.type).toUpperCase()}</span> : null}
+                </h1>
                 <p className="mt-1 text-sm text-white/70">
                   {order.created_at ? new Date(order.created_at).toLocaleString() : "—"}
                 </p>
@@ -158,13 +173,7 @@ export default async function OrderDetail({ params }: { params: { id: string } }
               <div className="rounded-xl border border-white/10 bg-black/30 p-4">
                 <div className="text-xs uppercase tracking-wider text-white/60">Tracking</div>
                 <div className="mt-1 text-sm text-white">
-                  {order.tracking_code ? (
-                    <span className="inline-flex items-center gap-2">
-                      <Truck size={16} /> {order.tracking_code}
-                    </span>
-                  ) : (
-                    "—"
-                  )}
+                  {order.tracking_code ? <span className="inline-flex items-center gap-2"><Truck size={16} /> {order.tracking_code}</span> : "—"}
                 </div>
               </div>
               <div className="rounded-xl border border-white/10 bg-black/30 p-4">
@@ -183,13 +192,9 @@ export default async function OrderDetail({ params }: { params: { id: string } }
                   <>
                     <div className="font-semibold">{address.label || "—"}</div>
                     <div>{address.address || "—"}</div>
-                    <div>
-                      {(address.zip || "—")}, {(address.city || "—")} — {(address.country || "—")}
-                    </div>
+                    <div>{(address.zip || "—")}, {(address.city || "—")} — {(address.country || "—")}</div>
                   </>
-                ) : (
-                  "—"
-                )}
+                ) : "—"}
               </div>
             </div>
           </section>
@@ -209,14 +214,14 @@ export default async function OrderDetail({ params }: { params: { id: string } }
               </Link>
             </div>
 
-            {(!items || items.length === 0) ? (
+            {items.length === 0 ? (
               <div className="mt-4 rounded-xl border border-white/10 bg-black/30 p-4 text-sm text-white/80">
                 No items found for this order.
               </div>
             ) : (
               <ul className="mt-4 grid gap-3">
-                {items.map((it: any) => {
-                  const w = it.wines || {};
+                {items.map((it) => {
+                  const w = winesById.get(it.wine_id) || {};
                   const unit = Number(it.unit_price) || 0;
                   const qty = Number(it.quantity) || 0;
                   return (
@@ -225,12 +230,12 @@ export default async function OrderDetail({ params }: { params: { id: string } }
                         <div className="h-14 w-10 rounded bg-white/10 overflow-hidden shrink-0">
                           {w.image_url ? (
                             // eslint-disable-next-line @next/next/no-img-element
-                            <img src={w.image_url} alt={w.name || "Wine"} className="h-full w-full object-cover" />
+                            <img src={w.image_url as string} alt={(w.name as string) || "Wine"} className="h-full w-full object-cover" />
                           ) : null}
                         </div>
                         <div className="min-w-0 flex-1">
                           <div className="font-semibold text-white truncate">
-                            {w.name || "Wine"} {w.vintage ? `— ${w.vintage}` : ""}
+                            {(w.name as string) || "Wine"} {w.vintage ? `— ${w.vintage}` : ""}
                           </div>
                           <div className="text-xs text-white/70">
                             {w.winery_name ? `${w.winery_name} · ` : ""}{w.region || ""}
@@ -257,7 +262,6 @@ export default async function OrderDetail({ params }: { params: { id: string } }
   );
 }
 
-/* =========== UI helper =========== */
 function StatusBadge({ status }: { status: string }) {
   const map: Record<string, string> = {
     pending: "bg-yellow-500/15 text-yellow-300 border-yellow-500/30",
