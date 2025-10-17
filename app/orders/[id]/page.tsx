@@ -1,3 +1,4 @@
+// app/orders/[id]/page.tsx
 export const dynamic = "force-dynamic";
 
 import Link from "next/link";
@@ -16,7 +17,7 @@ type Order = {
   created_at: string | null;
   tracking_code?: string | null;
   shipping_address_id?: string | null;
-  totals?: number | null;
+  totals?: number | null;          // <-- usa 'totals'
   order_code?: string | null;
 };
 
@@ -39,6 +40,8 @@ type Wine = {
 
 export default async function OrderDetail({ params }: { params: { id: string } }) {
   const supa = createSupabaseServer();
+
+  // Auth
   const { data: { user } } = await supa.auth.getUser();
   if (!user) {
     return (
@@ -50,6 +53,7 @@ export default async function OrderDetail({ params }: { params: { id: string } }
     );
   }
 
+  // Buyer
   const { data: buyer } = await supa
     .from("buyers")
     .select("id")
@@ -63,6 +67,7 @@ export default async function OrderDetail({ params }: { params: { id: string } }
     );
   }
 
+  // Ordine
   const { data: order } = await supa
     .from("orders")
     .select("*")
@@ -77,7 +82,7 @@ export default async function OrderDetail({ params }: { params: { id: string } }
     );
   }
 
-  // address
+  // Address snapshot
   let address: any = null;
   if (order.shipping_address_id) {
     const { data: addr } = await supa
@@ -88,7 +93,8 @@ export default async function OrderDetail({ params }: { params: { id: string } }
     address = addr || null;
   }
 
-  // items: order_items then fallback cart_items
+  // === ITEMS ===
+  // 1) Prova order_items
   let items: Item[] = [];
   {
     const { data: oi } = await supa
@@ -97,6 +103,8 @@ export default async function OrderDetail({ params }: { params: { id: string } }
       .eq("order_id", order.id);
     if (oi?.length) items = oi as Item[];
   }
+
+  // 2) Fallback a cart_items (legacy)
   if ((!items || items.length === 0) && order.cart_id) {
     const { data: ci } = await supa
       .from("cart_items")
@@ -105,10 +113,10 @@ export default async function OrderDetail({ params }: { params: { id: string } }
     items = (ci || []) as Item[];
   }
 
-  // wines lookup
+  // 3) Lookup wines (query separata, niente join implicite)
   const winesById: Map<string, Wine> = new Map();
   if (items.length > 0) {
-    const wineIds = Array.from(new Set(items.map(i => i.wine_id))).filter(Boolean);
+    const wineIds = Array.from(new Set(items.map((i) => i.wine_id))).filter(Boolean);
     if (wineIds.length > 0) {
       const { data: wines } = await supa
         .from("wines")
@@ -118,7 +126,10 @@ export default async function OrderDetail({ params }: { params: { id: string } }
     }
   }
 
-  const subtotal = items.reduce((acc, it) => acc + (Number(it.unit_price) || 0) * (Number(it.quantity) || 0), 0);
+  const subtotal = items.reduce(
+    (acc, it) => acc + (Number(it.unit_price) || 0) * (Number(it.quantity) || 0),
+    0
+  );
   const totalToShow = order.totals != null ? Number(order.totals) : subtotal;
 
   return (
@@ -172,14 +183,18 @@ export default async function OrderDetail({ params }: { params: { id: string } }
               <div className="rounded-xl border border-white/10 bg-black/30 p-4">
                 <div className="text-xs uppercase tracking-wider text-white/60">Tracking</div>
                 <div className="mt-1 text-sm text-white">
-                  {order.tracking_code ? <span className="inline-flex items-center gap-2"><Truck size={16} /> {order.tracking_code}</span> : "—"}
+                  {order.tracking_code ? (
+                    <span className="inline-flex items-center gap-2">
+                      <Truck size={16} /> {order.tracking_code}
+                    </span>
+                  ) : (
+                    "—"
+                  )}
                 </div>
               </div>
               <div className="rounded-xl border border-white/10 bg-black/30 p-4">
                 <div className="text-xs uppercase tracking-wider text-white/60">Total</div>
-                <div className="mt-1 text-sm text-white">
-                  € {totalToShow.toFixed(2)}
-                </div>
+                <div className="mt-1 text-sm text-white">€ {totalToShow.toFixed(2)}</div>
               </div>
             </div>
 
@@ -191,9 +206,13 @@ export default async function OrderDetail({ params }: { params: { id: string } }
                   <>
                     <div className="font-semibold">{address.label || "—"}</div>
                     <div>{address.address || "—"}</div>
-                    <div>{(address.zip || "—")}, {(address.city || "—")} — {(address.country || "—")}</div>
+                    <div>
+                      {(address.zip || "—")}, {(address.city || "—")} — {(address.country || "—")}
+                    </div>
                   </>
-                ) : "—"}
+                ) : (
+                  "—"
+                )}
               </div>
             </div>
           </section>
@@ -269,7 +288,7 @@ function StatusBadge({ status }: { status: string }) {
   const map: Record<string, string> = {
     pending: "bg-yellow-500/15 text-yellow-300 border-yellow-500/30",
     processing: "bg-blue-500/15 text-blue-300 border-blue-500/30",
-    shipped: "bg-purple-500/15 text-purple-300 border-purple-500/30",
+    shipped: "bg-purple-500/15 text-purple-500 border-purple-500/30",
     completed: "bg-emerald-500/15 text-emerald-300 border-emerald-500/30",
     cancelled: "bg-red-500/15 text-red-300 border-red-500/30",
   };
