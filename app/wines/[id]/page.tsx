@@ -9,7 +9,7 @@ const BG =
   "radial-gradient(120% 120% at 50% -10%, #1c3e5e 0%, #0a1722 60%, #000 140%)";
 const WC_PINK = "#E33955";
 
-/** Tipi “elastici” per evitare errori in build se alcune colonne non esistono */
+/* ----------------- Types (elastici) ----------------- */
 type CatalogRow = {
   wine_id: string;
   wine_name: string | null;
@@ -33,7 +33,7 @@ type WineRow = {
   type?: string | null;
   image_url?: string | null;
   description?: string | null;
-  certifications?: any; // array<string> o json
+  certifications?: any;
 };
 
 type WineryRow = {
@@ -41,14 +41,14 @@ type WineryRow = {
   name?: string | null;
   region?: string | null;
   country?: string | null;
-  image_url?: string | null; // hero/cover
-  logo_url?: string | null;  // eventuale logo
+  image_url?: string | null;
+  logo_url?: string | null;
 };
 
 export default async function WineDetail({ params }: { params: { id: string } }) {
   const supa = createSupabaseServer();
 
-  // gated area (coerente con il resto)
+  // auth req
   const { data: { user } } = await supa.auth.getUser();
   if (!user) {
     return (
@@ -62,16 +62,16 @@ export default async function WineDetail({ params }: { params: { id: string } })
 
   const wineId = params.id;
 
-  // 1) Fonte primaria: RPC su vw_catalog (SECURITY DEFINER)
+  // 1) dalla view (RPC)
   let cat: CatalogRow | null = null;
   {
-    const { data, error } = await supa
+    const { data } = await supa
       .rpc("get_catalog_wine", { _wine_id: wineId })
       .maybeSingle<CatalogRow>();
-    if (!error) cat = data ?? null;
+    cat = data ?? null;
   }
 
-  // 2) Arricchimento da tabella "wines" (descrizione, certifications, winery_id… se disponibili)
+  // 2) arricchimento da wines
   let baseWine: WineRow | null = null;
   {
     const { data } = await supa
@@ -82,7 +82,7 @@ export default async function WineDetail({ params }: { params: { id: string } })
     baseWine = data ?? null;
   }
 
-  // 3) Dettagli cantina (se abbiamo winery_id)
+  // 3) winery details (se c'è)
   let winery: WineryRow | null = null;
   if (baseWine?.winery_id) {
     const { data } = await supa
@@ -103,7 +103,7 @@ export default async function WineDetail({ params }: { params: { id: string } })
     );
   }
 
-  // Modello unico per la UI
+  // modello consolidato
   const model = {
     id: wineId,
     name: (cat?.wine_name ?? baseWine?.name) || "Wine",
@@ -124,6 +124,33 @@ export default async function WineDetail({ params }: { params: { id: string } })
     wineryImage: winery?.image_url || winery?.logo_url || null,
   };
 
+  /* 4) Recommended: 3 elementi
+       - prima per stessa winery_name (escludendo questo vino)
+       - fallback: stesso type o stessa region
+  */
+  let recs: CatalogRow[] = [];
+  if (model.wineryName) {
+    const { data } = await supa
+      .from("vw_catalog")
+      .select("*")
+      .neq("wine_id", model.id)
+      .ilike("winery_name", model.wineryName)
+      .limit(3);
+    recs = (data as CatalogRow[]) ?? [];
+  }
+  if (recs.length < 3) {
+    const { data } = await supa
+      .from("vw_catalog")
+      .select("*")
+      .neq("wine_id", model.id)
+      .or(`type.ilike.${model.type || " "},region.ilike.${model.region || " "}`)
+      .limit(3);
+    const fallback = (data as CatalogRow[]) ?? [];
+    // evita duplicati
+    const ids = new Set(recs.map(r => r.wine_id));
+    recs.push(...fallback.filter(f => !ids.has(f.wine_id)).slice(0, 3 - recs.length));
+  }
+
   return (
     <div className="min-h-screen flex flex-col" style={{ background: BG }}>
       {/* Header */}
@@ -140,7 +167,7 @@ export default async function WineDetail({ params }: { params: { id: string } })
       </header>
 
       <main className="flex-1 px-5">
-        <div className="mx-auto max-w-5xl py-8 space-y-6">
+        <div className="mx-auto max-w-5xl py-8 space-y-8">
           {/* Title */}
           <section className="rounded-2xl border border-white/10 bg-white/[0.04] p-5 md:p-6">
             <div className="flex items-start justify-between gap-4">
@@ -169,17 +196,17 @@ export default async function WineDetail({ params }: { params: { id: string } })
             </div>
 
             <div className="mt-6 grid gap-6 md:grid-cols-2">
-              {/* IMAGE */}
+              {/* IMAGE (più piccola) */}
               <div className="rounded-2xl border border-white/10 bg-black/30 p-4 flex items-center justify-center">
                 {model.img ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src={model.img}
                     alt={model.name}
-                    className="max-h-[520px] w-auto object-contain"
+                    className="max-h-[360px] w-auto object-contain"
                   />
                 ) : (
-                  <div className="w-full h-[420px] grid place-items-center text-white/50">
+                  <div className="w-full h-[320px] grid place-items-center text-white/50">
                     No image
                   </div>
                 )}
@@ -187,56 +214,7 @@ export default async function WineDetail({ params }: { params: { id: string } })
 
               {/* RIGHT COLUMN */}
               <div className="space-y-4">
-                {/* BUY SAMPLE: prices + qty + button */}
-                <form
-                  action="/api/cart/add"
-                  method="post"
-                  className="rounded-2xl border border-white/10 bg-black/30 p-4 space-y-4"
-                >
-                  <input type="hidden" name="listType" value="sample" />
-                  <input type="hidden" name="wineId" value={model.id} />
-
-                  <div>
-                    <div className="text-xs uppercase tracking-wider text-white/60">
-                      Buy sample
-                    </div>
-                    <div className="mt-2 text-white/90 grid grid-cols-2 gap-3">
-                      <div>
-                        <div className="text-white/60 text-xs">Ex-cellar</div>
-                        <div className="font-semibold">
-                          € {Number(model.priceEx ?? 0).toFixed(2)}
-                        </div>
-                      </div>
-                      <div>
-                        <div className="text-white/60 text-xs">Sample</div>
-                        <div className="font-semibold">
-                          € {Number(model.priceSample ?? 0).toFixed(2)}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-3">
-                    <label className="text-sm text-white/80 min-w-[72px]">
-                      Quantity
-                    </label>
-                    <input
-                      type="number"
-                      name="qty"
-                      min={1}
-                      defaultValue={1}
-                      className="w-24 rounded-lg bg-black/30 border border-white/10 px-3 py-2 text-white"
-                    />
-                    <button
-                      className="inline-flex items-center gap-2 rounded-xl px-4 py-2 font-semibold text-[#0f1720]"
-                      style={{ background: WC_PINK }}
-                    >
-                      <ShoppingBasket size={16} /> Add sample
-                    </button>
-                  </div>
-                </form>
-
-                {/* WINERY CARD */}
+                {/* WINERY (sopra) */}
                 <div className="rounded-2xl border border-white/10 bg-black/30 p-4">
                   <div className="text-xs uppercase tracking-wider text-white/60">
                     Winery
@@ -265,7 +243,56 @@ export default async function WineDetail({ params }: { params: { id: string } })
                   </div>
                 </div>
 
-                {/* WINE DETAILS: type + description + certifications */}
+                {/* BUY SAMPLE (prezzi + qty + CTA ben distribuiti) */}
+                <form
+                  action="/api/cart/add"
+                  method="post"
+                  className="rounded-2xl border border-white/10 bg-black/30 p-4"
+                >
+                  <input type="hidden" name="listType" value="sample" />
+                  <input type="hidden" name="wineId" value={model.id} />
+
+                  <div className="text-xs uppercase tracking-wider text-white/60">
+                    Buy sample
+                  </div>
+
+                  <div className="mt-3 grid grid-cols-2 gap-3">
+                    <div className="rounded-xl border border-white/10 bg-white/[0.02] p-3">
+                      <div className="text-white/60 text-xs">Ex-cellar</div>
+                      <div className="mt-1 font-semibold">
+                        € {Number(model.priceEx ?? 0).toFixed(2)}
+                      </div>
+                    </div>
+                    <div className="rounded-xl border border-white/10 bg-white/[0.02] p-3">
+                      <div className="text-white/60 text-xs">Sample</div>
+                      <div className="mt-1 font-semibold">
+                        € {Number(model.priceSample ?? 0).toFixed(2)}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mt-3 flex items-center gap-3">
+                    <label className="text-sm text-white/80 min-w-[72px]">
+                      Quantity
+                    </label>
+                    <input
+                      type="number"
+                      name="qty"
+                      min={1}
+                      defaultValue={1}
+                      className="w-24 rounded-lg bg-black/30 border border-white/10 px-3 py-2 text-white"
+                    />
+                    <div className="grow" />
+                    <button
+                      className="inline-flex items-center gap-2 rounded-xl px-4 py-2 font-semibold text-[#0f1720]"
+                      style={{ background: WC_PINK }}
+                    >
+                      <ShoppingBasket size={16} /> Add sample
+                    </button>
+                  </div>
+                </form>
+
+                {/* WINE DETAILS */}
                 <div className="rounded-2xl border border-white/10 bg-black/30 p-4">
                   <div className="text-xs uppercase tracking-wider text-white/60">
                     Wine details
@@ -306,6 +333,61 @@ export default async function WineDetail({ params }: { params: { id: string } })
               </div>
             </div>
           </section>
+
+          {/* Recommended */}
+          <section className="rounded-2xl border border-white/10 bg-white/[0.04] p-5 md:p-6">
+            <div className="text-xs uppercase tracking-wider text-white/60">
+              Recommended
+            </div>
+            <h3 className="mt-1 text-xl font-extrabold text-white">
+              You may also like
+            </h3>
+
+            {recs.length === 0 ? (
+              <div className="mt-4 rounded-xl border border-white/10 bg-black/30 p-4 text-sm text-white/75">
+                No suggestions right now.
+              </div>
+            ) : (
+              <ul className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {recs.map((w) => (
+                  <li
+                    key={w.wine_id}
+                    className="rounded-2xl border border-white/10 bg-white/[0.04] hover:bg-white/[0.06] transition overflow-hidden"
+                  >
+                    <Link href={`/wines/${w.wine_id}`} className="block">
+                      <div className="aspect-square bg-black/30 grid place-items-center overflow-hidden">
+                        {w.image_url ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={w.image_url}
+                            alt={w.wine_name || "Wine"}
+                            className="h-full w-full object-cover"
+                          />
+                        ) : (
+                          <div className="text-white/30 text-xs">No image</div>
+                        )}
+                      </div>
+                      <div className="p-4">
+                        <div className="font-semibold text-white truncate">
+                          {w.wine_name}{" "}
+                          {w.vintage ? (
+                            <span className="text-white/60">({w.vintage})</span>
+                          ) : null}
+                        </div>
+                        <div className="text-sm text-white/70 truncate">
+                          {w.winery_name} · {w.region} · {w.type}
+                        </div>
+                        <div className="text-sm mt-2 text-white">
+                          <span className="text-white/60">Sample:</span>{" "}
+                          €{Number(w.price_sample ?? 0).toFixed(2)}
+                        </div>
+                      </div>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
         </div>
       </main>
 
@@ -316,7 +398,7 @@ export default async function WineDetail({ params }: { params: { id: string } })
   );
 }
 
-/** Normalizza certificazioni in array<string> */
+/* ---------- helpers ---------- */
 function normalizeCerts(raw: any): string[] {
   if (!raw) return [];
   try {
@@ -330,7 +412,6 @@ function normalizeCerts(raw: any): string[] {
       }
     }
     if (typeof raw === "object") {
-      // es. { organic:true, biodynamic:false } -> ["organic"]
       return Object.entries(raw)
         .filter(([, v]) => Boolean(v))
         .map(([k]) => String(k));
