@@ -16,7 +16,7 @@ type Order = {
   created_at: string | null;
   tracking_code?: string | null;
   shipping_address_id?: string | null;
-  total?: number | null;
+  totals?: number | null;           // <-- usa 'totals'
   order_code?: string | null;
 };
 
@@ -50,7 +50,6 @@ export default async function OrderDetail({ params }: { params: { id: string } }
     );
   }
 
-  // Buyer
   const { data: buyer } = await supa
     .from("buyers")
     .select("id")
@@ -64,7 +63,6 @@ export default async function OrderDetail({ params }: { params: { id: string } }
     );
   }
 
-  // Order
   const { data: order } = await supa
     .from("orders")
     .select("*")
@@ -79,7 +77,7 @@ export default async function OrderDetail({ params }: { params: { id: string } }
     );
   }
 
-  // Address (snapshot)
+  // address
   let address: any = null;
   if (order.shipping_address_id) {
     const { data: addr } = await supa
@@ -90,7 +88,7 @@ export default async function OrderDetail({ params }: { params: { id: string } }
     address = addr || null;
   }
 
-  // Items: prima order_items, fallback cart_items
+  // items: order_items then fallback cart_items
   let items: Item[] = [];
   {
     const { data: oi } = await supa
@@ -107,7 +105,7 @@ export default async function OrderDetail({ params }: { params: { id: string } }
     items = (ci || []) as Item[];
   }
 
-  // Enrich wines (no join implicita)
+  // wines lookup
   const winesById = new Map<string, Wine>();
   if (items.length > 0) {
     const wineIds = Array.from(new Set(items.map(i => i.wine_id))).filter(Boolean);
@@ -121,6 +119,7 @@ export default async function OrderDetail({ params }: { params: { id: string } }
   }
 
   const subtotal = items.reduce((acc, it) => acc + (Number(it.unit_price) || 0) * (Number(it.quantity) || 0), 0);
+  const totalToShow = order.totals != null ? Number(order.totals) : subtotal;
 
   return (
     <div className="min-h-screen flex flex-col" style={{ background: WC_BG }}>
@@ -179,7 +178,7 @@ export default async function OrderDetail({ params }: { params: { id: string } }
               <div className="rounded-xl border border-white/10 bg-black/30 p-4">
                 <div className="text-xs uppercase tracking-wider text-white/60">Total</div>
                 <div className="mt-1 text-sm text-white">
-                  {order.total != null ? `€ ${Number(order.total).toFixed(2)}` : `€ ${subtotal.toFixed(2)}`}
+                  € {totalToShow.toFixed(2)}
                 </div>
               </div>
             </div>
