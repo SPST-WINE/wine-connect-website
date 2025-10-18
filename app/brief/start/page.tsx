@@ -8,54 +8,27 @@ import ClientBriefWizard from "./Client";
 const BG =
   "radial-gradient(120% 120% at 50% -10%, #1c3e5e 0%, #0a1722 60%, #000 140%)";
 
-function SectionCard({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="rounded-2xl border border-white/10 bg-white/[0.06] backdrop-blur p-5">
-      {children}
-    </div>
-  );
-}
-
 export default async function Page() {
   const supa = createSupabaseServer();
-  const { data: { user } } = await supa.auth.getUser();
+  const {
+    data: { user },
+  } = await supa.auth.getUser();
 
-  if (!user) {
-    return (
-      <div className="min-h-screen" style={{ background: BG }}>
-        <header className="h-14 flex items-center justify-between px-5">
-          <Link href="/buyer-home" className="flex items-center gap-2 text-white">
-            <img src="/wc-logo.png" alt="Wine Connect" className="h-6 w-auto" />
-            <span className="font-semibold">Wine Connect</span>
-          </Link>
-        </header>
-        <main className="px-5">
-          <div className="mx-auto max-w-3xl py-10">
-            <SectionCard>
-              <div className="text-center text-white/80">
-                Please <a className="underline" href="/login">sign in</a> to start your brief.
-              </div>
-            </SectionCard>
-          </div>
-        </main>
-        <footer className="mt-auto py-6 px-5 text-right text-white/70 text-xs">
-          © {new Date().getFullYear()} Wine Connect — SPST
-        </footer>
-      </div>
-    );
+  let buyerId: string | null = null;
+  let fullName: string | null = null;
+
+  if (user) {
+    const { data: buyer } = await supa
+      .from("buyers")
+      .select("id, full_name")
+      .eq("auth_user_id", user.id)
+      .maybeSingle();
+    buyerId = buyer?.id ?? null;
+    fullName = (buyer as any)?.full_name ?? null;
   }
 
-  const { data: buyer } = await supa
-    .from("buyers")
-    .select("id, full_name")
-    .eq("auth_user_id", user.id)
-    .maybeSingle();
-
-  const buyerId = buyer?.id ?? null;
-  const fullName = (buyer as any)?.full_name ?? null;
-
   return (
-    <div className="min-h-screen" style={{ background: BG }}>
+    <div className="min-h-screen flex flex-col" style={{ background: BG }}>
       <header className="h-14 flex items-center justify-between px-5">
         <Link href="/buyer-home" className="flex items-center gap-2 text-white">
           <img src="/wc-logo.png" alt="Wine Connect" className="h-6 w-auto" />
@@ -68,14 +41,14 @@ export default async function Page() {
         </nav>
       </header>
 
-      <main className="px-5">
-        <div className="mx-auto max-w-3xl py-8">
-          {/* Il wizard vero e proprio è client-side */}
+      {/* La card è centrata verticalmente/orizzontalmente, con spazio per il footer */}
+      <main className="flex-1 px-5 grid place-items-center">
+        <div className="w-full max-w-3xl">
           <ClientBriefWizard buyerId={buyerId} fullName={fullName} />
         </div>
       </main>
 
-      <footer className="mt-auto py-6 px-5 text-right text-white/70 text-xs">
+      <footer className="py-6 px-5 text-right text-white/70 text-xs">
         © {new Date().getFullYear()} Wine Connect — SPST
       </footer>
     </div>
