@@ -14,18 +14,40 @@ export default async function Page() {
     data: { user },
   } = await supa.auth.getUser();
 
-  let buyerId: string | null = null;
-  let fullName: string | null = null;
-
-  if (user) {
-    const { data: buyer } = await supa
-      .from("buyers")
-      .select("id, full_name")
-      .eq("auth_user_id", user.id)
-      .maybeSingle();
-    buyerId = buyer?.id ?? null;
-    fullName = (buyer as any)?.full_name ?? null;
+  if (!user) {
+    return (
+      <div className="min-h-screen flex flex-col" style={{ background: BG }}>
+        <header className="h-14 flex items-center justify-between px-5">
+          <Link href="/buyer-home" className="flex items-center gap-2 text-white">
+            <img src="/wc-logo.png" alt="Wine Connect" className="h-6 w-auto" />
+            <span className="font-semibold">Wine Connect</span>
+          </Link>
+        </header>
+        <main className="flex-1 px-5 grid place-items-center">
+          <div className="w-full max-w-3xl rounded-2xl border border-white/10 bg-white/[0.06] backdrop-blur p-5 text-center text-white/80">
+            Please <a className="underline" href="/login">sign in</a> to start your brief.
+          </div>
+        </main>
+        <footer className="py-6 px-5 text-right text-white/70 text-xs">
+          © {new Date().getFullYear()} Wine Connect — SPST
+        </footer>
+      </div>
+    );
   }
+
+  // ✅ usa le colonne realmente presenti in "buyers"
+  const { data: buyer } = await supa
+    .from("buyers")
+    .select("id, contact_name, company_name, email")
+    .eq("auth_user_id", user.id)
+    .maybeSingle();
+
+  const buyerId = buyer?.id ?? null;
+  const fullName =
+    (buyer?.contact_name?.trim() || "") ||
+    (buyer?.company_name?.trim() || "") ||
+    (buyer?.email?.split("@")[0] || "") ||
+    null;
 
   return (
     <div className="min-h-screen flex flex-col" style={{ background: BG }}>
@@ -41,7 +63,7 @@ export default async function Page() {
         </nav>
       </header>
 
-      {/* La card è centrata verticalmente/orizzontalmente, con spazio per il footer */}
+      {/* card centrata, footer sempre in basso */}
       <main className="flex-1 px-5 grid place-items-center">
         <div className="w-full max-w-3xl">
           <ClientBriefWizard buyerId={buyerId} fullName={fullName} />
