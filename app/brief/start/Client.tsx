@@ -90,6 +90,9 @@ export default function ClientBriefWizard({
 }) {
   const [started, setStarted] = useState(false);
   const [step, setStep] = useState<1 | 2 | 3>(1);
+  const [isSending, setIsSending] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   // state
   const [wineStyles, setWineStyles] = useState<string[]>([]);
@@ -103,29 +106,44 @@ export default function ClientBriefWizard({
   const [wish, setWish] = useState<string>("");
   const [pref, setPref] = useState<string>("Shortlist only");
   const [file, setFile] = useState<File | null>(null);
-  const [submitted, setSubmitted] = useState(false);
 
   const toggle = (arr: string[], value: string, setter: (v: string[]) => void) =>
     setter(arr.includes(value) ? arr.filter(v => v !== value) : [...arr, value]);
 
   const submit = async () => {
-    if (!buyerId) return;
-    const form = new FormData();
-    form.set("buyer_id", buyerId);
-    form.set("wine_styles", JSON.stringify(wineStyles));
-    form.set("price_range", priceRange);
-    form.set("certifications", JSON.stringify(certs));
-    form.set("target_audience", JSON.stringify(audience));
-    form.set("quantity_estimate", quantity);
-    form.set("regions_interest", JSON.stringify(regions));
-    form.set("frequency_orders", frequency);
-    form.set("brief_notes", `${notes}${wish ? `\n\nWineries: ${wish}` : ""}`);
-    form.set("shortlist_preference", pref);
-    if (file) form.set("uploaded_file", file);
+    setErrorMsg(null);
+    if (!buyerId) {
+      setErrorMsg("You must be signed in to submit a brief.");
+      return;
+    }
 
-    const res = await fetch("/api/brief/submit", { method: "POST", body: form });
-    if (res.ok) setSubmitted(true);
-    else alert("There was an error saving your brief. Please try again.");
+    try {
+      setIsSending(true);
+      const form = new FormData();
+      form.set("buyer_id", buyerId);
+      form.set("wine_styles", JSON.stringify(wineStyles));
+      form.set("price_range", priceRange);
+      form.set("certifications", JSON.stringify(certs));
+      form.set("target_audience", JSON.stringify(audience));
+      form.set("quantity_estimate", quantity);
+      form.set("regions_interest", JSON.stringify(regions));
+      form.set("frequency_orders", frequency);
+      form.set("brief_notes", `${notes}${wish ? `\n\nWineries: ${wish}` : ""}`);
+      form.set("shortlist_preference", pref);
+      if (file) form.set("uploaded_file", file);
+
+      const res = await fetch("/api/brief/submit", { method: "POST", body: form });
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({}));
+        throw new Error(j?.error || "Failed to submit");
+      }
+
+      setSubmitted(true); // chiude il form e mostra la conferma
+    } catch (e: any) {
+      setErrorMsg(e?.message || "Unexpected error");
+    } finally {
+      setIsSending(false);
+    }
   };
 
   return (
@@ -161,6 +179,11 @@ export default function ClientBriefWizard({
       ) : (
         <>
           <Progress step={step} />
+          {errorMsg && (
+            <div className="rounded-lg border border-red-400/30 bg-red-500/10 px-3 py-2 text-sm text-red-200">
+              {errorMsg}
+            </div>
+          )}
 
           {/* STEP 1 */}
           {step === 1 && (
@@ -269,9 +292,6 @@ export default function ClientBriefWizard({
                           {f}
                         </Chip>
                       ))}
-                    </div>
-                    <div className="text-xs text-white/50 mt-1">
-                      (Se vuoi un campo dedicato per i formati, lo aggiungo in tabella)
                     </div>
                   </div>
 
@@ -390,10 +410,11 @@ export default function ClientBriefWizard({
                   </button>
                   <button
                     onClick={submit}
-                    className="rounded-xl px-4 py-2 font-semibold text-[#0f1720]"
+                    disabled={isSending}
+                    className="rounded-xl px-4 py-2 font-semibold text-[#0f1720] disabled:opacity-60"
                     style={{ background: "#E33955" }}
                   >
-                    Submit my brief
+                    {isSending ? "Submitting…" : "Submit my brief"}
                   </button>
                 </div>
               </div>
