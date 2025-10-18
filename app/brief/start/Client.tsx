@@ -112,15 +112,11 @@ export default function ClientBriefWizard({
 
   const submit = async () => {
     setErrorMsg(null);
-    if (!buyerId) {
-      setErrorMsg("You must be signed in to submit a brief.");
-      return;
-    }
-
     try {
       setIsSending(true);
+
       const form = new FormData();
-      form.set("buyer_id", buyerId);
+      if (buyerId) form.set("buyer_id", buyerId);
       form.set("wine_styles", JSON.stringify(wineStyles));
       form.set("price_range", priceRange);
       form.set("certifications", JSON.stringify(certs));
@@ -135,10 +131,14 @@ export default function ClientBriefWizard({
       const res = await fetch("/api/brief/submit", { method: "POST", body: form });
       if (!res.ok) {
         const j = await res.json().catch(() => ({}));
+        // messaggi più chiari
+        if (j?.error === "not_authenticated") throw new Error("Your session expired. Please sign in again.");
+        if (j?.error === "buyer_mismatch") throw new Error("We couldn't verify your buyer profile.");
+        if (j?.error === "missing_buyer_id") throw new Error("Missing buyer id. Please reload the page and try again.");
         throw new Error(j?.error || "Failed to submit");
       }
 
-      setSubmitted(true); // chiude il form e mostra la conferma
+      setSubmitted(true);
     } catch (e: any) {
       setErrorMsg(e?.message || "Unexpected error");
     } finally {
