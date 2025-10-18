@@ -10,69 +10,69 @@ export async function POST(req: Request) {
 
     const form = await req.formData();
 
-    // Hidden field dal client
     const buyer_id = String(form.get("buyer_id") || "");
+    if (!buyer_id) return NextResponse.json({ error: "missing_buyer_id" }, { status: 400 });
 
-    // Helper per normalizzare array checkbox
-    const toArr = (v: FormDataEntryValue | null) => {
+    // opzionale: verifica ownership buyer
+    const { data: buyer } = await supa
+      .from("buyers")
+      .select("id")
+      .eq("id", buyer_id)
+      .eq("auth_user_id", user.id)
+      .maybeSingle();
+    if (!buyer) return NextResponse.json({ error: "buyer_mismatch" }, { status: 403 });
+
+    const parseJSON = (v: FormDataEntryValue | null) => {
       if (!v) return [];
-      if (Array.isArray(v)) return v.map(String);
-      // il client invia JSON.stringify([...]) per i multi-select
-      try { return JSON.parse(String(v)); } catch { return [String(v)]; }
+      try { return JSON.parse(String(v)) } catch { return [] }
     };
 
-    const wine_styles          = toArr(form.get("wine_styles"));
-    const price_range          = String(form.get("price_range") || "");
-    const certifications       = toArr(form.get("certifications"));
-    const target_audience      = toArr(form.get("target_audience"));
-    const quantity_estimate    = String(form.get("quantity_estimate") || "");
-    const regions_interest     = toArr(form.get("regions_interest"));
-    const frequency_orders     = String(form.get("frequency_orders") || "");
-    const brief_notes          = String(form.get("brief_notes") || "");
-    const shortlist_preference = String(form.get("shortlist_preference") || "");
+    const payload = {
+      buyer_id,
+      wine_styles: parseJSON(form.get("wine_styles")),
+      price_range: String(form.get("price_range") || ""),
+      certifications: parseJSON(form.get("certifications")),
+      target_audience: parseJSON(form.get("target_audience")),
+      quantity_estimate: String(form.get("quantity_estimate") || ""),
+      regions_interest: parseJSON(form.get("regions_interest")),
+      frequency_orders: String(form.get("frequency_orders") || ""),
+      brief_notes: String(form.get("brief_notes") || ""),
+      shortlist_preference: String(form.get("shortlist_preference") || ""),
+      uploaded_file_url: null as string | null,
+    };
 
-    // Upload opzionale
-    let uploaded_file_url: string | null = null;
+    // Upload file (opzionale)
     const file = form.get("uploaded_file") as File | null;
     if (file && file.size > 0) {
-      const ext = (file.name.split(".").pop() || "bin").toLowerCase();
-      const path = `${user.id}/${Date.now()}_${file.name.replace(/\s+/g, "_")}`;
-      const { error: upErr } = await supa.storage.from("brief_uploads").upload(path, file, {
-        contentType: file.type || "application/octet-stream",
-        upsert: false,
-      });
+      const arrayBuffer = await file.arrayBuffer();
+      const path = `${buyer_id}/${Date.now()}_${file.name}`;
+      const { data: up, error: upErr } = await supa
+        .storage
+        .from("briefs")            // <-- crea il bucket "briefs" (vedi SQL sotto)
+        .upload(path, Buffer.from(arrayBuffer), {
+          contentType: file.type || "application/octet-stream",
+          upsert: true,
+        });
+
       if (upErr) {
-        // non blocco l’intero brief se l’upload fallisce
-        console.error("upload error", upErr);
+        // non blocco l’inserimento del brief se l’upload fallisce
+        console.warn("brief upload error", upErr);
       } else {
-        const { data: publicUrl } = supa.storage.from("brief_uploads").getPublicUrl(path);
-        uploaded_file_url = publicUrl?.publicUrl ?? null;
+        // se il bucket è pubblico, prendi l'URL pubblico:
+        const { data: pub } = supa.storage.from("briefs").getPublicUrl(up.path);
+        payload.uploaded_file_url = pub?.publicUrl ?? up.path;
       }
     }
 
-    // Inserimento
-    const { error: insErr } = await supa.from("buyer_briefs").insert({
-      buyer_id,
-      wine_styles,
-      price_range: price_range || null,
-      certifications,
-      target_audience,
-      quantity_estimate: quantity_estimate || null,
-      regions_interest,
-      frequency_orders: frequency_orders || null,
-      brief_notes: brief_notes || null,
-      shortlist_preference: shortlist_preference || null,
-      uploaded_file_url: uploaded_file_url || null,
-    } as any);
-
+    const { error: insErr } = await supa.from("buyer_briefs").insert(payload);
     if (insErr) {
-      console.error(insErr);
+      console.error("brief insert error", insErr);
       return NextResponse.json({ error: "insert_failed" }, { status: 500 });
     }
 
     return NextResponse.json({ ok: true });
   } catch (e) {
-    console.error(e);
+    console.error("brief submit error", e);
     return NextResponse.json({ error: "unexpected_error" }, { status: 500 });
   }
 }
