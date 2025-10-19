@@ -5,6 +5,7 @@ import Link from "next/link";
 import { createSupabaseServer } from "@/lib/supabase/server";
 import SiteHeader from "@/components/layout/SiteHeader";
 import SiteFooter from "@/components/layout/SiteFooter";
+import ShippingAddressPicker from "@/components/cart/ShippingAddressPicker";
 
 export default async function SamplesCart() {
   const supa = createSupabaseServer();
@@ -65,7 +66,7 @@ export default async function SamplesCart() {
     .limit(1);
   const cartId = carts?.[0]?.id;
 
-  // items
+  // items (aggiungo region + alcohol per i dettagli)
   const { data: items } = cartId
     ? await supa
         .from("cart_items")
@@ -79,6 +80,8 @@ export default async function SamplesCart() {
             id,
             name,
             vintage,
+            region,
+            alcohol,
             image_url
           )
         `
@@ -86,10 +89,10 @@ export default async function SamplesCart() {
         .eq("cart_id", cartId)
     : { data: [] as any[] };
 
-  // addresses (default prima)
+  // addresses (aggiungo city/zip per dettaglio + caret custom)
   const { data: addresses } = await supa
     .from("addresses")
-    .select("id,label,address,country,is_default,created_at")
+    .select("id,label,address,city,zip,country,is_default,created_at")
     .eq("buyer_id", buyer.id)
     .eq("is_active", true)
     .order("is_default", { ascending: false })
@@ -145,10 +148,11 @@ export default async function SamplesCart() {
               {/* Items */}
               <ul className="mt-6 grid gap-3">
                 {(items || []).map((it: any) => {
-                  const img = it.wines?.image_url || null;
+                  const w = it.wines || {};
+                  const img = w?.image_url || null;
+                  const name = w?.name || "Wine";
                   const title =
-                    (it.wines?.name || "Wine") +
-                    (it.wines?.vintage ? ` (${it.wines.vintage})` : "");
+                    name + (w?.vintage ? ` (${w.vintage})` : "");
                   const lineTotal =
                     Number(it.unit_price || 0) * Number(it.quantity || 0);
 
@@ -157,11 +161,15 @@ export default async function SamplesCart() {
                       key={it.id}
                       className="rounded-2xl border border-white/10 bg-white/[0.04] p-3 flex items-center gap-3"
                     >
-                      <div className="w-16 h-16 rounded-lg border border-white/10 overflow-hidden shrink-0 bg-black/30">
+                      <Link
+                        href={`/wines/${w?.id}`}
+                        className="w-16 h-16 rounded-lg border border-white/10 overflow-hidden shrink-0 bg-black/30"
+                      >
                         {img ? (
+                          // eslint-disable-next-line @next/next/no-img-element
                           <img
                             src={img}
-                            alt={it.wines?.name || "Wine"}
+                            alt={name}
                             className="w-full h-full object-cover"
                           />
                         ) : (
@@ -169,10 +177,20 @@ export default async function SamplesCart() {
                             No image
                           </div>
                         )}
-                      </div>
+                      </Link>
 
                       <div className="flex-1 min-w-0">
-                        <div className="font-semibold truncate">{title}</div>
+                        <div className="font-semibold truncate">
+                          <Link href={`/wines/${w?.id}`} className="hover:underline">
+                            {title}
+                          </Link>
+                        </div>
+                        {/* meta: vintage (separato), alcohol %, region */}
+                        <div className="text-xs text-white/70 mt-0.5">
+                          {w?.vintage ? `${w.vintage}` : "—"}
+                          {w?.alcohol != null ? ` · ${Number(w.alcohol)}% alc.` : ""}
+                          {w?.region ? ` · ${w.region}` : ""}
+                        </div>
                         <div className="text-sm text-white/70">
                           €{Number(it.unit_price || 0).toFixed(2)} each
                         </div>
@@ -219,8 +237,9 @@ export default async function SamplesCart() {
               </ul>
 
               {/* Addresses + checkout */}
+              {/* ↓ margin-top ridotta (da mt-4 a mt-3) per togliere lo "spazio morto" */}
               {!addresses || addresses.length === 0 ? (
-                <div className="mt-4 rounded-2xl border border-amber-300/20 bg-amber-500/10 p-5 text-amber-100">
+                <div className="mt-3 rounded-2xl border border-amber-300/20 bg-amber-500/10 p-5 text-amber-100">
                   You need at least one shipping address to complete checkout.
                   <Link className="underline ml-1" href="/profile">
                     Add it in your profile
@@ -231,25 +250,14 @@ export default async function SamplesCart() {
                 <form
                   action="/api/cart/checkout"
                   method="post"
-                  className="mt-4 space-y-3 rounded-2xl border border-white/10 bg-white/[0.04] p-5"
+                  className="mt-3 space-y-3 rounded-2xl border border-white/10 bg-white/[0.04] p-5"
                 >
                   <input type="hidden" name="type" value="sample" />
-                  <label className="block text-sm text-white/80">
-                    Shipping address
-                  </label>
-                  <select
-                    name="shipping_address_id" // <-- NOME CORRETTO
-                    required
-                    defaultValue={defaultAddressId}
-                    className="w-full rounded-lg bg-black/30 border border-white/10 px-3 py-2"
-                  >
-                    {(addresses || []).map((a: any) => (
-                      <option key={a.id} value={a.id} className="bg-[#0a1722]">
-                        {(a.label || a.address)} ({a.country})
-                        {a.is_default ? " · default" : ""}
-                      </option>
-                    ))}
-                  </select>
+                  {/* Select + dettaglio indirizzo (caret custom) */}
+                  <ShippingAddressPicker
+                    addresses={addresses as any}
+                    defaultId={defaultAddressId}
+                  />
                   <button
                     className="h-11 w-full rounded-xl font-semibold text-[#0f1720]"
                     style={{ background: "#E33955" }}
