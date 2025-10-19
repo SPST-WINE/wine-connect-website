@@ -7,6 +7,28 @@ import SiteHeader from "@/components/layout/SiteHeader";
 import SiteFooter from "@/components/layout/SiteFooter";
 import ShippingAddressPicker from "@/components/cart/ShippingAddressPicker";
 
+type CartItemRow = {
+  id: string;
+  wine_id: string;
+  quantity: number;
+  unit_price: number | null;
+  list_type: string | null;
+};
+
+type CatalogRow = {
+  wine_id: string;
+  wine_name: string | null;
+  winery_name: string | null;
+  vintage: string | null;
+  region: string | null;
+  image_url: string | null;
+};
+
+type WineRow = {
+  id: string;
+  alcohol: number | null;
+};
+
 export default async function SamplesCart() {
   const supa = createSupabaseServer();
   const {
@@ -38,7 +60,7 @@ export default async function SamplesCart() {
     .from("buyers")
     .select("id")
     .eq("auth_user_id", user.id)
-    .single();
+    .maybeSingle();
 
   if (!buyer) {
     return (
@@ -56,7 +78,7 @@ export default async function SamplesCart() {
     );
   }
 
-  // open cart
+  // open cart id
   const { data: carts } = await supa
     .from("carts")
     .select("id")
@@ -64,32 +86,41 @@ export default async function SamplesCart() {
     .eq("type", "sample")
     .eq("status", "open")
     .limit(1);
-  const cartId = carts?.[0]?.id;
 
-  // items (aggiungo region + alcohol per i dettagli)
-  const { data: items } = cartId
-    ? await supa
-        .from("cart_items")
-        .select(
-          `
-          id,
-          quantity,
-          unit_price,
-          list_type,
-          wines (
-            id,
-            name,
-            vintage,
-            region,
-            alcohol,
-            image_url
-          )
-        `
-        )
-        .eq("cart_id", cartId)
-    : { data: [] as any[] };
+  const cartId = carts?.[0]?.id || null;
 
-  // addresses (aggiungo city/zip per dettaglio + caret custom)
+  // items (no join per evitare problemi RLS)
+  let items: CartItemRow[] = [];
+  if (cartId) {
+    const { data: rows } = await supa
+      .from("cart_items")
+      .select("id,wine_id,quantity,unit_price,list_type")
+      .eq("cart_id", cartId);
+    items = (rows || []) as CartItemRow[];
+  }
+
+  // lookup vini (catalogo + alcohol)
+  const wineIds = Array.from(new Set(items.map((i) => i.wine_id))).filter(Boolean);
+
+  const [catalogRes, winesRes] = await Promise.all([
+    wineIds.length
+      ? supa
+          .from("vw_catalog")
+          .select("wine_id, wine_name, winery_name, vintage, region, image_url")
+          .in("wine_id", wineIds)
+      : Promise.resolve({ data: [] as CatalogRow[] }),
+    wineIds.length
+      ? supa.from("wines").select("id, alcohol").in("id", wineIds)
+      : Promise.resolve({ data: [] as WineRow[] }),
+  ]);
+
+  const byId = new Map<string, CatalogRow>();
+  (catalogRes.data as CatalogRow[]).forEach((r) => byId.set(r.wine_id, r));
+
+  const alcById = new Map<string, number | null>();
+  (winesRes.data as WineRow[]).forEach((r) => alcById.set(r.id, r.alcohol));
+
+  // addresses (city/zip per dettaglio)
   const { data: addresses } = await supa
     .from("addresses")
     .select("id,label,address,city,zip,country,is_default,created_at")
@@ -103,8 +134,8 @@ export default async function SamplesCart() {
     addresses?.[0]?.id ||
     "";
 
-  const subtotal = (items || []).reduce(
-    (s: number, i: any) => s + i.quantity * Number(i.unit_price || 0),
+  const subtotal = items.reduce(
+    (s: number, i: CartItemRow) => s + (Number(i.unit_price) || 0) * (Number(i.quantity) || 0),
     0
   );
 
@@ -123,7 +154,7 @@ export default async function SamplesCart() {
               </div>
               <h1 className="text-3xl font-extrabold">Your cart</h1>
               <p className="text-white/70 text-sm">
-                {(items?.length || 0)} items · Total €{subtotal.toFixed(2)}
+                {items.length} items · Total €{subtotal.toFixed(2)}
               </p>
             </div>
             <Link
@@ -135,7 +166,7 @@ export default async function SamplesCart() {
           </div>
 
           {/* Empty state */}
-          {!cartId || !items || items.length === 0 ? (
+          {!cartId || items.length === 0 ? (
             <div className="mt-6 rounded-2xl border border-white/10 bg-white/[0.04] p-5 text-center text-white/70">
               Your sample cart is empty.{" "}
               <Link href="/catalog" className="underline">
@@ -147,14 +178,16 @@ export default async function SamplesCart() {
             <>
               {/* Items */}
               <ul className="mt-6 grid gap-3">
-                {(items || []).map((it: any) => {
-                  const w = it.wines || {};
-                  const img = w?.image_url || null;
-                  const name = w?.name || "Wine";
-                  const title =
-                    name + (w?.vintage ? ` (${w.vintage})` : "");
+                {items.map((it) => {
+                  const cat = byId.get(it.wine_id);
+                  const img = cat?.image_url || null;
+                  const name = cat?.wine_name || "Wine";
+                  const vintage = cat?.vintage || null;
+                  const region = cat?.region || null;
+                  const alcohol = alcById.get(it.wine_id);
+                  const title = name + (vintage ? ` (${vintage})` : "");
                   const lineTotal =
-                    Number(it.unit_price || 0) * Number(it.quantity || 0);
+                    (Number(it.unit_price) || 0) * (Number(it.quantity) || 0);
 
                   return (
                     <li
@@ -162,7 +195,7 @@ export default async function SamplesCart() {
                       className="rounded-2xl border border-white/10 bg-white/[0.04] p-3 flex items-center gap-3"
                     >
                       <Link
-                        href={`/wines/${w?.id}`}
+                        href={`/wines/${it.wine_id}`}
                         className="w-16 h-16 rounded-lg border border-white/10 overflow-hidden shrink-0 bg-black/30"
                       >
                         {img ? (
@@ -181,15 +214,14 @@ export default async function SamplesCart() {
 
                       <div className="flex-1 min-w-0">
                         <div className="font-semibold truncate">
-                          <Link href={`/wines/${w?.id}`} className="hover:underline">
+                          <Link href={`/wines/${it.wine_id}`} className="hover:underline">
                             {title}
                           </Link>
                         </div>
-                        {/* meta: vintage (separato), alcohol %, region */}
                         <div className="text-xs text-white/70 mt-0.5">
-                          {w?.vintage ? `${w.vintage}` : "—"}
-                          {w?.alcohol != null ? ` · ${Number(w.alcohol)}% alc.` : ""}
-                          {w?.region ? ` · ${w.region}` : ""}
+                          {vintage ?? "—"}
+                          {alcohol != null ? ` · ${Number(alcohol)}% alc.` : ""}
+                          {region ? ` · ${region}` : ""}
                         </div>
                         <div className="text-sm text-white/70">
                           €{Number(it.unit_price || 0).toFixed(2)} each
@@ -236,8 +268,7 @@ export default async function SamplesCart() {
                 </li>
               </ul>
 
-              {/* Addresses + checkout */}
-              {/* ↓ margin-top ridotta (da mt-4 a mt-3) per togliere lo "spazio morto" */}
+              {/* Addresses + checkout — margin compatto */}
               {!addresses || addresses.length === 0 ? (
                 <div className="mt-3 rounded-2xl border border-amber-300/20 bg-amber-500/10 p-5 text-amber-100">
                   You need at least one shipping address to complete checkout.
@@ -253,7 +284,6 @@ export default async function SamplesCart() {
                   className="mt-3 space-y-3 rounded-2xl border border-white/10 bg-white/[0.04] p-5"
                 >
                   <input type="hidden" name="type" value="sample" />
-                  {/* Select + dettaglio indirizzo (caret custom) */}
                   <ShippingAddressPicker
                     addresses={addresses as any}
                     defaultId={defaultAddressId}
