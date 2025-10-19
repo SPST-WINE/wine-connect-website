@@ -12,7 +12,6 @@ export default async function SiteHeader() {
   let cartCount = 0;
 
   if (user) {
-    // risolvi buyer
     const { data: buyer } = await supabase
       .from("buyers")
       .select("id")
@@ -20,7 +19,6 @@ export default async function SiteHeader() {
       .maybeSingle();
 
     if (buyer) {
-      // trova carrello "sample" aperto
       const { data: cart } = await supabase
         .from("carts")
         .select("id")
@@ -30,13 +28,15 @@ export default async function SiteHeader() {
         .maybeSingle();
 
       if (cart) {
-        // somma quantita delle righe
         const { data: items } = await supabase
           .from("cart_items")
           .select("quantity")
           .eq("cart_id", cart.id);
 
-        cartCount = (items ?? []).reduce((acc, it) => acc + Number(it.quantity || 0), 0);
+        cartCount = (items ?? []).reduce(
+          (acc, it) => acc + Number(it.quantity || 0),
+          0
+        );
       }
     }
   }
