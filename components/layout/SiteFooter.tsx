@@ -7,8 +7,8 @@ export default function SiteFooter() {
           <div className="text-sm">
             © {new Date().getFullYear()} Wine Connect — All rights reserved.
           </div>
-          <div className="text-sm">
-            <span className="opacity-80">Built on Next.js & Supabase</span>
+          <div className="text-sm opacity-80">
+            Built on Next.js & Supabase
           </div>
         </div>
       </div>
