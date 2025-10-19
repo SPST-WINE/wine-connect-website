@@ -5,6 +5,8 @@ import { createSupabaseServer } from "@/lib/supabase/server";
 import { ArrowRight, Search, SlidersHorizontal } from "lucide-react";
 import WineCard, { CatalogItem } from "@/components/catalog/WineCard";
 import Pagination from "@/components/common/Pagination";
+import SiteHeader from "@/components/layout/SiteHeader";
+import SiteFooter from "@/components/layout/SiteFooter";
 
 /* ---------- Helpers ---------- */
 type SP = {
@@ -79,31 +81,18 @@ export default async function Catalog({ searchParams }: { searchParams: SP }) {
           "radial-gradient(120% 120% at 50% -10%, #1c3e5e 0%, #0a1722 60%, #000 140%)",
       }}
     >
-      {/* Top bar */}
-      <header className="h-14 flex items-center justify-between px-5">
-        <Link href="/buyer-home" className="flex items-center gap-2 text-white">
-          <img src="/wc-logo.png" alt="Wine Connect" className="h-6 w-auto" />
-          <span className="font-semibold">Wine Connect</span>
-        </Link>
-        <nav className="flex items-center gap-5 text-sm">
-          <Link className="text-white/80 hover:text-white" href="/cart/samples">
-            Sample Cart
-          </Link>
-          <Link className="text-white/80 hover:text-white" href="/profile">
-            Profile
-          </Link>
-        </nav>
-      </header>
+      {/* GLOBAL HEADER (full-bleed) */}
+      <SiteHeader />
 
       <main className="px-5">
-        <div className="mx-auto max-w-6xl py-6">
+        <div className="mx-auto max-w-6xl py-6 text-white">
           {/* Heading */}
           <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
             <div>
               <div className="text-xs uppercase tracking-wider text-white/60">
                 Catalog
               </div>
-              <h1 className="text-3xl font-extrabold text-white">
+              <h1 className="text-3xl font-extrabold">
                 Explore wines & add samples
               </h1>
               <p className="text-white/70 text-sm">
@@ -112,14 +101,17 @@ export default async function Catalog({ searchParams }: { searchParams: SP }) {
             </div>
             <Link
               href="/cart/samples"
-              className="inline-flex items-center gap-2 rounded-xl bg-white/10 border border-white/10 px-3 py-2 text-sm text-white hover:bg-white/15"
+              className="inline-flex items-center gap-2 rounded-xl bg-white/10 border border-white/10 px-3 py-2 text-sm hover:bg-white/15"
             >
               Go to sample cart <ArrowRight size={16} />
             </Link>
           </div>
 
           {/* Filters */}
-          <form className="mt-5 rounded-2xl border border-white/10 bg-white/[0.04] p-4" method="get">
+          <form
+            className="mt-5 rounded-2xl border border-white/10 bg-white/[0.04] p-4"
+            method="get"
+          >
             <div className="grid grid-cols-1 md:grid-cols-[2fr_1fr_1fr_1fr] gap-3">
               <label className="grid gap-1">
                 <span className="text-[11px] text-white/60">Search</span>
@@ -197,9 +189,11 @@ export default async function Catalog({ searchParams }: { searchParams: SP }) {
             </div>
           </form>
 
-          {/* Grid -> 4 colonne (xl) */}
+          {/* Grid */}
           <ul className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {items.map((it) => <WineCard key={it.wine_id} item={it} />)}
+            {items.map((it) => (
+              <WineCard key={it.wine_id} item={it} />
+            ))}
           </ul>
 
           {/* Empty state */}
@@ -209,14 +203,13 @@ export default async function Catalog({ searchParams }: { searchParams: SP }) {
             </div>
           )}
 
-          {/* Pagination component */}
+          {/* Pagination */}
           <Pagination pages={pages} page={page} searchParams={searchParams as any} />
         </div>
       </main>
 
-      <footer className="mt-auto py-6 px-5 text-right text-white/70 text-xs">
-        © {new Date().getFullYear()} Wine Connect — SPST
-      </footer>
+      {/* GLOBAL FOOTER (full-bleed) */}
+      <SiteFooter />
     </div>
   );
 }
