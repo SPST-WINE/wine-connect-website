@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/is-admin";
-import { supabaseAdmin } from "@/lib/supabase/admin";
+import { getSupabaseAdmin } from "@/lib/supabase/admin";
+
+export const runtime = "nodejs"; // assicuriamo Node runtime per l’upload
 
 export async function POST(req: Request) {
   const { ok } = await requireAdmin();
@@ -14,7 +16,9 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Dati mancanti" }, { status: 400 });
   }
 
-  // (opzionale) valida mime coerente col bucket
+  // crea il client admin solo ora (no import-time crash)
+  const supa = getSupabaseAdmin();
+
   const allowed = new Set([
     "image/png",
     "image/jpeg",
@@ -26,16 +30,14 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Tipo file non supportato" }, { status: 415 });
   }
 
-  // filename sicuro
   const extFromName = file.name.includes(".")
     ? file.name.split(".").pop()!
     : (file.type.split("/")[1] || "png");
   const ext = extFromName.toLowerCase().replace(/[^a-z0-9+.-]/g, "") || "png";
   const key = `${wineryId}/${crypto.randomUUID()}.${ext}`;
 
-  // upload sul bucket CORRETTO: "wineries"
-  const { error: upErr } = await supabaseAdmin.storage
-    .from("wineries")
+  const { error: upErr } = await supa.storage
+    .from("wineries")                   // <— bucket corretto
     .upload(key, file, {
       cacheControl: "31536000",
       upsert: true,
@@ -46,16 +48,14 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: upErr.message }, { status: 400 });
   }
 
-  // url pubblico e salvataggio su DB
-  const { data: pub } = supabaseAdmin.storage.from("wineries").getPublicUrl(key);
+  const { data: pub } = supa.storage.from("wineries").getPublicUrl(key);
   const publicUrl = pub?.publicUrl ?? null;
 
   if (publicUrl) {
-    const { error: dbErr } = await supabaseAdmin
+    const { error: dbErr } = await supa
       .from("wineries")
       .update({ logo_url: publicUrl })
       .eq("id", wineryId);
-
     if (dbErr) {
       return NextResponse.json({ error: dbErr.message }, { status: 400 });
     }
