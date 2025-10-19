@@ -32,7 +32,8 @@ type Winery = {
   name: string | null;
   region: string | null;
   country: string | null;
-  logo_url: string | null; // <-- aggiunto
+  logo_url: string | null;
+  description: string | null; // <-- aggiunto
 };
 
 function fmtMoney(n?: number | null) {
@@ -79,7 +80,7 @@ export default async function WineDetail({ params }: { params: { id: string } })
   if (wine.winery_id) {
     const { data: wn } = await supa
       .from("wineries")
-      .select("id,name,region,country,logo_url") // <-- logo_url
+      .select("id,name,region,country,logo_url,description") // <-- description
       .eq("id", wine.winery_id)
       .maybeSingle<Winery>();
     winery = wn ?? null;
@@ -87,7 +88,9 @@ export default async function WineDetail({ params }: { params: { id: string } })
 
   const title = `${wine.name ?? "Wine"}${wine.vintage ? ` (${wine.vintage})` : ""}`;
   const wineryName = winery?.name ?? "—";
-  const wineryRegionCountry = [winery?.region, winery?.country].filter(Boolean).join(" — ") || "—";
+  const wineryRegionCountry =
+    [winery?.region, winery?.country].filter(Boolean).join(" — ") || "—";
+
   const grapeVariety = joinArr(wine.grape_varieties);
   const certs = joinArr(wine.certifications);
 
@@ -116,33 +119,33 @@ export default async function WineDetail({ params }: { params: { id: string } })
           </div>
 
           {/* HERO */}
-          <div className="mt-5 grid grid-cols-1 md:grid-cols-[420px,1fr] gap-4 items-stretch">
+          <div className="mt-5 grid grid-cols-1 md:grid-cols-[420px,1fr] gap-4 items-start">
             {/* LEFT: image */}
             <section className="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
               <div className="mx-auto w-full aspect-square rounded-xl bg-black/30 grid place-items-center overflow-hidden">
                 {wine.image_url ? (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img src={wine.image_url} alt={wine.name ?? "Wine"} className="h-full w-full object-contain" />
+                  <img
+                    src={wine.image_url}
+                    alt={wine.name ?? "Wine"}
+                    className="h-full w-full object-contain"
+                  />
                 ) : (
                   <div className="text-white/40 text-sm">No image</div>
                 )}
               </div>
             </section>
 
-            {/* RIGHT column — stessa larghezza della sinistra */}
+            {/* RIGHT column: larghezza contenuta, buy-sample non stretch */}
             <div className="flex flex-col gap-4 md:max-w-[420px]">
-              {/* Winery */}
+              {/* WINERY CARD (con descrizione) */}
               <section className="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
                 <div className="text-[11px] uppercase tracking-wider text-white/60">Winery</div>
                 <div className="mt-2 flex items-center gap-3">
                   <div className="h-9 w-9 rounded-lg overflow-hidden bg-black/30 grid place-items-center text-[10px] text-white/50">
                     {winery?.logo_url ? (
                       // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={winery.logo_url}
-                        alt={wineryName}
-                        className="h-full w-full object-cover"
-                      />
+                      <img src={winery.logo_url} alt={wineryName} className="h-full w-full object-cover" />
                     ) : (
                       "No image"
                     )}
@@ -159,46 +162,48 @@ export default async function WineDetail({ params }: { params: { id: string } })
                     </div>
                   )}
                 </div>
+
+                {/* Descrizione cantina (spinge in basso Buy sample) */}
+                <p className="mt-3 text-sm text-white/85 leading-relaxed">
+                  {winery?.description && winery.description.trim() !== "" ? winery.description : "—"}
+                </p>
               </section>
 
-              {/* Buy sample (altezza flessibile per allineare il fondo con l’immagine) */}
-              <section className="rounded-2xl border border-white/10 bg-white/[0.04] p-4 flex-1 flex">
-                <div className="w-full">
-                  <div className="text-[11px] uppercase tracking-wider text-white/60">Buy sample</div>
+              {/* BUY SAMPLE (compatto, non flex-1) */}
+              <section className="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
+                <div className="text-[11px] uppercase tracking-wider text-white/60">Buy sample</div>
 
-                  {/* riga compatta, non eccessivamente larga */}
-                  <div className="mt-3 grid grid-cols-[1fr_1fr_auto_auto] items-stretch gap-3">
-                    {/* Ex-cellar */}
-                    <div className="rounded-xl border border-white/10 bg-black/30 px-4 h-12 flex flex-col justify-center">
-                      <div className="text-[11px] text-white/60 leading-none">Ex-cellar</div>
-                      <div className="font-semibold leading-tight">€ {fmtMoney(wine.price_ex_cellar)}</div>
-                    </div>
-                    {/* Sample */}
-                    <div className="rounded-xl border border-white/10 bg-black/30 px-4 h-12 flex flex-col justify-center">
-                      <div className="text-[11px] text-white/60 leading-none">Sample</div>
-                      <div className="font-semibold leading-tight">€ {fmtMoney(wine.price_sample)}</div>
-                    </div>
-
-                    {/* Qty */}
-                    <form action="/api/cart/add" method="post" className="contents">
-                      <input type="hidden" name="wineId" value={wine.id} />
-                      <input type="hidden" name="listType" value="sample" />
-                      <input
-                        name="qty"
-                        type="number"
-                        min={1}
-                        defaultValue={1}
-                        required
-                        className="w-16 h-12 rounded-lg bg-black/30 border border-white/10 px-3 text-center"
-                      />
-                      <button
-                        className="h-12 rounded-lg px-4 font-semibold text-[#0f1720]"
-                        style={{ background: "#E33955" }}
-                      >
-                        Add sample
-                      </button>
-                    </form>
+                <div className="mt-3 grid grid-cols-[1fr_1fr_auto_auto] items-stretch gap-3">
+                  {/* Ex-cellar */}
+                  <div className="rounded-xl border border-white/10 bg-black/30 px-4 h-12 flex flex-col justify-center">
+                    <div className="text-[11px] text-white/60 leading-none">Ex-cellar</div>
+                    <div className="font-semibold leading-tight">€ {fmtMoney(wine.price_ex_cellar)}</div>
                   </div>
+                  {/* Sample */}
+                  <div className="rounded-xl border border-white/10 bg-black/30 px-4 h-12 flex flex-col justify-center">
+                    <div className="text-[11px] text-white/60 leading-none">Sample</div>
+                    <div className="font-semibold leading-tight">€ {fmtMoney(wine.price_sample)}</div>
+                  </div>
+
+                  {/* Qty + Add */}
+                  <form action="/api/cart/add" method="post" className="contents">
+                    <input type="hidden" name="wineId" value={wine.id} />
+                    <input type="hidden" name="listType" value="sample" />
+                    <input
+                      name="qty"
+                      type="number"
+                      min={1}
+                      defaultValue={1}
+                      required
+                      className="w-16 h-12 rounded-lg bg-black/30 border border-white/10 px-3 text-center"
+                    />
+                    <button
+                      className="h-12 rounded-lg px-4 font-semibold text-[#0f1720]"
+                      style={{ background: "#E33955" }}
+                    >
+                      Add sample
+                    </button>
+                  </form>
                 </div>
               </section>
             </div>
@@ -247,7 +252,9 @@ function Detail({
   return (
     <div className="flex items-start justify-between gap-3 text-white/85">
       <dt className="text-white/60">{label}:</dt>
-      <dd className="font-medium">{suffix && show !== "—" ? `${show} ${suffix}` : show}</dd>
+      <dd className="font-medium">
+        {suffix && show !== "—" ? `${show} ${suffix}` : show}
+      </dd>
     </div>
   );
 }
