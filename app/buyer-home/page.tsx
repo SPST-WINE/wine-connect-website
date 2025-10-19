@@ -4,10 +4,11 @@ import Link from "next/link";
 import { createSupabaseServer } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { ArrowRight, ShoppingBasket, UserCog, Rows3 } from "lucide-react";
+import SiteHeader from "@/components/layout/SiteHeader";
+import SiteFooter from "@/components/layout/SiteFooter";
 
 /** WC palette */
 const WC_PINK = "#E33955";
-const LOGO_PNG = "/wc-logo.png";
 
 export default async function BuyerHome() {
   const supa = createSupabaseServer();
@@ -32,30 +33,14 @@ export default async function BuyerHome() {
 
   return (
     <div
-      className="min-h-screen flex flex-col"
+      className="min-h-screen flex flex-col text-white"
       style={{
         background:
           "radial-gradient(120% 120% at 50% -10%, #1c3e5e 0%, #0a1722 60%, #000 140%)",
       }}
     >
-      {/* Top nav */}
-      <header className="h-14 flex items-center justify-between px-5">
-        <Link href="/buyer-home" className="flex items-center gap-2 text-white">
-          <img src={LOGO_PNG} alt="Wine Connect" className="h-6 w-auto" />
-          <span className="font-semibold">Wine Connect</span>
-        </Link>
-        <nav className="flex items-center gap-5 text-sm">
-          <Link className="text-white/80 hover:text-white" href="/catalog">
-            Catalog
-          </Link>
-          <Link className="text-white/80 hover:text-white" href="/cart/samples">
-            Sample Cart
-          </Link>
-          <Link className="text-white/80 hover:text-white" href="/profile">
-            Profile
-          </Link>
-        </nav>
-      </header>
+      {/* GLOBAL HEADER */}
+      <SiteHeader />
 
       <main className="flex-1 px-5">
         <div className="mx-auto max-w-5xl py-8">
@@ -66,7 +51,7 @@ export default async function BuyerHome() {
                 <div className="text-xs tracking-wider uppercase text-white/60">
                   Welcome
                 </div>
-                <h1 className="mt-1 text-3xl md:text-4xl font-extrabold text-white">
+                <h1 className="mt-1 text-3xl md:text-4xl font-extrabold">
                   Hi {displayName} —{" "}
                   <span
                     className="bg-clip-text text-transparent"
@@ -85,13 +70,13 @@ export default async function BuyerHome() {
               <div className="flex gap-2 shrink-0">
                 <Link
                   href="/cart/samples"
-                  className="inline-flex items-center gap-2 rounded-xl bg-black/40 border border-white/10 px-3 py-2 text-sm text-white hover:bg-black/50"
+                  className="inline-flex items-center gap-2 rounded-xl bg-black/40 border border-white/10 px-3 py-2 text-sm hover:bg-black/50"
                 >
                   <ShoppingBasket size={16} /> Sample cart
                 </Link>
                 <Link
                   href="/profile"
-                  className="inline-flex items-center gap-2 rounded-xl bg-black/40 border border-white/10 px-3 py-2 text-sm text-white hover:bg-black/50"
+                  className="inline-flex items-center gap-2 rounded-xl bg-black/40 border border-white/10 px-3 py-2 text-sm hover:bg-black/50"
                 >
                   <UserCog size={16} /> Profile & compliance
                 </Link>
@@ -104,9 +89,7 @@ export default async function BuyerHome() {
                 <div className="text-[11px] uppercase tracking-wider text-white/60 mb-2">
                   Tailored service
                 </div>
-                <h3 className="text-xl font-bold text-white">
-                  Get a curated shortlist
-                </h3>
+                <h3 className="text-xl font-bold">Get a curated shortlist</h3>
                 <p className="text-sm text-white/75 mt-1">
                   Give us your brief (styles, price points, volumes). We’ll
                   build the shortlist and ship a tasting kit.
@@ -125,9 +108,7 @@ export default async function BuyerHome() {
                 <div className="text-[11px] uppercase tracking-wider text-white/60 mb-2">
                   Browse yourself
                 </div>
-                <h3 className="text-xl font-bold text-white">
-                  Explore wines & add samples
-                </h3>
+                <h3 className="text-xl font-bold">Explore wines & add samples</h3>
                 <p className="text-sm text-white/75 mt-1">
                   Filter by region, type, certifications and price. Add samples
                   to cart and request shipment.
@@ -155,7 +136,7 @@ export default async function BuyerHome() {
               >
                 <Rows3 size={18} className="text-white/80" />
                 <div>
-                  <div className="font-semibold text-white">Catalog</div>
+                  <div className="font-semibold">Catalog</div>
                   <div className="text-xs text-white/70">
                     Discover wines and add samples.
                   </div>
@@ -168,9 +149,7 @@ export default async function BuyerHome() {
               >
                 <UserCog size={18} className="text-white/80" />
                 <div>
-                  <div className="font-semibold text-white">
-                    Profile & compliance
-                  </div>
+                  <div className="font-semibold">Profile & compliance</div>
                   <div className="text-xs text-white/70">
                     Account, addresses, compliance data.
                   </div>
@@ -183,7 +162,7 @@ export default async function BuyerHome() {
               >
                 <ShoppingBasket size={18} className="text-white/80" />
                 <div>
-                  <div className="font-semibold text-white">My orders</div>
+                  <div className="font-semibold">My orders</div>
                   <div className="text-xs text-white/70">
                     Track your requests and shipments.
                   </div>
@@ -194,10 +173,8 @@ export default async function BuyerHome() {
         </div>
       </main>
 
-      {/* Sticky footer */}
-      <footer className="mt-auto py-6 px-5 text-right text-white/70 text-xs">
-        © {new Date().getFullYear()} Wine Connect — SPST
-      </footer>
+      {/* GLOBAL FOOTER */}
+      <SiteFooter />
     </div>
   );
 }
