@@ -11,7 +11,7 @@ export type WineCardProps = {
   priceSample?: number | null;
   priceExCellar?: number | null;
   available?: boolean | null;
-  href?: string; // default: /wines/{id}
+  href?: string; // opzionale: default /wines/{id}
 };
 
 function money(n?: number | null) {
