@@ -33,7 +33,7 @@ type Winery = {
   region: string | null;
   country: string | null;
   logo_url: string | null;
-  description: string | null; // <-- aggiunto
+  description: string | null;
 };
 
 function fmtMoney(n?: number | null) {
@@ -52,7 +52,6 @@ function mlToText(n?: number | null) {
 export default async function WineDetail({ params }: { params: { id: string } }) {
   const supa = createSupabaseServer();
 
-  // 1) Vino
   const { data: wine, error: wErr } = await supa
     .from("wines")
     .select(
@@ -75,12 +74,11 @@ export default async function WineDetail({ params }: { params: { id: string } })
     );
   }
 
-  // 2) Cantina
   let winery: Winery | null = null;
   if (wine.winery_id) {
     const { data: wn } = await supa
       .from("wineries")
-      .select("id,name,region,country,logo_url,description") // <-- description
+      .select("id,name,region,country,logo_url,description")
       .eq("id", wine.winery_id)
       .maybeSingle<Winery>();
     winery = wn ?? null;
@@ -119,7 +117,8 @@ export default async function WineDetail({ params }: { params: { id: string } })
           </div>
 
           {/* HERO */}
-          <div className="mt-5 grid grid-cols-1 md:grid-cols-[420px,1fr] gap-4 items-start">
+          {/* ⬇️ Colonna destra ora più larga */}
+          <div className="mt-5 grid grid-cols-1 md:grid-cols-[420px,minmax(520px,1fr)] gap-4 items-start">
             {/* LEFT: image */}
             <section className="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
               <div className="mx-auto w-full aspect-square rounded-xl bg-black/30 grid place-items-center overflow-hidden">
@@ -136,9 +135,9 @@ export default async function WineDetail({ params }: { params: { id: string } })
               </div>
             </section>
 
-            {/* RIGHT column: larghezza contenuta, buy-sample non stretch */}
-            <div className="flex flex-col gap-4 md:max-w-[420px]">
-              {/* WINERY CARD (con descrizione) */}
+            {/* RIGHT column — niente max-width */}
+            <div className="flex flex-col gap-4">
+              {/* WINERY CARD con descrizione */}
               <section className="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
                 <div className="text-[11px] uppercase tracking-wider text-white/60">Winery</div>
                 <div className="mt-2 flex items-center gap-3">
@@ -163,29 +162,25 @@ export default async function WineDetail({ params }: { params: { id: string } })
                   )}
                 </div>
 
-                {/* Descrizione cantina (spinge in basso Buy sample) */}
                 <p className="mt-3 text-sm text-white/85 leading-relaxed">
                   {winery?.description && winery.description.trim() !== "" ? winery.description : "—"}
                 </p>
               </section>
 
-              {/* BUY SAMPLE (compatto, non flex-1) */}
+              {/* BUY SAMPLE — resta compatta */}
               <section className="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
                 <div className="text-[11px] uppercase tracking-wider text-white/60">Buy sample</div>
 
                 <div className="mt-3 grid grid-cols-[1fr_1fr_auto_auto] items-stretch gap-3">
-                  {/* Ex-cellar */}
                   <div className="rounded-xl border border-white/10 bg-black/30 px-4 h-12 flex flex-col justify-center">
                     <div className="text-[11px] text-white/60 leading-none">Ex-cellar</div>
                     <div className="font-semibold leading-tight">€ {fmtMoney(wine.price_ex_cellar)}</div>
                   </div>
-                  {/* Sample */}
                   <div className="rounded-xl border border-white/10 bg-black/30 px-4 h-12 flex flex-col justify-center">
                     <div className="text-[11px] text-white/60 leading-none">Sample</div>
                     <div className="font-semibold leading-tight">€ {fmtMoney(wine.price_sample)}</div>
                   </div>
 
-                  {/* Qty + Add */}
                   <form action="/api/cart/add" method="post" className="contents">
                     <input type="hidden" name="wineId" value={wine.id} />
                     <input type="hidden" name="listType" value="sample" />
@@ -217,10 +212,10 @@ export default async function WineDetail({ params }: { params: { id: string } })
                 <Detail label="Type" value={wine.type} />
                 <Detail label="Vintage" value={wine.vintage} />
                 <Detail label="Region" value={wineryRegionCountry} />
-                <Detail label="Grape variety" value={grapeVariety} />
+                <Detail label="Grape variety" value={joinArr(wine.grape_varieties)} />
                 <Detail label="Alcohol" value={wine.alcohol != null ? String(Number(wine.alcohol)) : null} suffix="%" />
                 <Detail label="Bottle size" value={mlToText(wine.bottle_size_ml)} />
-                <Detail label="Certifications" value={certs} />
+                <Detail label="Certifications" value={joinArr(wine.certifications)} />
               </dl>
             </section>
 
