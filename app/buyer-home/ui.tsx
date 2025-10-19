@@ -1,11 +1,18 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Package, ShoppingBasket, FileText, ArrowRight, Truck, Sparkles, Compass } from "lucide-react";
+import {
+  Package,
+  ShoppingBasket,
+  FileText,
+  ArrowRight,
+  Truck,
+  Sparkles,
+  Compass,
+} from "lucide-react";
 import React from "react";
 
 /* ===================== PALETTE ===================== */
-const WC_BLUE = "#0a1722";
 const WC_BLUE_SOFT = "#1c3e5e";
 const WC_PINK = "#E33955";
 
@@ -41,29 +48,12 @@ export default function BuyerHomeClient(props: {
     (userEmail ? userEmail.split("@")[0] : "there");
 
   return (
-    <main
-      className="min-h-screen font-sans text-slate-100 selection:bg-[color:var(--wc)]/30"
+    <section
+      className="font-sans text-slate-100 selection:bg-[color:var(--wc)]/30"
       style={{
         ["--wc" as any]: WC_PINK,
-        background:
-          "radial-gradient(140% 140% at 50% -10%, #1c3e5e 0%, #0a1722 60%, #000 140%)",
       }}
     >
-      {/* HEADER */}
-      <header className="sticky top-0 z-50 border-b border-white/10 bg-black/30 backdrop-blur supports-[backdrop-filter]:bg-black/20">
-        <div className="mx-auto max-w-[1200px] px-5 h-16 flex items-center justify-between gap-4">
-          <a href="/buyer-home" className="flex items-center gap-2 text-white font-extrabold">
-            <img src="/wc-logo.png" alt="Wine Connect" className="h-8 w-auto" />
-            <span className="hidden sm:inline">Wine Connect</span>
-          </a>
-          <nav className="flex items-center gap-3 text-sm">
-            <a className="hover:underline" href="/catalog">Catalog</a>
-            <a className="hover:underline" href="/cart/samples">Sample Cart</a>
-            <a className="hover:underline" href="/profile">Profile</a>
-          </nav>
-        </div>
-      </header>
-
       {/* GLOWS */}
       <motion.div
         aria-hidden
@@ -86,21 +76,31 @@ export default function BuyerHomeClient(props: {
         }}
       />
 
-      <div className="mx-auto max-w-[1200px] px-5 py-8 space-y-8">
+      <div className="relative mx-auto max-w-[1200px] px-5 py-8 space-y-8">
         {/* HERO DASHBOARD */}
         <section className="rounded-2xl border border-white/10 bg-white/[0.04] p-5 md:p-6 relative overflow-hidden">
           <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
             <div>
-              <div className="text-xs uppercase tracking-wider text-white/70">Welcome</div>
+              <div className="text-xs uppercase tracking-wider text-white/70">
+                Welcome
+              </div>
               <h1 className="text-[28px] sm:text-[34px] font-black leading-[1.05]">
                 Hi {greetingName} —
-                <span className="block text-transparent bg-clip-text"
-                  style={{ backgroundImage: `linear-gradient(90deg, ${WC_PINK}, ${WC_BLUE_SOFT})` }}>
+                <span
+                  className="block text-transparent bg-clip-text"
+                  style={{
+                    backgroundImage: `linear-gradient(90deg, ${WC_PINK}, ${WC_BLUE_SOFT})`,
+                  }}
+                >
                   choose how you want to work today
                 </span>
               </h1>
               <p className="mt-2 text-white/80 text-sm">
-                {companyName ? `${companyName} · ` : ""}{country || "—"} · Compliance: {complianceMode === "self" ? "Self-managed" : "Handled by Wine Connect"}
+                {companyName ? `${companyName} · ` : ""}
+                {country || "—"} · Compliance:{" "}
+                {complianceMode === "self"
+                  ? "Self-managed"
+                  : "Handled by Wine Connect"}
               </p>
             </div>
             <div className="grid grid-cols-2 gap-2">
@@ -134,12 +134,19 @@ export default function BuyerHomeClient(props: {
                 <Sparkles size={16} />
                 Tailored service
               </div>
-              <h2 className="mt-1 text-xl md:text-2xl font-extrabold">Get a curated shortlist</h2>
+              <h2 className="mt-1 text-xl md:text-2xl font-extrabold">
+                Get a curated shortlist
+              </h2>
               <p className="mt-2 text-white/75 text-sm">
-                Give us your brief (styles, price points, volumes). We build the shortlist and ship a tasting kit.
+                Give us your brief (styles, price points, volumes). We build
+                the shortlist and ship a tasting kit.
               </p>
               <div className="mt-4 inline-flex items-center gap-2 text-sm font-semibold">
-                Start a brief <ArrowRight size={16} className="transition-transform group-hover:translate-x-0.5" />
+                Start a brief{" "}
+                <ArrowRight
+                  size={16}
+                  className="transition-transform group-hover:translate-x-0.5"
+                />
               </div>
             </motion.a>
 
@@ -156,12 +163,19 @@ export default function BuyerHomeClient(props: {
                 <Compass size={16} />
                 Browse yourself
               </div>
-              <h2 className="mt-1 text-xl md:text-2xl font-extrabold">Explore wines & add samples</h2>
+              <h2 className="mt-1 text-xl md:text-2xl font-extrabold">
+                Explore wines & add samples
+              </h2>
               <p className="mt-2 text-white/75 text-sm">
-                Filter by region, type, certifications and price. Add samples to cart and request shipment.
+                Filter by region, type, certifications and price. Add samples to
+                cart and request shipment.
               </p>
               <div className="mt-4 inline-flex items-center gap-2 text-sm font-semibold">
-                Go to catalog <ArrowRight size={16} className="transition-transform group-hover:translate-x-0.5" />
+                Go to catalog{" "}
+                <ArrowRight
+                  size={16}
+                  className="transition-transform group-hover:translate-x-0.5"
+                />
               </div>
             </motion.a>
           </div>
@@ -171,8 +185,12 @@ export default function BuyerHomeClient(props: {
         <section className="rounded-2xl border border-white/10 bg-white/[0.04] p-5 md:p-6">
           <div className="flex items-center justify-between">
             <div>
-              <div className="text-[11px] tracking-wider uppercase text-white/60">Recent activity</div>
-              <h3 className="mt-1 text-xl md:text-2xl font-extrabold">Your latest orders</h3>
+              <div className="text-[11px] tracking-wider uppercase text-white/60">
+                Recent activity
+              </div>
+              <h3 className="mt-1 text-xl md:text-2xl font-extrabold">
+                Your latest orders
+              </h3>
             </div>
             <a
               href="/orders"
@@ -185,12 +203,16 @@ export default function BuyerHomeClient(props: {
           <ul className="mt-4 grid gap-3">
             {recentOrders.length === 0 && (
               <li className="rounded-xl border border-white/10 bg-black/30 p-4 text-sm text-white/75">
-                No orders yet. Start with a brief or add samples from the catalog.
+                No orders yet. Start with a brief or add samples from the
+                catalog.
               </li>
             )}
 
             {recentOrders.map((o) => (
-              <li key={o.id} className="rounded-xl border border-white/10 bg-black/30 p-4">
+              <li
+                key={o.id}
+                className="rounded-xl border border-white/10 bg-black/30 p-4"
+              >
                 <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
                   <div className="min-w-0">
                     <div className="font-semibold truncate">
@@ -202,15 +224,14 @@ export default function BuyerHomeClient(props: {
                   </div>
                   <div className="flex items-center gap-3">
                     <StatusBadge status={o.status} />
-                    {o.tracking_code && (
+                    {o.tracking_code ? (
                       <a
                         href={`/orders/${o.id}`}
                         className="inline-flex items-center gap-1 text-sm underline"
                       >
                         <Truck size={14} /> Track
                       </a>
-                    )}
-                    {!o.tracking_code && (
+                    ) : (
                       <a href={`/orders/${o.id}`} className="text-sm underline">
                         View details
                       </a>
@@ -222,20 +243,7 @@ export default function BuyerHomeClient(props: {
           </ul>
         </section>
       </div>
-
-      {/* FOOTER */}
-      <footer className="py-8">
-        <div className="mx-auto max-w-[1200px] px-5 flex flex-col sm:flex-row items-center justify-between gap-3">
-          <a className="flex items-center gap-2 text-white font-extrabold" href="#">
-            <img src="/wc-logo.png" alt="Wine Connect" className="h-7 w-auto" />
-            <span className="sr-only">Wine Connect</span>
-          </a>
-          <small className="text-white/80 leading-tight text-center sm:text-right">
-            © {new Date().getFullYear()} Wine Connect — SPST
-          </small>
-        </div>
-      </footer>
-    </main>
+    </section>
   );
 }
 
