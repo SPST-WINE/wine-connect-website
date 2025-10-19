@@ -4,9 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useMemo } from "react";
 
-type Props = {
-  cartCount?: number;
-};
+type Props = { cartCount?: number };
 
 function NavLink({
   href,
@@ -35,7 +33,6 @@ function NavLink({
   );
 }
 
-// semplice icona carrello inline (niente dipendenze)
 function CartIcon() {
   return (
     <svg
@@ -61,14 +58,13 @@ export default function SiteHeaderClient({ cartCount = 0 }: Props) {
 
   const isActive = (href: string) => {
     if (href === "/buyer-home") return pathname === "/buyer-home";
-    if (href === "/catalog") return pathname === "/catalog";
-    if (href === "/profile") return pathname === "/profile";
+    if (href === "/catalog") return pathname.startsWith("/catalog");
+    if (href === "/profile") return pathname.startsWith("/profile");
     if (href === "/orders") return pathname.startsWith("/orders");
     if (href === "/cart/samples") return pathname.startsWith("/cart/samples");
     return pathname === href;
   };
 
-  // mostra badge solo se > 0
   const badge = useMemo(
     () =>
       cartCount > 0 ? (
@@ -82,7 +78,8 @@ export default function SiteHeaderClient({ cartCount = 0 }: Props) {
   return (
     <header className="sticky top-0 z-40 w-full border-b border-white/10 bg-[rgba(10,12,20,0.65)] backdrop-blur">
       <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4">
-        <Link href="/buyer-home" className="text-white">
+        <Link href="/buyer-home" className="flex items-center gap-2 text-white">
+          <img src="/wc-logo.png" alt="Wine Connect" className="h-6 w-auto" />
           <span className="font-semibold">Wine Connect</span>
         </Link>
 
