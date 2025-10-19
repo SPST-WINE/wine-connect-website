@@ -1,3 +1,4 @@
+// app/wines/[id]/page.tsx
 export const dynamic = "force-dynamic";
 
 import Link from "next/link";
@@ -31,28 +32,23 @@ type Winery = {
   name: string | null;
   region: string | null;
   country: string | null;
+  logo_url: string | null; // <-- aggiunto
 };
 
 function fmtMoney(n?: number | null) {
   const v = Number(n ?? 0);
   return v.toFixed(2);
 }
-
 function joinArr(a?: string[] | null) {
   if (!a || a.length === 0) return "—";
   return a.filter(Boolean).join(", ");
 }
-
 function mlToText(n?: number | null) {
   if (!n) return "—";
   return `${n} ml`;
 }
 
-export default async function WineDetail({
-  params,
-}: {
-  params: { id: string };
-}) {
+export default async function WineDetail({ params }: { params: { id: string } }) {
   const supa = createSupabaseServer();
 
   // 1) Vino
@@ -66,18 +62,11 @@ export default async function WineDetail({
 
   if (wErr || !wine) {
     return (
-      <div
-        className="min-h-screen flex flex-col text-white"
-        style={{ background: BG }}
-      >
+      <div className="min-h-screen flex flex-col text-white" style={{ background: BG }}>
         <SiteHeader />
         <div className="flex-1 grid place-items-center px-5">
           <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-3">
-            Wine not found.{" "}
-            <a className="underline" href="/catalog">
-              Back to catalog
-            </a>
-            .
+            Wine not found. <a className="underline" href="/catalog">Back to catalog</a>.
           </div>
         </div>
         <SiteFooter />
@@ -85,31 +74,25 @@ export default async function WineDetail({
     );
   }
 
-  // 2) Cantina (se presente)
+  // 2) Cantina
   let winery: Winery | null = null;
   if (wine.winery_id) {
     const { data: wn } = await supa
       .from("wineries")
-      .select("id,name,region,country")
+      .select("id,name,region,country,logo_url") // <-- logo_url
       .eq("id", wine.winery_id)
       .maybeSingle<Winery>();
     winery = wn ?? null;
   }
 
-  // Derivati per UI
-  const title = `${wine.name ?? "Wine"}${
-    wine.vintage ? ` (${wine.vintage})` : ""
-  }`;
+  const title = `${wine.name ?? "Wine"}${wine.vintage ? ` (${wine.vintage})` : ""}`;
   const wineryName = winery?.name ?? "—";
-  const wineryRegionCountry =
-    [winery?.region, winery?.country].filter(Boolean).join(" — ") || "—";
-
+  const wineryRegionCountry = [winery?.region, winery?.country].filter(Boolean).join(" — ") || "—";
   const grapeVariety = joinArr(wine.grape_varieties);
   const certs = joinArr(wine.certifications);
 
   return (
     <div className="min-h-screen flex flex-col text-white" style={{ background: BG }}>
-      {/* GLOBAL HEADER */}
       <SiteHeader />
 
       <main className="px-5">
@@ -117,9 +100,7 @@ export default async function WineDetail({
           {/* Heading */}
           <div className="flex items-start justify-between">
             <div>
-              <div className="text-xs uppercase tracking-wider text-white/60">
-                Catalog
-              </div>
+              <div className="text-xs uppercase tracking-wider text-white/60">Catalog</div>
               <h1 className="text-3xl font-extrabold">{title}</h1>
               <p className="text-white/70 text-sm">
                 {wineryName} · {wineryRegionCountry} · {wine.type ?? "—"}
@@ -134,88 +115,72 @@ export default async function WineDetail({
             </Link>
           </div>
 
-          {/* HERO: immagine a sinistra, colonna destra con Winery + Buy sample */}
+          {/* HERO */}
           <div className="mt-5 grid grid-cols-1 md:grid-cols-[420px,1fr] gap-4 items-stretch">
-            {/* LEFT: image (square 1:1) */}
+            {/* LEFT: image */}
             <section className="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
               <div className="mx-auto w-full aspect-square rounded-xl bg-black/30 grid place-items-center overflow-hidden">
                 {wine.image_url ? (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={wine.image_url}
-                    alt={wine.name ?? "Wine"}
-                    className="h-full w-full object-contain"
-                  />
+                  <img src={wine.image_url} alt={wine.name ?? "Wine"} className="h-full w-full object-contain" />
                 ) : (
                   <div className="text-white/40 text-sm">No image</div>
                 )}
               </div>
             </section>
 
-            {/* RIGHT column */}
-            <div className="flex flex-col gap-4">
+            {/* RIGHT column — stessa larghezza della sinistra */}
+            <div className="flex flex-col gap-4 md:max-w-[420px]">
               {/* Winery */}
               <section className="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
-                <div className="text-[11px] uppercase tracking-wider text-white/60">
-                  Winery
-                </div>
+                <div className="text-[11px] uppercase tracking-wider text-white/60">Winery</div>
                 <div className="mt-2 flex items-center gap-3">
-                  <div className="h-9 w-9 rounded-lg bg-black/30 grid place-items-center text-[10px] text-white/50">
-                    No image
+                  <div className="h-9 w-9 rounded-lg overflow-hidden bg-black/30 grid place-items-center text-[10px] text-white/50">
+                    {winery?.logo_url ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={winery.logo_url}
+                        alt={wineryName}
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      "No image"
+                    )}
                   </div>
                   {winery?.id ? (
                     <Link href={`/wineries/${winery.id}`} className="group">
-                      <div className="font-semibold group-hover:underline">
-                        {wineryName}
-                      </div>
-                      <div className="text-sm text-white/70">
-                        {wineryRegionCountry}
-                      </div>
+                      <div className="font-semibold group-hover:underline">{wineryName}</div>
+                      <div className="text-sm text-white/70">{wineryRegionCountry}</div>
                     </Link>
                   ) : (
                     <div>
                       <div className="font-semibold">{wineryName}</div>
-                      <div className="text-sm text-white/70">
-                        {wineryRegionCountry}
-                      </div>
+                      <div className="text-sm text-white/70">{wineryRegionCountry}</div>
                     </div>
                   )}
                 </div>
               </section>
 
-              {/* Buy sample */}
+              {/* Buy sample (altezza flessibile per allineare il fondo con l’immagine) */}
               <section className="rounded-2xl border border-white/10 bg-white/[0.04] p-4 flex-1 flex">
                 <div className="w-full">
-                  <div className="text-[11px] uppercase tracking-wider text-white/60">
-                    Buy sample
-                  </div>
+                  <div className="text-[11px] uppercase tracking-wider text-white/60">Buy sample</div>
 
-                  <div className="mt-3 flex items-stretch gap-3">
+                  {/* riga compatta, non eccessivamente larga */}
+                  <div className="mt-3 grid grid-cols-[1fr_1fr_auto_auto] items-stretch gap-3">
                     {/* Ex-cellar */}
-                    <div className="flex-1 rounded-xl border border-white/10 bg-black/30 px-4 h-12 flex flex-col justify-center">
-                      <div className="text-[11px] text-white/60 leading-none">
-                        Ex-cellar
-                      </div>
-                      <div className="font-semibold leading-tight">
-                        € {fmtMoney(wine.price_ex_cellar)}
-                      </div>
+                    <div className="rounded-xl border border-white/10 bg-black/30 px-4 h-12 flex flex-col justify-center">
+                      <div className="text-[11px] text-white/60 leading-none">Ex-cellar</div>
+                      <div className="font-semibold leading-tight">€ {fmtMoney(wine.price_ex_cellar)}</div>
                     </div>
                     {/* Sample */}
-                    <div className="flex-1 rounded-xl border border-white/10 bg-black/30 px-4 h-12 flex flex-col justify-center">
-                      <div className="text-[11px] text-white/60 leading-none">
-                        Sample
-                      </div>
-                      <div className="font-semibold leading-tight">
-                        € {fmtMoney(wine.price_sample)}
-                      </div>
+                    <div className="rounded-xl border border-white/10 bg-black/30 px-4 h-12 flex flex-col justify-center">
+                      <div className="text-[11px] text-white/60 leading-none">Sample</div>
+                      <div className="font-semibold leading-tight">€ {fmtMoney(wine.price_sample)}</div>
                     </div>
 
-                    {/* Qty + Add */}
-                    <form
-                      action="/api/cart/add"
-                      method="post"
-                      className="flex items-stretch gap-3"
-                    >
+                    {/* Qty */}
+                    <form action="/api/cart/add" method="post" className="contents">
                       <input type="hidden" name="wineId" value={wine.id} />
                       <input type="hidden" name="listType" value="sample" />
                       <input
@@ -241,31 +206,21 @@ export default async function WineDetail({
 
           {/* DETAILS */}
           <div className="mt-5 grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Technical */}
             <section className="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
-              <div className="text-[11px] uppercase tracking-wider text-white/60">
-                Wine details
-              </div>
+              <div className="text-[11px] uppercase tracking-wider text-white/60">Wine details</div>
               <dl className="mt-3 grid grid-cols-1 gap-1 text-sm">
                 <Detail label="Type" value={wine.type} />
                 <Detail label="Vintage" value={wine.vintage} />
                 <Detail label="Region" value={wineryRegionCountry} />
                 <Detail label="Grape variety" value={grapeVariety} />
-                <Detail
-                  label="Alcohol"
-                  value={wine.alcohol != null ? String(Number(wine.alcohol)) : null}
-                  suffix="%"
-                />
+                <Detail label="Alcohol" value={wine.alcohol != null ? String(Number(wine.alcohol)) : null} suffix="%" />
                 <Detail label="Bottle size" value={mlToText(wine.bottle_size_ml)} />
                 <Detail label="Certifications" value={certs} />
               </dl>
             </section>
 
-            {/* Description */}
             <section className="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
-              <div className="text-[11px] uppercase tracking-wider text-white/60">
-                Description
-              </div>
+              <div className="text-[11px] uppercase tracking-wider text-white/60">Description</div>
               <p className="mt-3 text-white/85 text-sm leading-relaxed">
                 {wine.description && wine.description.trim() !== "" ? wine.description : "—"}
               </p>
@@ -274,7 +229,6 @@ export default async function WineDetail({
         </div>
       </main>
 
-      {/* GLOBAL FOOTER */}
       <SiteFooter />
     </div>
   );
@@ -289,14 +243,11 @@ function Detail({
   value?: string | null;
   suffix?: string;
 }) {
-  const show =
-    value != null && String(value).trim() !== "" ? String(value) : "—";
+  const show = value != null && String(value).trim() !== "" ? String(value) : "—";
   return (
     <div className="flex items-start justify-between gap-3 text-white/85">
       <dt className="text-white/60">{label}:</dt>
-      <dd className="font-medium">
-        {suffix && show !== "—" ? `${show} ${suffix}` : show}
-      </dd>
+      <dd className="font-medium">{suffix && show !== "—" ? `${show} ${suffix}` : show}</dd>
     </div>
   );
 }
