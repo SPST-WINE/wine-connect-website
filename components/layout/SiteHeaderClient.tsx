@@ -76,18 +76,26 @@ export default function SiteHeaderClient({ cartCount = 0 }: Props) {
   );
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-white/10 bg-[rgba(10,12,20,0.65)] backdrop-blur">
-      <div className="mx-auto grid h-16 max-w-7xl grid-cols-2 items-center px-6">
-        {/* SINISTRA: logo, più vicino al bordo sinistro */}
-        <div className="justify-self-start">
+    <header
+      className="
+        sticky top-0 z-40 w-full
+        border-b border-white/10
+        bg-[#0a1722]/70 backdrop-blur
+        supports-[backdrop-filter]:bg-[#0a1722]/55
+      "
+    >
+      {/* full-bleed row: elementi ai bordi */}
+      <div className="flex h-16 w-full items-center justify-between px-4 md:px-6">
+        {/* LOGO: attaccato a sinistra */}
+        <div className="-ml-1 md:-ml-2">
           <Link href="/buyer-home" className="flex items-center gap-2 text-white">
             <img src="/wc-logo.png" alt="Wine Connect" className="h-7 w-auto" />
             <span className="font-semibold text-[15px]">Wine Connect</span>
           </Link>
         </div>
 
-        {/* DESTRA: navigazione, spinta a destra */}
-        <nav className="justify-self-end flex items-center gap-2.5 md:gap-3.5">
+        {/* MENU: attaccato a destra */}
+        <nav className="flex items-center gap-2.5 md:gap-3.5 -mr-1 md:-mr-2">
           <NavLink href="/buyer-home" label="Home" active={isActive("/buyer-home")} />
           <NavLink href="/catalog" label="Catalog" active={isActive("/catalog")} />
           <NavLink href="/profile" label="Profile" active={isActive("/profile")} />
