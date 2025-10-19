@@ -3,6 +3,8 @@ export const dynamic = "force-dynamic";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { createSupabaseServer } from "@/lib/supabase/server";
+import SiteHeader from "@/components/layout/SiteHeader";
+import SiteFooter from "@/components/layout/SiteFooter";
 
 const BG =
   "radial-gradient(120% 120% at 50% -10%, #1c3e5e 0%, #0a1722 60%, #000 140%)";
@@ -13,10 +15,10 @@ type Wine = {
   name: string | null;
   vintage: string | null;
   type: string | null;
-  grape_varieties: string[] | null; // array nel DB
+  grape_varieties: string[] | null;
   alcohol: number | null;
   bottle_size_ml: number | null;
-  certifications: string[] | null;  // array nel DB
+  certifications: string[] | null;
   price_ex_cellar: number | null;
   price_sample: number | null;
   description: string | null;
@@ -65,16 +67,20 @@ export default async function WineDetail({
   if (wErr || !wine) {
     return (
       <div
-        className="min-h-screen grid place-items-center text-white/80"
+        className="min-h-screen flex flex-col text-white"
         style={{ background: BG }}
       >
-        <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-3">
-          Wine not found.{" "}
-          <a className="underline" href="/catalog">
-            Back to catalog
-          </a>
-          .
+        <SiteHeader />
+        <div className="flex-1 grid place-items-center px-5">
+          <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-3">
+            Wine not found.{" "}
+            <a className="underline" href="/catalog">
+              Back to catalog
+            </a>
+            .
+          </div>
         </div>
+        <SiteFooter />
       </div>
     );
   }
@@ -95,30 +101,16 @@ export default async function WineDetail({
     wine.vintage ? ` (${wine.vintage})` : ""
   }`;
   const wineryName = winery?.name ?? "—";
-  const wineryRegionCountry = [winery?.region, winery?.country]
-    .filter(Boolean)
-    .join(" — ") || "—";
+  const wineryRegionCountry =
+    [winery?.region, winery?.country].filter(Boolean).join(" — ") || "—";
 
   const grapeVariety = joinArr(wine.grape_varieties);
   const certs = joinArr(wine.certifications);
 
   return (
-    <div className="min-h-screen" style={{ background: BG }}>
-      {/* Top bar */}
-      <header className="h-14 flex items-center justify-between px-5">
-        <Link href="/buyer-home" className="flex items-center gap-2 text-white">
-          <img src="/wc-logo.png" alt="Wine Connect" className="h-6 w-auto" />
-          <span className="font-semibold">Wine Connect</span>
-        </Link>
-        <nav className="flex items-center gap-5 text-sm">
-          <Link className="text-white/80 hover:text-white" href="/cart/samples">
-            Sample Cart
-          </Link>
-          <Link className="text-white/80 hover:text-white" href="/profile">
-            Profile
-          </Link>
-        </nav>
-      </header>
+    <div className="min-h-screen flex flex-col text-white" style={{ background: BG }}>
+      {/* GLOBAL HEADER */}
+      <SiteHeader />
 
       <main className="px-5">
         <div className="mx-auto max-w-6xl py-6">
@@ -128,14 +120,14 @@ export default async function WineDetail({
               <div className="text-xs uppercase tracking-wider text-white/60">
                 Catalog
               </div>
-              <h1 className="text-3xl font-extrabold text-white">{title}</h1>
+              <h1 className="text-3xl font-extrabold">{title}</h1>
               <p className="text-white/70 text-sm">
                 {wineryName} · {wineryRegionCountry} · {wine.type ?? "—"}
               </p>
             </div>
             <Link
               href="/catalog"
-              className="inline-flex items-center gap-2 rounded-xl bg-white/10 border border-white/10 px-3 py-2 text-sm text-white hover:bg-white/15"
+              className="inline-flex items-center gap-2 rounded-xl bg-white/10 border border-white/10 px-3 py-2 text-sm hover:bg-white/15"
             >
               <ArrowLeft size={16} />
               Back to catalog
@@ -160,7 +152,7 @@ export default async function WineDetail({
               </div>
             </section>
 
-            {/* RIGHT column: stessa altezza della sinistra grazie a flex-1 nella seconda card */}
+            {/* RIGHT column */}
             <div className="flex flex-col gap-4">
               {/* Winery */}
               <section className="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
@@ -173,7 +165,7 @@ export default async function WineDetail({
                   </div>
                   {winery?.id ? (
                     <Link href={`/wineries/${winery.id}`} className="group">
-                      <div className="font-semibold text-white group-hover:underline">
+                      <div className="font-semibold group-hover:underline">
                         {wineryName}
                       </div>
                       <div className="text-sm text-white/70">
@@ -182,7 +174,7 @@ export default async function WineDetail({
                     </Link>
                   ) : (
                     <div>
-                      <div className="font-semibold text-white">{wineryName}</div>
+                      <div className="font-semibold">{wineryName}</div>
                       <div className="text-sm text-white/70">
                         {wineryRegionCountry}
                       </div>
@@ -191,21 +183,20 @@ export default async function WineDetail({
                 </div>
               </section>
 
-              {/* Buy sample — prende lo spazio rimanente per allinearsi al fondo dell’immagine */}
+              {/* Buy sample */}
               <section className="rounded-2xl border border-white/10 bg-white/[0.04] p-4 flex-1 flex">
                 <div className="w-full">
                   <div className="text-[11px] uppercase tracking-wider text-white/60">
                     Buy sample
                   </div>
 
-                  {/* Unica riga, stessa altezza (h-12) per tutti i blocchi */}
                   <div className="mt-3 flex items-stretch gap-3">
                     {/* Ex-cellar */}
                     <div className="flex-1 rounded-xl border border-white/10 bg-black/30 px-4 h-12 flex flex-col justify-center">
                       <div className="text-[11px] text-white/60 leading-none">
                         Ex-cellar
                       </div>
-                      <div className="text-white font-semibold leading-tight">
+                      <div className="font-semibold leading-tight">
                         € {fmtMoney(wine.price_ex_cellar)}
                       </div>
                     </div>
@@ -214,7 +205,7 @@ export default async function WineDetail({
                       <div className="text-[11px] text-white/60 leading-none">
                         Sample
                       </div>
-                      <div className="text-white font-semibold leading-tight">
+                      <div className="font-semibold leading-tight">
                         € {fmtMoney(wine.price_sample)}
                       </div>
                     </div>
@@ -233,7 +224,7 @@ export default async function WineDetail({
                         min={1}
                         defaultValue={1}
                         required
-                        className="w-16 h-12 rounded-lg bg-black/30 border border-white/10 px-3 text-white text-center"
+                        className="w-16 h-12 rounded-lg bg-black/30 border border-white/10 px-3 text-center"
                       />
                       <button
                         className="h-12 rounded-lg px-4 font-semibold text-[#0f1720]"
@@ -262,9 +253,7 @@ export default async function WineDetail({
                 <Detail label="Grape variety" value={grapeVariety} />
                 <Detail
                   label="Alcohol"
-                  value={
-                    wine.alcohol != null ? String(Number(wine.alcohol)) : null
-                  }
+                  value={wine.alcohol != null ? String(Number(wine.alcohol)) : null}
                   suffix="%"
                 />
                 <Detail label="Bottle size" value={mlToText(wine.bottle_size_ml)} />
@@ -278,18 +267,15 @@ export default async function WineDetail({
                 Description
               </div>
               <p className="mt-3 text-white/85 text-sm leading-relaxed">
-                {wine.description && wine.description.trim() !== ""
-                  ? wine.description
-                  : "—"}
+                {wine.description && wine.description.trim() !== "" ? wine.description : "—"}
               </p>
             </section>
           </div>
         </div>
       </main>
 
-      <footer className="mt-auto py-6 px-5 text-right text-white/70 text-xs">
-        © {new Date().getFullYear()} Wine Connect — SPST
-      </footer>
+      {/* GLOBAL FOOTER */}
+      <SiteFooter />
     </div>
   );
 }
