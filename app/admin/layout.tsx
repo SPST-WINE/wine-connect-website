@@ -1,20 +1,20 @@
+// app/admin/layout.tsx
 export const dynamic = "force-dynamic";
 
-import Link from "next/link";
+import type { ReactNode } from "react";
+import AdminHeader from "@/components/admin/AdminHeader";
+import AdminFooter from "@/components/admin/AdminFooter";
 
-export default function AdminLayout({ children }: { children: React.ReactNode }) {
+const BG =
+  "radial-gradient(120% 120% at 50% -10%, #1c3e5e 0%, #0a1722 60%, #000 140%)";
+
+export default function AdminLayout({ children }: { children: ReactNode }) {
   return (
-    <div className="mx-auto max-w-6xl p-6 space-y-6">
-      <header className="flex items-center justify-between">
-        <h1 className="text-xl font-bold">Admin · Wine Connect</h1>
-        <nav className="flex gap-3 text-sm">
-          <Link className="underline" href="/admin">Dashboard</Link>
-          <Link className="underline" href="/admin/orders">Ordini</Link>
-          <Link className="underline" href="/admin/wineries">Cantine</Link>
-          <Link className="underline" href="/admin/wines">Vini</Link>
-        </nav>
-      </header>
+    <div className="min-h-screen flex flex-col text-white" style={{ background: BG }}>
+      <AdminHeader />
+      {/* Le pagine renderizzano solo il loro <main> */}
       {children}
+      <AdminFooter />
     </div>
   );
 }
