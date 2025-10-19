@@ -3,7 +3,9 @@ export const dynamic = "force-dynamic";
 
 import Link from "next/link";
 import { createSupabaseServer } from "@/lib/supabase/server";
-import { Package, Rows3, ShoppingBasket, UserCog, Truck } from "lucide-react";
+import { Rows3, Truck } from "lucide-react";
+import SiteHeader from "@/components/layout/SiteHeader";
+import SiteFooter from "@/components/layout/SiteFooter";
 
 /** WC background */
 const WC_BG =
@@ -26,35 +28,38 @@ export default async function OrdersPage() {
   const {
     data: { user },
   } = await supa.auth.getUser();
+
   if (!user) {
     return (
-      <div
-        className="min-h-screen flex items-center justify-center text-white"
-        style={{ background: WC_BG }}
-      >
-        <div className="rounded-xl border border-white/10 bg-white/[0.05] p-6 text-center">
-          You need to <a className="underline" href="/login">log in</a> to view orders.
+      <div className="min-h-screen flex flex-col text-white" style={{ background: WC_BG }}>
+        <SiteHeader />
+        <div className="flex-1 flex items-center justify-center">
+          <div className="rounded-xl border border-white/10 bg-white/[0.05] p-6 text-center">
+            You need to <a className="underline" href="/login">log in</a> to view orders.
+          </div>
         </div>
+        <SiteFooter />
       </div>
     );
   }
 
   // Buyer
-  const { data: buyer, error: buyerErr } = await supa
+  const { data: buyer } = await supa
     .from("buyers")
     .select("id")
     .eq("auth_user_id", user.id)
     .maybeSingle();
 
-  if (buyerErr || !buyer) {
+  if (!buyer) {
     return (
-      <div
-        className="min-h-screen flex items-center justify-center text-white"
-        style={{ background: WC_BG }}
-      >
-        <div className="rounded-xl border border-white/10 bg-white/[0.05] p-6">
-          Buyer profile not found.
+      <div className="min-h-screen flex flex-col text-white" style={{ background: WC_BG }}>
+        <SiteHeader />
+        <div className="flex-1 flex items-center justify-center">
+          <div className="rounded-xl border border-white/10 bg-white/[0.05] p-6">
+            Buyer profile not found.
+          </div>
         </div>
+        <SiteFooter />
       </div>
     );
   }
@@ -68,13 +73,14 @@ export default async function OrdersPage() {
 
   if (ordersErr) {
     return (
-      <div
-        className="min-h-screen flex items-center justify-center text-white"
-        style={{ background: WC_BG }}
-      >
-        <div className="rounded-xl border border-white/10 bg-white/[0.05] p-6">
-          Could not load orders.
+      <div className="min-h-screen flex flex-col text-white" style={{ background: WC_BG }}>
+        <SiteHeader />
+        <div className="flex-1 flex items-center justify-center">
+          <div className="rounded-xl border border-white/10 bg-white/[0.05] p-6">
+            Could not load orders.
+          </div>
         </div>
+        <SiteFooter />
       </div>
     );
   }
@@ -82,25 +88,9 @@ export default async function OrdersPage() {
   const list = (orders || []) as OrderRow[];
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ background: WC_BG }}>
-      {/* Top nav */}
-      <header className="h-14 flex items-center justify-between px-5">
-        <Link href="/buyer-home" className="flex items-center gap-2 text-white">
-          <img src="/wc-logo.png" alt="Wine Connect" className="h-6 w-auto" />
-          <span className="font-semibold">Wine Connect</span>
-        </Link>
-        <nav className="flex items-center gap-5 text-sm">
-          <Link className="text-white/80 hover:text-white" href="/catalog">
-            Catalog
-          </Link>
-          <Link className="text-white/80 hover:text-white" href="/cart/samples">
-            Sample Cart
-          </Link>
-          <Link className="text-white/80 hover:text-white" href="/profile">
-            Profile
-          </Link>
-        </nav>
-      </header>
+    <div className="min-h-screen flex flex-col text-white" style={{ background: WC_BG }}>
+      {/* GLOBAL HEADER */}
+      <SiteHeader />
 
       <main className="flex-1 px-5">
         <div className="mx-auto max-w-5xl py-8 space-y-6">
@@ -111,7 +101,7 @@ export default async function OrdersPage() {
                 <div className="text-xs tracking-wider uppercase text-white/60">
                   Orders
                 </div>
-                <h1 className="mt-1 text-3xl md:text-4xl font-extrabold text-white">
+                <h1 className="mt-1 text-3xl md:text-4xl font-extrabold">
                   Your orders
                 </h1>
                 <p className="mt-1 text-sm text-white/70">
@@ -120,7 +110,7 @@ export default async function OrdersPage() {
               </div>
               <Link
                 href="/catalog"
-                className="inline-flex items-center gap-2 rounded-xl bg-black/40 border border-white/10 px-3 py-2 text-sm text-white hover:bg-black/50"
+                className="inline-flex items-center gap-2 rounded-xl bg-black/40 border border-white/10 px-3 py-2 text-sm hover:bg-black/50"
               >
                 <Rows3 size={16} /> Go to catalog
               </Link>
@@ -146,7 +136,7 @@ export default async function OrdersPage() {
                   >
                     <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
                       <div className="min-w-0">
-                        <div className="font-semibold text-white truncate">
+                        <div className="font-semibold truncate">
                           #{o.order_code || o.id.slice(0, 8)}{" "}
                           {o.type ? (
                             <span className="text-white/70">
@@ -166,15 +156,12 @@ export default async function OrdersPage() {
                         {o.tracking_code ? (
                           <a
                             href={`/orders/${o.id}`}
-                            className="inline-flex items-center gap-1 text-sm underline text-white"
+                            className="inline-flex items-center gap-1 text-sm underline"
                           >
                             <Truck size={14} /> Track
                           </a>
                         ) : (
-                          <Link
-                            href={`/orders/${o.id}`}
-                            className="text-sm underline text-white"
-                          >
+                          <Link href={`/orders/${o.id}`} className="text-sm underline">
                             Details
                           </Link>
                         )}
@@ -188,10 +175,8 @@ export default async function OrdersPage() {
         </div>
       </main>
 
-      {/* Footer */}
-      <footer className="mt-auto py-6 px-5 text-right text-white/70 text-xs">
-        © {new Date().getFullYear()} Wine Connect — SPST
-      </footer>
+      {/* GLOBAL FOOTER */}
+      <SiteFooter />
     </div>
   );
 }
