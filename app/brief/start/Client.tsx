@@ -3,6 +3,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
+import CaretSelect from "@/components/common/CaretSelect";
 
 function SectionCard({ children }: { children: React.ReactNode }) {
   return (
@@ -23,7 +24,11 @@ function Progress({ step }: { step: number }) {
       <div className="mt-2 h-2 rounded-full bg-white/10">
         <div
           className="h-2 rounded-full"
-          style={{ width: `${pct}%`, background: "#E33955", boxShadow: "0 0 16px rgba(227,57,85,.35)" }}
+          style={{
+            width: `${pct}%`,
+            background: "#E33955",
+            boxShadow: "0 0 16px rgba(227,57,85,.35)",
+          }}
         />
       </div>
     </div>
@@ -62,10 +67,12 @@ function HeroStart({ onStart }: { onStart: () => void }) {
           Tell us what you're looking for
         </h1>
         <p className="text-white/80">
-          Answer a few quick questions — our team will curate a shortlist and ship you a tasting kit.
+          Answer a few quick questions — our team will curate a shortlist and
+          ship you a tasting kit.
         </p>
         <p className="text-white/60 text-sm">
-          Takes less than 3 minutes. All data is confidential and helps us match you with the right wineries.
+          Takes less than 3 minutes. All data is confidential and helps us match
+          you with the right wineries.
         </p>
         <div className="pt-2">
           <button
@@ -107,8 +114,11 @@ export default function ClientBriefWizard({
   const [pref, setPref] = useState<string>("Shortlist only");
   const [file, setFile] = useState<File | null>(null);
 
-  const toggle = (arr: string[], value: string, setter: (v: string[]) => void) =>
-    setter(arr.includes(value) ? arr.filter(v => v !== value) : [...arr, value]);
+  const toggle = (
+    arr: string[],
+    value: string,
+    setter: (v: string[]) => void
+  ) => setter(arr.includes(value) ? arr.filter((v) => v !== value) : [...arr, value]);
 
   const submit = async () => {
     setErrorMsg(null);
@@ -131,10 +141,12 @@ export default function ClientBriefWizard({
       const res = await fetch("/api/brief/submit", { method: "POST", body: form });
       if (!res.ok) {
         const j = await res.json().catch(() => ({}));
-        // messaggi più chiari
-        if (j?.error === "not_authenticated") throw new Error("Your session expired. Please sign in again.");
-        if (j?.error === "buyer_mismatch") throw new Error("We couldn't verify your buyer profile.");
-        if (j?.error === "missing_buyer_id") throw new Error("Missing buyer id. Please reload the page and try again.");
+        if (j?.error === "not_authenticated")
+          throw new Error("Your session expired. Please sign in again.");
+        if (j?.error === "buyer_mismatch")
+          throw new Error("We couldn't verify your buyer profile.");
+        if (j?.error === "missing_buyer_id")
+          throw new Error("Missing buyer id. Please reload the page and try again.");
         throw new Error(j?.error || "Failed to submit");
       }
 
@@ -157,7 +169,8 @@ export default function ClientBriefWizard({
               Thank you{fullName ? `, ${fullName}` : ""}!
             </h2>
             <p className="text-white/80">
-              Our team is curating your shortlist. You’ll receive your tailored selection within 48 hours.
+              Our team is curating your shortlist. You’ll receive your tailored
+              selection within 48 hours.
             </p>
             <div className="flex items-center justify-center gap-3 pt-2">
               <Link
@@ -191,27 +204,36 @@ export default function ClientBriefWizard({
               <div className="space-y-6">
                 <div>
                   <h3 className="text-white font-semibold text-lg">Buyer Preferences</h3>
-                  <p className="text-white/70 text-sm">Help us understand your style and positioning.</p>
+                  <p className="text-white/70 text-sm">
+                    Help us understand your style and positioning.
+                  </p>
                 </div>
 
                 <div className="grid gap-5">
                   <div>
                     <div className="text-white/80 text-sm mb-2">Wine styles</div>
                     <div className="flex flex-wrap gap-2">
-                      {["Red", "White", "Rosé", "Sparkling", "Sweet / Fortified"].map((w) => (
-                        <Chip key={w} checked={wineStyles.includes(w)} onClick={() => toggle(wineStyles, w, setWineStyles)}>
-                          {w}
-                        </Chip>
-                      ))}
+                      {["Red", "White", "Rosé", "Sparkling", "Sweet / Fortified"].map(
+                        (w) => (
+                          <Chip
+                            key={w}
+                            checked={wineStyles.includes(w)}
+                            onClick={() => toggle(wineStyles, w, setWineStyles)}
+                          >
+                            {w}
+                          </Chip>
+                        )
+                      )}
                     </div>
                   </div>
 
                   <div>
-                    <div className="text-white/80 text-sm mb-2">Price range per bottle (ex-cellar)</div>
-                    <select
+                    <div className="text-white/80 text-sm mb-2">
+                      Price range per bottle (ex-cellar)
+                    </div>
+                    <CaretSelect
                       value={priceRange}
                       onChange={(e) => setPriceRange(e.target.value)}
-                      className="w-full rounded-xl bg-black/30 border border-white/10 px-3 py-2 text-white"
                     >
                       <option value="">Select…</option>
                       {["< €4", "€4–8", "€8–15", "€15–25", "€25+"].map((r) => (
@@ -219,14 +241,25 @@ export default function ClientBriefWizard({
                           {r}
                         </option>
                       ))}
-                    </select>
+                    </CaretSelect>
                   </div>
 
                   <div>
-                    <div className="text-white/80 text-sm mb-2">Certifications / Special interest</div>
+                    <div className="text-white/80 text-sm mb-2">
+                      Certifications / Special interest
+                    </div>
                     <div className="flex flex-wrap gap-2">
-                      {["Organic / Biodynamic", "Vegan", "DOC / DOCG / IGT", "Natural / Low-intervention"].map((c) => (
-                        <Chip key={c} checked={certs.includes(c)} onClick={() => toggle(certs, c, setCerts)}>
+                      {[
+                        "Organic / Biodynamic",
+                        "Vegan",
+                        "DOC / DOCG / IGT",
+                        "Natural / Low-intervention",
+                      ].map((c) => (
+                        <Chip
+                          key={c}
+                          checked={certs.includes(c)}
+                          onClick={() => toggle(certs, c, setCerts)}
+                        >
                           {c}
                         </Chip>
                       ))}
@@ -236,8 +269,17 @@ export default function ClientBriefWizard({
                   <div>
                     <div className="text-white/80 text-sm mb-2">Target audience</div>
                     <div className="flex flex-wrap gap-2">
-                      {["Restaurants", "Retail / Wine shops", "E-commerce", "Private clients"].map((t) => (
-                        <Chip key={t} checked={audience.includes(t)} onClick={() => toggle(audience, t, setAudience)}>
+                      {[
+                        "Restaurants",
+                        "Retail / Wine shops",
+                        "E-commerce",
+                        "Private clients",
+                      ].map((t) => (
+                        <Chip
+                          key={t}
+                          checked={audience.includes(t)}
+                          onClick={() => toggle(audience, t, setAudience)}
+                        >
                           {t}
                         </Chip>
                       ))}
@@ -264,31 +306,45 @@ export default function ClientBriefWizard({
               <div className="space-y-6">
                 <div>
                   <h3 className="text-white font-semibold text-lg">Volume & Regions</h3>
-                  <p className="text-white/70 text-sm">Tell us more about formats, regions and cadence.</p>
+                  <p className="text-white/70 text-sm">
+                    Tell us more about formats, regions and cadence.
+                  </p>
                 </div>
 
                 <div className="grid gap-5">
                   <div>
-                    <div className="text-white/80 text-sm mb-2">Estimated quantity / order size</div>
-                    <select
+                    <div className="text-white/80 text-sm mb-2">
+                      Estimated quantity / order size
+                    </div>
+                    <CaretSelect
                       value={quantity}
                       onChange={(e) => setQuantity(e.target.value)}
-                      className="w-full rounded-xl bg-black/30 border border-white/10 px-3 py-2 text-white"
                     >
                       <option value="">Select…</option>
-                      {["Samples only", "1–5 pallets / year", "5–20 pallets / year", "20+ pallets / year"].map((q) => (
+                      {[
+                        "Samples only",
+                        "1–5 pallets / year",
+                        "5–20 pallets / year",
+                        "20+ pallets / year",
+                      ].map((q) => (
                         <option key={q} value={q} className="bg-[#0a1722]">
                           {q}
                         </option>
                       ))}
-                    </select>
+                    </CaretSelect>
                   </div>
 
                   <div>
-                    <div className="text-white/80 text-sm mb-2">Preferred bottle formats</div>
+                    <div className="text-white/80 text-sm mb-2">
+                      Preferred bottle formats
+                    </div>
                     <div className="flex flex-wrap gap-2">
                       {["0.75L", "Magnum", "Bag-in-box", "Other"].map((f) => (
-                        <Chip key={f} checked={certs.includes(f)} onClick={() => toggle(certs, f, setCerts)}>
+                        <Chip
+                          key={f}
+                          checked={certs.includes(f)}
+                          onClick={() => toggle(certs, f, setCerts)}
+                        >
                           {f}
                         </Chip>
                       ))}
@@ -296,10 +352,24 @@ export default function ClientBriefWizard({
                   </div>
 
                   <div>
-                    <div className="text-white/80 text-sm mb-2">Interested regions</div>
+                    <div className="text-white/80 text-sm mb-2">
+                      Interested regions
+                    </div>
                     <div className="flex flex-wrap gap-2">
-                      {["Piemonte", "Toscana", "Veneto", "Sicilia", "Puglia", "Friuli", "Altro"].map((r) => (
-                        <Chip key={r} checked={regions.includes(r)} onClick={() => toggle(regions, r, setRegions)}>
+                      {[
+                        "Piemonte",
+                        "Toscana",
+                        "Veneto",
+                        "Sicilia",
+                        "Puglia",
+                        "Friuli",
+                        "Altro",
+                      ].map((r) => (
+                        <Chip
+                          key={r}
+                          checked={regions.includes(r)}
+                          onClick={() => toggle(regions, r, setRegions)}
+                        >
                           {r}
                         </Chip>
                       ))}
@@ -307,19 +377,22 @@ export default function ClientBriefWizard({
                   </div>
 
                   <div>
-                    <div className="text-white/80 text-sm mb-2">Frequency of orders</div>
-                    <select
+                    <div className="text-white/80 text-sm mb-2">
+                      Frequency of orders
+                    </div>
+                    <CaretSelect
                       value={frequency}
                       onChange={(e) => setFrequency(e.target.value)}
-                      className="w-full rounded-xl bg-black/30 border border-white/10 px-3 py-2 text-white"
                     >
                       <option value="">Select…</option>
-                      {["One-off", "Monthly", "Quarterly", "Twice a year"].map((f) => (
-                        <option key={f} value={f} className="bg-[#0a1722]">
-                          {f}
-                        </option>
-                      ))}
-                    </select>
+                      {["One-off", "Monthly", "Quarterly", "Twice a year"].map(
+                        (f) => (
+                          <option key={f} value={f} className="bg-[#0a1722]">
+                            {f}
+                          </option>
+                        )
+                      )}
+                    </CaretSelect>
                   </div>
                 </div>
 
@@ -353,7 +426,9 @@ export default function ClientBriefWizard({
 
                 <div className="grid gap-5">
                   <div>
-                    <div className="text-white/80 text-sm mb-2">Describe your ideal selection</div>
+                    <div className="text-white/80 text-sm mb-2">
+                      Describe your ideal selection
+                    </div>
                     <textarea
                       value={notes}
                       onChange={(e) => setNotes(e.target.value)}
@@ -381,7 +456,11 @@ export default function ClientBriefWizard({
                     </div>
                     <div className="flex flex-wrap gap-2">
                       {["Shortlist only", "Shortlist + Tasting Kit"].map((p) => (
-                        <Chip key={p} checked={pref === p} onClick={() => setPref(p)}>
+                        <Chip
+                          key={p}
+                          checked={pref === p}
+                          onClick={() => setPref(p)}
+                        >
                           {p}
                         </Chip>
                       ))}
