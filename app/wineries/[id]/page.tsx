@@ -38,7 +38,6 @@ function money(n?: number | null) {
 export default async function WineryPage({ params }: { params: { id: string } }) {
   const supa = createSupabaseServer();
 
-  // 1) Cantina
   const { data: winery } = await supa
     .from("wineries")
     .select("id,name,region,country,description,logo_url,website")
@@ -46,9 +45,11 @@ export default async function WineryPage({ params }: { params: { id: string } })
     .maybeSingle<Winery>();
 
   if (!winery) {
-    // Not found / non esiste
     return (
-      <div className="min-h-screen flex flex-col text-white" style={{ background: BG }}>
+      <div
+        className="min-h-screen flex flex-col text-white"
+        style={{ background: BG }}
+      >
         <SiteHeader />
         <main className="flex-1 grid place-items-center px-5">
           <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-3">
@@ -64,10 +65,11 @@ export default async function WineryPage({ params }: { params: { id: string } })
     );
   }
 
-  // 2) Vini della cantina
   const { data: wines } = await supa
     .from("wines")
-    .select("id,name,vintage,type,price_sample,alcohol,image_url,available")
+    .select(
+      "id,name,vintage,type,price_sample,alcohol,image_url,available"
+    )
     .eq("winery_id", winery.id)
     .order("name", { ascending: true });
 
@@ -75,19 +77,21 @@ export default async function WineryPage({ params }: { params: { id: string } })
     [winery.region, winery.country].filter(Boolean).join(" — ") || "—";
 
   return (
-    <div className="min-h-screen flex flex-col text-white" style={{ background: BG }}>
-      {/* Header globale */}
+    <div
+      className="min-h-screen flex flex-col text-white"
+      style={{ background: BG }}
+    >
       <SiteHeader />
 
-      <main className="px-5">
-        <div className="mx-auto max-w-6xl py-6 space-y-6">
-          {/* Testata cantina */}
+      {/* ⬇️ main flessibile per spingere footer giù */}
+      <main className="flex-1 px-5 flex flex-col">
+        <div className="mx-auto max-w-6xl py-6 flex-1 flex flex-col space-y-6">
+          {/* HEADER CANTINA */}
           <section className="rounded-2xl border border-white/10 bg-white/[0.04] p-5 md:p-6">
             <div className="flex items-start justify-between gap-4">
               <div className="flex items-start gap-4 min-w-0">
                 <div className="h-14 w-14 rounded-xl overflow-hidden bg-black/30 grid place-items-center text-[10px] text-white/50 shrink-0">
                   {winery.logo_url ? (
-                    // eslint-disable-next-line @next/next/no-img-element
                     <img
                       src={winery.logo_url}
                       alt={winery.name ?? "Winery"}
@@ -98,12 +102,14 @@ export default async function WineryPage({ params }: { params: { id: string } })
                   )}
                 </div>
                 <div className="min-w-0">
-                  <div className="text-xs uppercase tracking-wider text-white/60">Winery</div>
+                  <div className="text-xs uppercase tracking-wider text-white/60">
+                    Winery
+                  </div>
                   <h1 className="mt-1 text-3xl md:text-4xl font-extrabold">
                     {winery.name ?? "Winery"}
                   </h1>
                   <p className="mt-1 text-sm text-white/70">{regionCountry}</p>
-                  {winery.website ? (
+                  {winery.website && (
                     <p className="mt-1 text-sm">
                       <a
                         className="underline text-white/80 hover:text-white"
@@ -114,7 +120,7 @@ export default async function WineryPage({ params }: { params: { id: string } })
                         {winery.website}
                       </a>
                     </p>
-                  ) : null}
+                  )}
                 </div>
               </div>
               <Link
@@ -125,14 +131,15 @@ export default async function WineryPage({ params }: { params: { id: string } })
               </Link>
             </div>
 
-            {/* Descrizione */}
             <p className="mt-4 text-white/85 text-sm leading-relaxed">
-              {winery.description && winery.description.trim() !== "" ? winery.description : "—"}
+              {winery.description && winery.description.trim() !== ""
+                ? winery.description
+                : "—"}
             </p>
           </section>
 
-          {/* Lista vini */}
-          <section>
+          {/* LISTA VINI */}
+          <section className="flex-1">
             <div className="mb-3 text-[11px] uppercase tracking-wider text-white/60">
               Wines from {winery.name ?? "this winery"}
             </div>
@@ -156,14 +163,15 @@ export default async function WineryPage({ params }: { params: { id: string } })
                         <div className="p-4 flex gap-4">
                           <div className="h-20 w-14 rounded-lg overflow-hidden bg-black/30 shrink-0 grid place-items-center">
                             {w.image_url ? (
-                              // eslint-disable-next-line @next/next/no-img-element
                               <img
                                 src={w.image_url}
                                 alt={w.name ?? "Wine"}
                                 className="h-full w-full object-cover"
                               />
                             ) : (
-                              <span className="text-[10px] text-white/50">No image</span>
+                              <span className="text-[10px] text-white/50">
+                                No image
+                              </span>
                             )}
                           </div>
                           <div className="min-w-0">
@@ -171,7 +179,8 @@ export default async function WineryPage({ params }: { params: { id: string } })
                               {title}
                             </div>
                             <div className="text-xs text-white/70 mt-0.5">
-                              {w.type ?? "—"} {w.alcohol ? `· ${Number(w.alcohol)}%` : ""}
+                              {w.type ?? "—"}{" "}
+                              {w.alcohol ? `· ${Number(w.alcohol)}%` : ""}
                             </div>
                             <div className="text-sm mt-2">
                               <span className="rounded-md border border-white/10 bg-black/30 px-2 py-1">
@@ -193,7 +202,7 @@ export default async function WineryPage({ params }: { params: { id: string } })
         </div>
       </main>
 
-      {/* Footer globale */}
+      {/* Footer fisso in fondo */}
       <SiteFooter />
     </div>
   );
