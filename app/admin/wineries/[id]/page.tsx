@@ -5,6 +5,14 @@ import { notFound } from "next/navigation";
 import { requireAdmin } from "@/lib/is-admin";
 import { createSupabaseServer } from "@/lib/supabase/server";
 import ConfirmSubmit from "@/components/ConfirmSubmit";
+import {
+  AdminCard,
+  AdminToolbar,
+  AdminInput,
+  AdminTextarea,
+  AdminPrimaryButton,
+  AdminFileInput,
+} from "@/components/admin/UI";
 
 type Winery = {
   id: string;
@@ -24,15 +32,12 @@ function csv(a?: string[] | null) {
 
 export default async function EditWinery({ params }: { params: { id: string } }) {
   const { ok } = await requireAdmin();
-  if (!ok) {
+  if (!ok)
     return (
       <main className="flex-1 px-5 grid place-items-center">
-        <div className="rounded-2xl border border-white/10 bg-white/[0.06] p-6 text-center">
-          Non autorizzato.
-        </div>
+        <div className="rounded-2xl border border-white/10 bg-white/[0.06] p-6 text-center">Non autorizzato.</div>
       </main>
     );
-  }
 
   const supa = createSupabaseServer();
   const { data: w, error } = await supa
@@ -45,21 +50,16 @@ export default async function EditWinery({ params }: { params: { id: string } })
   return (
     <main className="flex-1 px-5">
       <div className="mx-auto max-w-[1200px] py-6 space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <div className="text-xs uppercase tracking-wider text-white/60">Wineries</div>
-            <h1 className="mt-1 text-3xl font-extrabold">Edit winery</h1>
-          </div>
-          <Link
-            className="rounded-xl border border-white/10 px-3 py-2 text-white/85 hover:bg-white/5"
-            href="/admin/wineries"
-          >
-            ← All wineries
-          </Link>
-        </div>
+        <AdminToolbar
+          title="Edit winery"
+          right={
+            <Link href="/admin/wineries" className="rounded-xl border border-white/10 px-3 py-2 text-white/85 hover:bg-white/5">
+              ← All wineries
+            </Link>
+          }
+        />
 
-        <section className="rounded-2xl border border-white/10 bg-white/[0.04] p-5 grid gap-6 md:grid-cols-[2fr_1fr]">
+        <AdminCard className="p-5 grid gap-6 md:grid-cols-[2fr_1fr]">
           {/* LEFT: form */}
           <form action="/api/admin/wineries/update" method="post" className="grid gap-3">
             <input type="hidden" name="id" value={w.id} />
@@ -67,61 +67,37 @@ export default async function EditWinery({ params }: { params: { id: string } })
             <div className="grid md:grid-cols-2 gap-3">
               <label className="grid gap-1">
                 <span className="text-[12px] text-white/70">Name *</span>
-                <input
-                  name="name"
-                  required
-                  defaultValue={w.name ?? ""}
-                  className="rounded-xl bg-black/30 border border-white/10 px-3 py-2 text-white outline-none"
-                />
+                <AdminInput name="name" required defaultValue={w.name ?? ""} />
               </label>
 
               <label className="grid gap-1">
                 <span className="text-[12px] text-white/70">Website</span>
-                <input
-                  name="website"
-                  defaultValue={w.website ?? ""}
-                  placeholder="https://..."
-                  className="rounded-xl bg-black/30 border border-white/10 px-3 py-2 text-white outline-none"
-                />
+                <AdminInput name="website" defaultValue={w.website ?? ""} placeholder="https://..." />
               </label>
 
               <label className="grid gap-1">
                 <span className="text-[12px] text-white/70">Region</span>
-                <input
-                  name="region"
-                  defaultValue={w.region ?? ""}
-                  className="rounded-xl bg-black/30 border border-white/10 px-3 py-2 text-white outline-none"
-                />
+                <AdminInput name="region" defaultValue={w.region ?? ""} />
               </label>
 
               <label className="grid gap-1">
                 <span className="text-[12px] text-white/70">Country</span>
-                <input
-                  name="country"
-                  defaultValue={w.country ?? ""}
-                  className="rounded-xl bg-black/30 border border-white/10 px-3 py-2 text-white outline-none"
-                />
+                <AdminInput name="country" defaultValue={w.country ?? ""} />
               </label>
             </div>
 
             <label className="grid gap-1">
               <span className="text-[12px] text-white/70">Certifications (CSV)</span>
-              <input
+              <AdminInput
                 name="certifications"
                 defaultValue={csv(w.certifications)}
                 placeholder="BIO, DOCG, ..."
-                className="rounded-xl bg-black/30 border border-white/10 px-3 py-2 text-white outline-none"
               />
             </label>
 
             <label className="grid gap-1">
               <span className="text-[12px] text-white/70">Description</span>
-              <textarea
-                name="description"
-                rows={6}
-                defaultValue={w.description ?? ""}
-                className="rounded-xl bg-black/30 border border-white/10 px-3 py-2 text-white outline-none"
-              />
+              <AdminTextarea name="description" rows={6} defaultValue={w.description ?? ""} />
             </label>
 
             <label className="inline-flex items-center gap-2 text-sm text-white/85">
@@ -130,18 +106,13 @@ export default async function EditWinery({ params }: { params: { id: string } })
             </label>
 
             <div className="pt-2">
-              <button
-                className="h-11 rounded-xl px-4 font-semibold text-[#0f1720]"
-                style={{ background: "#E33955" }}
-              >
-                Save changes
-              </button>
+              <AdminPrimaryButton>Save changes</AdminPrimaryButton>
             </div>
           </form>
 
           {/* RIGHT: logo & delete */}
           <div className="space-y-4">
-            <div className="rounded-xl border border-white/10 bg-white/[0.03] p-3">
+            <AdminCard className="p-3">
               <div className="text-sm font-medium mb-2 text-white/90">Logo</div>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
@@ -156,18 +127,12 @@ export default async function EditWinery({ params }: { params: { id: string } })
                 className="mt-3 grid gap-2"
               >
                 <input type="hidden" name="wineryId" value={w.id} />
-                <input
-                  type="file"
-                  name="file"
-                  accept="image/*"
-                  required
-                  className="text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-white/15 file:px-3 file:py-1 file:text-white"
-                />
+                <AdminFileInput name="file" accept="image/*" required />
                 <button className="px-3 py-1.5 rounded-lg border border-white/10 text-sm text-white/90 hover:bg-white/5">
                   Upload logo
                 </button>
               </form>
-            </div>
+            </AdminCard>
 
             <form
               action="/api/admin/wineries/delete"
@@ -183,7 +148,7 @@ export default async function EditWinery({ params }: { params: { id: string } })
               </ConfirmSubmit>
             </form>
           </div>
-        </section>
+        </AdminCard>
       </div>
     </main>
   );
