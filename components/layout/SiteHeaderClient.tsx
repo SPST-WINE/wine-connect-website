@@ -21,7 +21,7 @@ function NavLink({
     <Link
       href={href}
       className={[
-        "rounded-xl px-3 py-2 text-sm font-medium transition",
+        "rounded-xl px-3.5 py-2 text-[15px] font-medium transition",
         active
           ? "bg-white/15 text-white"
           : "text-white/80 hover:text-white hover:bg-white/10",
@@ -77,13 +77,17 @@ export default function SiteHeaderClient({ cartCount = 0 }: Props) {
 
   return (
     <header className="sticky top-0 z-40 w-full border-b border-white/10 bg-[rgba(10,12,20,0.65)] backdrop-blur">
-      <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4">
-        <Link href="/buyer-home" className="flex items-center gap-2 text-white">
-          <img src="/wc-logo.png" alt="Wine Connect" className="h-6 w-auto" />
-          <span className="font-semibold">Wine Connect</span>
-        </Link>
+      <div className="mx-auto grid h-16 max-w-7xl grid-cols-2 items-center px-6">
+        {/* SINISTRA: logo, più vicino al bordo sinistro */}
+        <div className="justify-self-start">
+          <Link href="/buyer-home" className="flex items-center gap-2 text-white">
+            <img src="/wc-logo.png" alt="Wine Connect" className="h-7 w-auto" />
+            <span className="font-semibold text-[15px]">Wine Connect</span>
+          </Link>
+        </div>
 
-        <nav className="flex items-center gap-2">
+        {/* DESTRA: navigazione, spinta a destra */}
+        <nav className="justify-self-end flex items-center gap-2.5 md:gap-3.5">
           <NavLink href="/buyer-home" label="Home" active={isActive("/buyer-home")} />
           <NavLink href="/catalog" label="Catalog" active={isActive("/catalog")} />
           <NavLink href="/profile" label="Profile" active={isActive("/profile")} />
