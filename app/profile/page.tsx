@@ -4,6 +4,8 @@ import Link from "next/link";
 import { createSupabaseServer } from "@/lib/supabase/server";
 import Addresses from "@/components/profile/Addresses";
 import Compliance from "@/components/profile/Compliance";
+import SiteHeader from "@/components/layout/SiteHeader";
+import SiteFooter from "@/components/layout/SiteFooter";
 
 type SearchParams = { err?: string; ok?: string };
 
@@ -24,22 +26,20 @@ export default async function ProfilePage({
       "radial-gradient(120% 120% at 50% -10%, #1c3e5e 0%, #0a1722 60%, #000 140%)",
   };
 
+  // Header e Footer sono sempre renderizzati (anche senza login)
   if (!user) {
     return (
-      <main className="min-h-screen" style={gradient}>
-        <header className="h-14 flex items-center justify-between px-5">
-          <div className="flex items-center gap-2 text-white">
-            <img src="/wc-logo.png" alt="Wine Connect" className="h-6 w-auto" />
-            <span className="font-semibold">Wine Connect</span>
-          </div>
-        </header>
+      <main className="min-h-screen text-white" style={gradient}>
+        <SiteHeader />
 
         <div className="mx-auto max-w-5xl px-5 py-10">
-          <h1 className="text-2xl font-semibold text-white">Your profile</h1>
+          <h1 className="text-2xl font-semibold">Your profile</h1>
           <p className="mt-2 text-sm text-white/70">
             You are not signed in. <a className="underline" href="/login">Sign in</a>.
           </p>
         </div>
+
+        <SiteFooter />
       </main>
     );
   }
@@ -53,16 +53,10 @@ export default async function ProfilePage({
 
   if (!buyer) {
     return (
-      <main className="min-h-screen" style={gradient}>
-        <header className="h-14 flex items-center justify-between px-5">
-          <a href="/buyer-home" className="flex items-center gap-2 text-white">
-            <img src="/wc-logo.png" alt="Wine Connect" className="h-6 w-auto" />
-            <span className="font-semibold">Wine Connect</span>
-          </a>
-        </header>
-        <div className="mx-auto max-w-5xl px-5 py-10 text-white">
-          Buyer profile not found.
-        </div>
+      <main className="min-h-screen text-white" style={gradient}>
+        <SiteHeader />
+        <div className="mx-auto max-w-5xl px-5 py-10">Buyer profile not found.</div>
+        <SiteFooter />
       </main>
     );
   }
@@ -143,22 +137,9 @@ export default async function ProfilePage({
 
   /* ---------- UI ---------- */
   return (
-    <main className="min-h-screen" style={gradient}>
-      {/* Top bar */}
-      <header className="h-14 flex items-center justify-between px-5">
-        <a href="/buyer-home" className="flex items-center gap-2 text-white">
-          <img src="/wc-logo.png" alt="Wine Connect" className="h-6 w-auto" />
-          <span className="font-semibold">Wine Connect</span>
-        </a>
-        <nav className="flex items-center gap-5 text-sm">
-          <Link className="text-white/80 hover:text-white" href="/catalog">
-            Catalog
-          </Link>
-          <Link className="text-white/80 hover:text-white" href="/cart/samples">
-            Sample Cart
-          </Link>
-        </nav>
-      </header>
+    <main className="min-h-screen text-white" style={gradient}>
+      {/* GLOBAL HEADER (full-bleed) */}
+      <SiteHeader />
 
       <div className="mx-auto max-w-5xl px-5 py-8">
         {errorBanner && (
@@ -175,7 +156,7 @@ export default async function ProfilePage({
         <div className="text-xs uppercase tracking-wider text-white/60">
           Profile & compliance
         </div>
-        <h1 className="text-3xl font-extrabold text-white">Your profile</h1>
+        <h1 className="text-3xl font-extrabold">Your profile</h1>
         <p className="text-white/70 text-sm">— {buyer.email}</p>
 
         {/* Identity editable */}
@@ -235,7 +216,7 @@ export default async function ProfilePage({
 
         {/* Addresses */}
         <section className="mt-8 space-y-3">
-          <h2 className="text-lg font-semibold text-white">Addresses</h2>
+          <h2 className="text-lg font-semibold">Addresses</h2>
           <Addresses
             buyerId={buyer.id}
             initial={addressesList}
@@ -245,14 +226,13 @@ export default async function ProfilePage({
 
         {/* Compliance */}
         <section className="mt-8 space-y-3">
-          <h2 className="text-lg font-semibold text-white">Compliance</h2>
+          <h2 className="text-lg font-semibold">Compliance</h2>
           <Compliance buyerId={buyer.id} initial={complianceSafe as any} />
         </section>
       </div>
 
-      <footer className="mt-auto py-6 px-5 text-right text-white/70 text-xs">
-        © {new Date().getFullYear()} Wine Connect — SPST
-      </footer>
+      {/* GLOBAL FOOTER (full-bleed) */}
+      <SiteFooter />
     </main>
   );
 }
