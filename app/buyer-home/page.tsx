@@ -1,9 +1,9 @@
 export const dynamic = "force-dynamic";
 
 import Link from "next/link";
-import { createSupabaseServer } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { ArrowRight, ShoppingBasket, UserCog, Rows3 } from "lucide-react";
+import { createSupabaseServer } from "@/lib/supabase/server";
 import SiteHeader from "@/components/layout/SiteHeader";
 import SiteFooter from "@/components/layout/SiteFooter";
 
@@ -80,6 +80,16 @@ export default async function BuyerHome() {
                 >
                   <UserCog size={16} /> Profile & compliance
                 </Link>
+
+                {/* Logout */}
+                <form action="/api/auth/signout" method="post">
+                  <button
+                    className="inline-flex items-center gap-2 rounded-xl bg-black/40 border border-white/10 px-3 py-2 text-sm hover:bg-black/50"
+                    title="Log out"
+                  >
+                    Logout
+                  </button>
+                </form>
               </div>
             </div>
 
@@ -124,7 +134,7 @@ export default async function BuyerHome() {
             </div>
           </section>
 
-          {/* Quick links (replaces “latest orders”) */}
+          {/* Quick links */}
           <section className="mt-6 rounded-2xl border border-white/10 bg-white/[0.04] p-5 md:p-6">
             <div className="text-xs tracking-wider uppercase text-white/60 mb-3">
               Quick links
