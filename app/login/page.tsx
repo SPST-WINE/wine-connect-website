@@ -29,17 +29,19 @@ function LoginInner() {
     const supa = supabaseBrowser();
 
     try {
-      const res =
-        mode === "login"
-          ? await supa.auth.signInWithPassword({ email, password })
-          : await supa.auth.signUp({
-              email,
-              password,
-              options: {
-                data: { company_name: "", country: "", name: "" },
-                emailRedirectTo: `${window.location.origin}/auth/callback`,
-              },
-            });
+     const res = await supa.auth.signInWithPassword({ email, password });
+
+if (res.error) {
+  setErr(res.error.message);
+} else {
+  // ✅ Reindirizza tramite callback per scrivere il cookie server-side
+  const { session } = res.data;
+  if (session?.access_token) {
+    const redirectUrl = `${window.location.origin}/auth/callback?code=${session.access_token}&next=/buyer-home`;
+    window.location.href = redirectUrl;
+  }
+}
+
 
       if (res.error) {
         setErr(res.error.message);
