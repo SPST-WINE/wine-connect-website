@@ -3,38 +3,62 @@ import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/is-admin";
 import { createSupabaseServer } from "@/lib/supabase/server";
 
-function redirectBack(req: Request, fallbackPath = "/admin/orders") {
-  const ref = req.headers.get("referer");
-  // Usiamo 303 per dire al browser di fare una GET alla pagina di destinazione
-  const to = ref ? new URL(ref) : new URL(fallbackPath, req.url);
-  return NextResponse.redirect(to, { status: 303 });
-}
-
 export async function POST(req: Request) {
   const { ok } = await requireAdmin();
-  if (!ok) return NextResponse.json({ error: "forbidden" }, { status: 403 });
+  if (!ok) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   const form = await req.formData();
   const orderId = String(form.get("orderId") || "");
-  const status = String(form.get("status") || "");
-  const tracking_code = String(form.get("tracking_code") || "").trim();
+  const status = form.get("status") ? String(form.get("status")) : undefined;
+  const tracking_code = form.get("tracking_code")
+    ? String(form.get("tracking_code"))
+    : undefined;
+  const carrier_code = form.get("carrier_code")
+    ? String(form.get("carrier_code"))
+    : undefined;
+
+  // redirect sicuro (preferisci sempre il campo esplicito)
+  const redirect_to =
+    (form.get("redirect_to") && String(form.get("redirect_to"))) ||
+    req.headers.get("referer") ||
+    "/admin/orders";
 
   if (!orderId) {
-    return NextResponse.json({ error: "missing_orderId" }, { status: 400 });
+    return NextResponse.json(
+      { error: "Missing orderId" },
+      { status: 400 }
+    );
   }
 
   const supa = createSupabaseServer();
 
-  const payload: Record<string, any> = {};
-  if (status) payload.status = status;
-  // Permette di svuotare il tracking mettendo stringa vuota
-  payload.tracking_code = tracking_code || null;
+  // opzionale: validazione carrier (se presente)
+  if (carrier_code) {
+    const { data: carr } = await supa
+      .from("shipping_carriers")
+      .select("code")
+      .eq("code", carrier_code)
+      .maybeSingle();
+    if (!carr) {
+      return NextResponse.json(
+        { error: "Invalid carrier_code" },
+        { status: 400 }
+      );
+    }
+  }
 
-  const { error } = await supa.from("orders").update(payload).eq("id", orderId);
+  const payload: Record<string, any> = {};
+  if (status !== undefined) payload.status = status;
+  if (tracking_code !== undefined) payload.tracking_code = tracking_code;
+  if (carrier_code !== undefined) payload.carrier_code = carrier_code;
+
+  const { error } = await supa
+    .from("orders")
+    .update(payload)
+    .eq("id", orderId);
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 400 });
   }
 
-  // Redirect alla pagina precedente (lista ordini) invece che a una rotta che può 404
-  return redirectBack(req, "/admin/orders");
+  return NextResponse.redirect(new URL(redirect_to, req.url));
 }
