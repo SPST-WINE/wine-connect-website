@@ -15,7 +15,7 @@ function LoginInner() {
   const r = useRouter();
   const sp = useSearchParams();
   const modeQuery = sp.get("mode");
-  const [mode, setMode] = useState<"login" | "signup">(
+  const [mode] = useState<"login" | "signup">(
     modeQuery === "signup" ? "signup" : "login"
   );
   const [email, setEmail] = useState("");
@@ -88,12 +88,10 @@ function LoginInner() {
             Buyer access
           </div>
           <h1 className="mt-1 text-2xl font-extrabold text-white">
-            {mode === "login" ? "Sign in to Wine Connect" : "Create your account"}
+            Sign in to Wine Connect
           </h1>
           <p className="mt-1 text-sm text-white/70">
-            {mode === "login"
-              ? "Use your email and password to access your buyer hub."
-              : "Create an account to access your buyer hub."}
+            Use your email and password to access your buyer hub.
           </p>
 
           <form onSubmit={submit} className="mt-5 space-y-3">
@@ -121,9 +119,9 @@ function LoginInner() {
                 <Lock size={16} className="text-white/50" />
                 <input
                   className="bg-transparent outline-none w-full text-white placeholder:text-white/40"
-                  placeholder={mode === "login" ? "Your password" : "Choose a password"}
+                  placeholder="Your password"
                   type="password"
-                  autoComplete={mode === "login" ? "current-password" : "new-password"}
+                  autoComplete="current-password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
@@ -144,11 +142,11 @@ function LoginInner() {
                 className="w-full h-11 rounded-xl font-semibold text-[#0f1720] transition-all duration-200 hover:-translate-y-[1px] active:translate-y-[1px] disabled:opacity-60"
                 style={{ background: WC_PINK }}
               >
-                {loading ? "Please wait…" : mode === "login" ? "Sign in" : "Create account"}{" "}
+                {loading ? "Please wait…" : "Sign in"}{" "}
                 <ArrowRight className="inline-block ml-1 align-[-2px]" size={16} />
               </button>
 
-              {/* Bottone che porta a /signup */}
+              {/* CTA per la signup */}
               <Link
                 href="/signup"
                 className="w-full h-11 rounded-xl border border-white/15 bg-white/5 text-center grid place-items-center text-white/90 hover:bg-white/10"
@@ -158,15 +156,18 @@ function LoginInner() {
             </div>
           </form>
 
-          <button
-            className="mt-3 text-sm underline text-white/80 hover:text-white"
-            onClick={() => setMode(mode === "login" ? "signup" : "login")}
-          >
-            {mode === "login" ? "Don’t have an account? Create one" : "I already have an account"}
-          </button>
+          {/* NOTE: rimosso il link "Don’t have an account? Create one" */}
 
           <p className="mt-4 text-[11px] text-white/55">
-            By continuing you agree to our processing for compliance and logistics purposes.
+            By continuing you agree to our{" "}
+            <Link href="/privacy" className="underline hover:text-white">
+              privacy policy
+            </Link>{" "}
+            and{" "}
+            <Link href="/terms" className="underline hover:text-white">
+              terms of agreement
+            </Link>
+            .
           </p>
         </motion.div>
       </main>
