@@ -61,7 +61,7 @@ export default async function AdminOrdersPage() {
                 Ordini
               </h1>
               <p className="mt-1 text-sm text-white/70">
-                Panoramica ordini, tracking e stato.
+                Orders, tracking and status.
               </p>
             </div>
             <Link
