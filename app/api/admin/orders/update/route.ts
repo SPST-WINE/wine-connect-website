@@ -3,62 +3,72 @@ import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/is-admin";
 import { createSupabaseServer } from "@/lib/supabase/server";
 
+const STATI = ["pending", "processing", "shipped", "completed", "cancelled"] as const;
+type Stato = typeof STATI[number];
+
+const FALLBACK_CARRIERS = [
+  { code: "UPS", name: "UPS" },
+  { code: "DHL", name: "DHL" },
+  { code: "FEDEX", name: "FedEx" },
+  { code: "TNT", name: "TNT" },
+  { code: "GLS", name: "GLS" },
+  { code: "OTHER", name: "Altro corriere" },
+];
+
 export async function POST(req: Request) {
   const { ok } = await requireAdmin();
   if (!ok) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   const form = await req.formData();
-  const orderId = String(form.get("orderId") || "");
-  const status = form.get("status") ? String(form.get("status")) : undefined;
-  const tracking_code = form.get("tracking_code")
-    ? String(form.get("tracking_code"))
-    : undefined;
-  const carrier_code = form.get("carrier_code")
-    ? String(form.get("carrier_code"))
-    : undefined;
+  const orderId = String(form.get("orderId") || "").trim();
+  const status = String(form.get("status") || "").trim() as Stato;
+  const tracking_code_raw = String(form.get("tracking_code") || "").trim();
+  const carrier_code_raw = String(form.get("carrier_code") || "").trim();
 
-  // redirect sicuro (preferisci sempre il campo esplicito)
-  const redirect_to =
-    (form.get("redirect_to") && String(form.get("redirect_to"))) ||
-    req.headers.get("referer") ||
-    "/admin/orders";
+  if (!orderId) return NextResponse.json({ error: "Missing orderId" }, { status: 400 });
+  if (!STATI.includes(status))
+    return NextResponse.json({ error: "Invalid status" }, { status: 400 });
 
-  if (!orderId) {
-    return NextResponse.json(
-      { error: "Missing orderId" },
-      { status: 400 }
-    );
-  }
+  // Normalizziamo i campi opzionali
+  const tracking_code = tracking_code_raw === "" ? null : tracking_code_raw;
+  const carrier_code = carrier_code_raw === "" ? null : carrier_code_raw;
 
   const supa = createSupabaseServer();
 
-  // opzionale: validazione carrier (se presente)
+  // Validazione carrier_code (se presente)
   if (carrier_code) {
-    const { data: carr } = await supa
+    // prima proviamo sul DB
+    const { data: dbCarrier, error: dbErr } = await supa
       .from("shipping_carriers")
       .select("code")
       .eq("code", carrier_code)
       .maybeSingle();
-    if (!carr) {
-      return NextResponse.json(
-        { error: "Invalid carrier_code" },
-        { status: 400 }
-      );
+
+    const inDB = !dbErr && !!dbCarrier;
+
+    // se non in DB, accettiamo solo se presente in fallback
+    const inFallback = FALLBACK_CARRIERS.some((c) => c.code === carrier_code);
+
+    if (!inDB && !inFallback) {
+      return NextResponse.json({ error: "Invalid carrier_code" }, { status: 400 });
     }
   }
 
-  const payload: Record<string, any> = {};
-  if (status !== undefined) payload.status = status;
-  if (tracking_code !== undefined) payload.tracking_code = tracking_code;
-  if (carrier_code !== undefined) payload.carrier_code = carrier_code;
-
-  const { error } = await supa
+  // Update ordine
+  const { error: upErr } = await supa
     .from("orders")
-    .update(payload)
+    .update({
+      status,
+      tracking_code,
+      carrier_code, // può essere NULL o un codice valido
+    })
     .eq("id", orderId);
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 400 });
+
+  if (upErr) {
+    return NextResponse.json({ error: upErr.message }, { status: 400 });
   }
 
-  return NextResponse.redirect(new URL(redirect_to, req.url));
+  // Redirect 303 alla pagina dettaglio admin per evitare il 404 dopo il POST
+  const url = new URL(`/admin/orders/${orderId}?saved=1`, req.url);
+  return NextResponse.redirect(url, 303);
 }
