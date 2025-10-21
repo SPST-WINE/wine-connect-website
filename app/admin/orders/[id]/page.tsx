@@ -2,7 +2,8 @@
 export const dynamic = "force-dynamic";
 
 import Link from "next/link";
-import { notFound, headers } from "next/navigation";
+import { notFound } from "next/navigation";
+import { headers } from "next/headers";
 import { requireAdmin } from "@/lib/is-admin";
 import { createSupabaseServer } from "@/lib/supabase/server";
 
@@ -29,14 +30,10 @@ type OrderRow = {
 };
 
 const STATI: OrderRow["status"][] = ["pending", "processing", "shipped", "completed", "cancelled"];
-
-function money(n: number | null | undefined) {
-  if (n == null) return "€0.00";
-  return `€ ${n.toFixed(2)}`;
-}
+const money = (n: number | null | undefined) => `€ ${(n ?? 0).toFixed(2)}`;
 const j = (v: any) => {
   try {
-    return JSON.stringify(v);
+    return JSON.stringify(v, null, 2);
   } catch {
     return String(v);
   }
@@ -44,14 +41,15 @@ const j = (v: any) => {
 
 export default async function AdminOrderDetail({ params }: { params: { id: string } }) {
   const h = headers();
-  const url = h.get("x-vercel-deployment-url") || h.get("host") || "";
+  const host = h.get("x-vercel-deployment-url") || h.get("host") || "";
   const referer = h.get("referer") || "";
   const ts = new Date().toISOString();
-  const debug = (h.get("x-next-debug") || "").includes("1") || (h.get("next-url") || "").includes("debug=1");
+  // debug attivo se metti ?debug=1 nell'URL precedente (referer) o header personalizzato
+  const debug = referer.includes("debug=1") || (h.get("x-next-debug") || "") === "1";
 
-  console.log("[ADMIN/ORDER] ► start", { ts, id: params.id, host: url, referer });
+  console.log("[ADMIN/ORDER] ► start", { ts, id: params.id, host, referer });
 
-  // 1) Auth admin
+  // Auth admin
   const gate = await requireAdmin();
   console.log("[ADMIN/ORDER] requireAdmin()", gate);
   if (!gate.ok) {
@@ -66,11 +64,9 @@ export default async function AdminOrderDetail({ params }: { params: { id: strin
   try {
     const supa = createSupabaseServer();
 
-    // (opzionale) log utente
     const { data: authUser } = await supa.auth.getUser();
     console.log("[ADMIN/ORDER] auth.getUser()", { userId: authUser?.user?.id || null });
 
-    // 2) Ordine
     console.log("[ADMIN/ORDER] fetching order…", params.id);
     const { data: order, error } = await supa
       .from("orders")
@@ -94,12 +90,10 @@ export default async function AdminOrderDetail({ params }: { params: { id: strin
           <div className="p-6 text-white">
             <h1 className="text-xl font-bold mb-3">Debug: order not found</h1>
             <pre className="rounded bg-black/60 p-3 border border-white/10 text-xs">
-              {j({ params, error })}
+{j({ params, error })}
             </pre>
             <p className="mt-3">
-              <a className="underline" href="/admin/orders">
-                ← back to list
-              </a>
+              <a className="underline" href="/admin/orders">← back to list</a>
             </p>
           </div>
         );
@@ -108,16 +102,12 @@ export default async function AdminOrderDetail({ params }: { params: { id: strin
     }
     console.log("[ADMIN/ORDER] order ok", { id: order.id, items: order.items.length });
 
-    // 3) Carrier
     const { data: carriers, error: carrErr } = (await supa
       .from("shipping_carriers")
       .select("code,name,tracking_url")
       .order("name", { ascending: true })) as unknown as { data: Carrier[] | null; error: any };
-    if (carrErr) {
-      console.error("[ADMIN/ORDER] carriers error", j(carrErr));
-    } else {
-      console.log("[ADMIN/ORDER] carriers", carriers?.length ?? 0);
-    }
+    if (carrErr) console.error("[ADMIN/ORDER] carriers error", j(carrErr));
+    else console.log("[ADMIN/ORDER] carriers", carriers?.length ?? 0);
 
     const subtotal = order.items.reduce((acc, it) => acc + (it.unit_price ?? 0) * it.quantity, 0);
 
@@ -140,7 +130,9 @@ export default async function AdminOrderDetail({ params }: { params: { id: strin
             <div className="flex items-start justify-between gap-4">
               <div>
                 <div className="text-[11px] uppercase tracking-wider text-white/60">Admin · Order</div>
-                <h1 className="text-2xl font-extrabold mt-1">#{order.id.slice(0, 8)} · {order.type.toUpperCase()}</h1>
+                <h1 className="text-2xl font-extrabold mt-1">
+                  #{order.id.slice(0, 8)} · {order.type.toUpperCase()}
+                </h1>
                 <div className="mt-1 text-sm text-white/70">
                   {new Date(order.created_at).toLocaleString()} — {order.buyers?.company_name || order.buyers?.email || "—"}
                 </div>
@@ -278,7 +270,6 @@ export default async function AdminOrderDetail({ params }: { params: { id: strin
   }
 }
 
-/** Mini componente per costruire il link di tracking */
 function TrackingPreview({
   code,
   carrierCode,
