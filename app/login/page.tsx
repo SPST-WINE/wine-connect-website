@@ -7,7 +7,6 @@ import { motion } from "framer-motion";
 import Link from "next/link";
 import { Mail, Lock, ArrowRight } from "lucide-react";
 
-/** WC palette */
 const WC_PINK = "#E33955";
 const LOGO_PNG = "/wc-logo.png";
 
@@ -45,7 +44,10 @@ function LoginInner() {
       if (res.error) {
         setErr(res.error.message);
       } else {
-        r.push("/buyer-home");
+        // Assicurati che la sessione sia pronta e scritta nei cookie,
+        // poi fai un full page load per ricaricare i Server Components con i cookie aggiornati
+        await supa.auth.getSession();
+        window.location.assign("/buyer-home");
       }
     } catch (e: any) {
       setErr(e?.message ?? "Unexpected error");
@@ -95,7 +97,6 @@ function LoginInner() {
           </p>
 
           <form onSubmit={submit} className="mt-5 space-y-3">
-            {/* Email */}
             <label className="grid gap-1">
               <span className="text-[11px] text-white/60">Email</span>
               <div className="flex items-center gap-2 rounded-xl bg-black/30 border border-white/10 px-3 py-3 focus-within:ring-1 focus-within:ring-white/30">
@@ -112,7 +113,6 @@ function LoginInner() {
               </div>
             </label>
 
-            {/* Password */}
             <label className="grid gap-1">
               <span className="text-[11px] text-white/60">Password</span>
               <div className="flex items-center gap-2 rounded-xl bg-black/30 border border-white/10 px-3 py-3 focus-within:ring-1 focus-within:ring-white/30">
@@ -146,7 +146,7 @@ function LoginInner() {
                 <ArrowRight className="inline-block ml-1 align-[-2px]" size={16} />
               </button>
 
-              {/* CTA per la signup */}
+              {/* CTA per signup */}
               <Link
                 href="/signup"
                 className="w-full h-11 rounded-xl border border-white/15 bg-white/5 text-center grid place-items-center text-white/90 hover:bg-white/10"
@@ -155,8 +155,6 @@ function LoginInner() {
               </Link>
             </div>
           </form>
-
-          {/* NOTE: rimosso il link "Don’t have an account? Create one" */}
 
           <p className="mt-4 text-[11px] text-white/55">
             By continuing you agree to our{" "}
@@ -172,7 +170,6 @@ function LoginInner() {
         </motion.div>
       </main>
 
-      {/* Sticky footer */}
       <footer className="mt-auto py-6 px-5 text-right text-white/70 text-xs">
         © {new Date().getFullYear()} Wine Connect — SPST
       </footer>
