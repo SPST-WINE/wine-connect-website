@@ -8,7 +8,7 @@ import { createSupabaseServer } from "@/lib/supabase/server";
 // UI components (quelli che abbiamo già introdotto nella sezione admin)
 import AdminTopbar from "@/components/admin/AdminTopbar";
 import AdminFooter from "@/components/admin/AdminFooter";
-import AdminPageHeader from "@/components/admin/AdminPageHeader";
+
 
 type Carrier = {
   code: string;
