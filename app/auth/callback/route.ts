@@ -7,14 +7,11 @@ export const dynamic = "force-dynamic";
 export async function GET(request: Request) {
   const supabase = createSupabaseServer();
 
-  const { searchParams } = new URL(request.url);
-  const code = searchParams.get("code");
-  const next = searchParams.get("next") ?? "/buyer-home";
+  // Supabase passa ?code=...&next=...
+  // Usa l'URL completo: è quello che si aspetta exchangeCodeForSession
+  await supabase.auth.exchangeCodeForSession(new URL(request.url));
 
-  if (code) {
-    // Crea la sessione dai parametri di login (email link, magic link o signup)
-    await supabase.auth.exchangeCodeForSession(code);
-  }
-
+  const url = new URL(request.url);
+  const next = url.searchParams.get("next") || "/buyer-home";
   return NextResponse.redirect(new URL(next, request.url));
 }
