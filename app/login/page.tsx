@@ -1,22 +1,27 @@
+// app/login/page.tsx
 "use client";
 
 import React, { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { supabaseBrowser } from "@/lib/supabase/client";
-import { motion } from "framer-motion";
 import Link from "next/link";
+import { motion } from "framer-motion";
+import { supabaseBrowser } from "@/lib/supabase/client";
 import { Mail, Lock, ArrowRight } from "lucide-react";
 
+/** WC palette */
 const WC_PINK = "#E33955";
 const LOGO_PNG = "/wc-logo.png";
 
 function LoginInner() {
   const r = useRouter();
   const sp = useSearchParams();
+
+  // Permetti apertura diretta in modalità signup con ?mode=signup
   const modeQuery = sp.get("mode");
-  const [mode] = useState<"login" | "signup">(
+  const [mode, setMode] = useState<"login" | "signup">(
     modeQuery === "signup" ? "signup" : "login"
   );
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -26,30 +31,51 @@ function LoginInner() {
     e.preventDefault();
     setLoading(true);
     setErr(null);
-    const supa = supabaseBrowser();
 
     try {
-     const res = await supa.auth.signInWithPassword({ email, password });
+      const supa = supabaseBrowser();
 
-if (res.error) {
-  setErr(res.error.message);
-} else {
-  // ✅ Reindirizza tramite callback per scrivere il cookie server-side
-  const { session } = res.data;
-  if (session?.access_token) {
-    const redirectUrl = `${window.location.origin}/auth/callback?code=${session.access_token}&next=/buyer-home`;
-    window.location.href = redirectUrl;
-  }
-}
+      if (mode === "login") {
+        // 1) Autentica lato client
+        const { data, error } = await supa.auth.signInWithPassword({
+          email,
+          password,
+        });
+        if (error) throw error;
 
+        // 2) “Fissa” la sessione lato server per evitare loop su /buyer-home
+        const { access_token, refresh_token } = data.session ?? {};
+        const res = await fetch("/auth/set", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({
+            access_token,
+            refresh_token,
+            next: "/buyer-home",
+          }),
+        });
 
-      if (res.error) {
-        setErr(res.error.message);
+        if (!res.ok) {
+          const j = await res.json().catch(() => ({}));
+          throw new Error(j?.error || "Cannot establish server session");
+        }
+
+        // Il server risponde con redirect: come fallback forziamo la navigazione
+        r.push("/buyer-home");
       } else {
-        // Assicurati che la sessione sia pronta e scritta nei cookie,
-        // poi fai un full page load per ricaricare i Server Components con i cookie aggiornati
-        await supa.auth.getSession();
-        window.location.assign("/buyer-home");
+        // SIGNUP: inviamo mail di conferma con redirect alla callback server
+        const { error } = await supa.auth.signUp({
+          email,
+          password,
+          options: {
+            data: { company_name: "", country: "", name: "" },
+            emailRedirectTo: `${window.location.origin}/auth/callback?next=/buyer-home`,
+          },
+        });
+        if (error) throw error;
+
+        // Piccolo step di conferma
+        r.push("/signup?checkEmail=1");
       }
     } catch (e: any) {
       setErr(e?.message ?? "Unexpected error");
@@ -69,6 +95,7 @@ if (res.error) {
       {/* Top bar */}
       <header className="h-14 flex items-center justify-between px-5">
         <Link href="/" className="flex items-center gap-2 text-white">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={LOGO_PNG} alt="Wine Connect" className="h-6 w-auto" />
           <span className="font-semibold">Wine Connect</span>
         </Link>
@@ -91,14 +118,19 @@ if (res.error) {
           <div className="text-xs uppercase tracking-wider text-white/60">
             Buyer access
           </div>
+
           <h1 className="mt-1 text-2xl font-extrabold text-white">
-            Sign in to Wine Connect
+            {mode === "login" ? "Sign in to Wine Connect" : "Create your account"}
           </h1>
+
           <p className="mt-1 text-sm text-white/70">
-            Use your email and password to access your buyer hub.
+            {mode === "login"
+              ? "Use your email and password to access your buyer hub."
+              : "Sign up with email and password. We’ll send you a confirmation email."}
           </p>
 
           <form onSubmit={submit} className="mt-5 space-y-3">
+            {/* Email */}
             <label className="grid gap-1">
               <span className="text-[11px] text-white/60">Email</span>
               <div className="flex items-center gap-2 rounded-xl bg-black/30 border border-white/10 px-3 py-3 focus-within:ring-1 focus-within:ring-white/30">
@@ -115,6 +147,7 @@ if (res.error) {
               </div>
             </label>
 
+            {/* Password */}
             <label className="grid gap-1">
               <span className="text-[11px] text-white/60">Password</span>
               <div className="flex items-center gap-2 rounded-xl bg-black/30 border border-white/10 px-3 py-3 focus-within:ring-1 focus-within:ring-white/30">
@@ -123,7 +156,7 @@ if (res.error) {
                   className="bg-transparent outline-none w-full text-white placeholder:text-white/40"
                   placeholder="Your password"
                   type="password"
-                  autoComplete="current-password"
+                  autoComplete={mode === "login" ? "current-password" : "new-password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
@@ -137,34 +170,37 @@ if (res.error) {
               </p>
             )}
 
-            <div className="grid gap-2">
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full h-11 rounded-xl font-semibold text-[#0f1720] transition-all duration-200 hover:-translate-y-[1px] active:translate-y-[1px] disabled:opacity-60"
-                style={{ background: WC_PINK }}
-              >
-                {loading ? "Please wait…" : "Sign in"}{" "}
-                <ArrowRight className="inline-block ml-1 align-[-2px]" size={16} />
-              </button>
-
-              {/* CTA per signup */}
-              <Link
-                href="/signup"
-                className="w-full h-11 rounded-xl border border-white/15 bg-white/5 text-center grid place-items-center text-white/90 hover:bg-white/10"
-              >
-                Create an account
-              </Link>
-            </div>
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full h-11 rounded-xl font-semibold text-[#0f1720] transition-all duration-200 hover:-translate-y-[1px] active:translate-y-[1px] disabled:opacity-60"
+              style={{ background: WC_PINK }}
+            >
+              {loading
+                ? "Please wait…"
+                : mode === "login"
+                ? "Sign in"
+                : "Create account"}{" "}
+              <ArrowRight className="inline-block ml-1 align-[-2px]" size={16} />
+            </button>
           </form>
 
+          {/* Switch login/signup (sostituisce la vecchia riga di testo) */}
+          <button
+            className="mt-3 w-full h-11 rounded-xl border border-white/15 bg-white/5 text-white/90 hover:bg-white/10 transition"
+            onClick={() => setMode(mode === "login" ? "signup" : "login")}
+          >
+            {mode === "login" ? "Create an account" : "Back to sign in"}
+          </button>
+
+          {/* Note legali aggiornate */}
           <p className="mt-4 text-[11px] text-white/55">
             By continuing you agree to our{" "}
-            <Link href="/privacy" className="underline hover:text-white">
+            <Link href="/privacy" className="underline">
               privacy policy
             </Link>{" "}
             and{" "}
-            <Link href="/terms" className="underline hover:text-white">
+            <Link href="/terms" className="underline">
               terms of agreement
             </Link>
             .
@@ -172,6 +208,7 @@ if (res.error) {
         </motion.div>
       </main>
 
+      {/* Sticky footer */}
       <footer className="mt-auto py-6 px-5 text-right text-white/70 text-xs">
         © {new Date().getFullYear()} Wine Connect — SPST
       </footer>
@@ -180,6 +217,7 @@ if (res.error) {
 }
 
 export default function LoginPage() {
+  // Suspense richiesto perché usiamo useSearchParams
   return (
     <Suspense fallback={<div className="min-h-screen bg-black" />}>
       <LoginInner />
