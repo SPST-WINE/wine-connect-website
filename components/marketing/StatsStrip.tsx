@@ -16,32 +16,54 @@ type Stat = {
 export default function StatsStrip() {
   const { lang } = useI18n();
 
+  const kicker = lang === "it" ? "La forza della rete" : "We are wine connect";
   const titleEN = "A global B2B wine network";
-  const titleIT = "Un network B2B del vino globale";
+  const titleIT = "I network globale B2B del vino italino";
 
   const stats: Stat[] = [
     { key: "wineries", value: "50+", labelEN: "Wineries", labelIT: "Cantine", Icon: Building2 },
     { key: "labels", value: "300+", labelEN: "Labels", labelIT: "Etichette", Icon: Tag },
-    // 🔧 Markets: rimosso USA → "UK · EU · ASIA"
     { key: "markets", value: "UK · EU · ASIA", labelEN: "Markets", labelIT: "Mercati", Icon: Globe2 },
     { key: "shipout", value: "24h", labelEN: "Samples ship-out", labelIT: "Spedizione campioni", Icon: Timer },
   ];
 
   return (
-    <section className="py-12">
+    <section className="py-14">
       <div className="mx-auto max-w-[1200px] px-5">
-        {/* Titolo con gradiente come “Docs …” */}
-        <h2 className="text-center text-xl md:text-2xl font-semibold mb-6">
-          <span
-            className="bg-clip-text text-transparent"
-            style={{
-              backgroundImage: `linear-gradient(90deg, ${WC_COLORS.PINK}, ${WC_COLORS.BLUE_SOFT})`,
-              WebkitBackgroundClip: "text",
-            }}
-          >
-            {lang === "it" ? titleIT : titleEN}
-          </span>
-        </h2>
+        {/* Header del blocco: kicker + titolo con gradiente e halo */}
+        <div className="mb-8 text-center">
+          <div className="text-[11px] uppercase tracking-[.2em] mb-2" style={{ color: "rgba(255,255,255,.6)" }}>
+            {kicker}
+          </div>
+
+          <div className="relative inline-block">
+            {/* halo morbido dietro al titolo */}
+            <span
+              aria-hidden
+              className="absolute inset-[-14%] -z-10 rounded-[32px] blur-2xl"
+              style={{
+                background: `radial-gradient(60% 60% at 50% 50%, ${WC_COLORS.PINK}22, transparent 70%)`,
+              }}
+            />
+            <h2
+              className="text-xl md:text-2xl font-semibold"
+              style={{
+                backgroundImage: `linear-gradient(90deg, ${WC_COLORS.PINK}, ${WC_COLORS.BLUE_SOFT})`,
+                WebkitBackgroundClip: "text",
+                backgroundClip: "text",
+                color: "transparent",
+              }}
+            >
+              {lang === "it" ? titleIT : titleEN}
+            </h2>
+          </div>
+
+          {/* linea/underline gradient molto sottile */}
+          <div
+            className="mx-auto mt-3 h-[3px] w-40 rounded-full"
+            style={{ backgroundImage: `linear-gradient(90deg, ${WC_COLORS.PINK}, transparent)` }}
+          />
+        </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {stats.map(({ key, value, labelEN, labelIT, Icon }) => (
@@ -60,7 +82,7 @@ export default function StatsStrip() {
 
               <div>
                 <div className="text-2xl font-semibold text-white leading-tight">{value}</div>
-                <div className="text-sm" style={{ color: WC_COLORS.MUTED }}>
+                <div className="text-sm" style={{ color: "rgba(255,255,255,.75)" }}>
                   {lang === "it" ? labelIT : labelEN}
                 </div>
               </div>
