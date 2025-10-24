@@ -16,19 +16,32 @@ type Stat = {
 export default function StatsStrip() {
   const { lang } = useI18n();
 
-  const title = lang === "it" ? "Un network B2B del vino globale" : "A global B2B wine network";
+  const titleEN = "A global B2B wine network";
+  const titleIT = "Un network B2B del vino globale";
 
   const stats: Stat[] = [
     { key: "wineries", value: "50+", labelEN: "Wineries", labelIT: "Cantine", Icon: Building2 },
     { key: "labels", value: "300+", labelEN: "Labels", labelIT: "Etichette", Icon: Tag },
-    { key: "markets", value: "UK · USA · EU · ASIA", labelEN: "Markets", labelIT: "Mercati", Icon: Globe2 },
+    // 🔧 Markets: rimosso USA → "UK · EU · ASIA"
+    { key: "markets", value: "UK · EU · ASIA", labelEN: "Markets", labelIT: "Mercati", Icon: Globe2 },
     { key: "shipout", value: "24h", labelEN: "Samples ship-out", labelIT: "Spedizione campioni", Icon: Timer },
   ];
 
   return (
     <section className="py-12">
       <div className="mx-auto max-w-[1200px] px-5">
-        <h2 className="text-center text-xl md:text-2xl font-semibold mb-6">{title}</h2>
+        {/* Titolo con gradiente come “Docs …” */}
+        <h2 className="text-center text-xl md:text-2xl font-semibold mb-6">
+          <span
+            className="bg-clip-text text-transparent"
+            style={{
+              backgroundImage: `linear-gradient(90deg, ${WC_COLORS.PINK}, ${WC_COLORS.BLUE_SOFT})`,
+              WebkitBackgroundClip: "text",
+            }}
+          >
+            {lang === "it" ? titleIT : titleEN}
+          </span>
+        </h2>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {stats.map(({ key, value, labelEN, labelIT, Icon }) => (
