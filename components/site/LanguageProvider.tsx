@@ -5,7 +5,24 @@ import * as React from "react";
 
 export type Lang = "it" | "en";
 
-/* ----------------------------- Dizionari ----------------------------- */
+/* ------------------------- Tipi coerenti per entrambe le lingue ------------------------- */
+type Dict = {
+  header: {
+    enter: string;
+    nav: { catalog: string; buyers: string; wineries: string; how: string };
+  };
+  hero: {
+    kicker: string;
+    titleA: string;
+    titleB: string;
+    desc: string;
+    ctaCatalog: string;
+    ctaBrief: string;
+  };
+  footer: { rights: string };
+};
+
+/* ----------------------------- Dizionari (no as const) ----------------------------- */
 const I18N = {
   it: {
     header: {
@@ -39,14 +56,11 @@ const I18N = {
     },
     footer: { rights: "All rights reserved" },
   },
-} as const;
+} satisfies Record<Lang, Dict>;
 
-type Dictionary = typeof I18N["it"];
-
-/* ----------------------------- Context ------------------------------ */
 type LangContextValue = {
   lang: Lang;
-  t: Dictionary;
+  t: Dict;
   setLang: (l: Lang) => void;
   toggleLang: () => void;
 };
@@ -59,7 +73,6 @@ export function useI18n(): LangContextValue {
   return ctx;
 }
 
-/* ------------------------------ Provider ---------------------------- */
 type LanguageProviderProps = {
   children: React.ReactNode;
   defaultLang?: Lang;
@@ -67,7 +80,7 @@ type LanguageProviderProps = {
 
 export function LanguageProvider({ children, defaultLang = "it" }: LanguageProviderProps) {
   const [lang, setLang] = React.useState<Lang>(defaultLang);
-  const t = I18N[lang];
+  const t: Dict = I18N[lang];
 
   const value = React.useMemo<LangContextValue>(
     () => ({
