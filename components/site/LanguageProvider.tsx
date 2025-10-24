@@ -5,8 +5,7 @@ import * as React from "react";
 
 export type Lang = "it" | "en";
 
-type Dictionary = typeof I18N["it"];
-
+/* ----------------------------- Dizionari ----------------------------- */
 const I18N = {
   it: {
     header: {
@@ -42,6 +41,9 @@ const I18N = {
   },
 } as const;
 
+type Dictionary = typeof I18N["it"];
+
+/* ----------------------------- Context ------------------------------ */
 type LangContextValue = {
   lang: Lang;
   t: Dictionary;
@@ -57,11 +59,17 @@ export function useI18n(): LangContextValue {
   return ctx;
 }
 
-export function LanguageProvider({ children, defaultLang = "it" as Lang }) {
+/* ------------------------------ Provider ---------------------------- */
+type LanguageProviderProps = {
+  children: React.ReactNode;
+  defaultLang?: Lang;
+};
+
+export function LanguageProvider({ children, defaultLang = "it" }: LanguageProviderProps) {
   const [lang, setLang] = React.useState<Lang>(defaultLang);
   const t = I18N[lang];
 
-  const value: LangContextValue = React.useMemo(
+  const value = React.useMemo<LangContextValue>(
     () => ({
       lang,
       t,
