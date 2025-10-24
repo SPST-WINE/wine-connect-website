@@ -61,29 +61,18 @@ export default function ValueGrid() {
   return (
     <section className="pt-6 pb-14">
       <div className="mx-auto max-w-[1200px] px-5">
-        {/* Header: kicker bianco, titolo invariato (teniamo gradient attuale rosso→bianco?) */}
+        {/* Header: kicker bianco, TITOLO BIANCO (no gradient), underline specchiato */}
         <div className="mb-8 text-center">
           <div className="text-[11px] uppercase tracking-[.2em] mb-2 text-white/80">
             {kicker}
           </div>
-          <h2
-            className="text-2xl md:text-3xl font-semibold"
-            style={{
-              backgroundImage: `linear-gradient(90deg, ${WC_COLORS.PINK}, #ffffff)`,
-              WebkitBackgroundClip: "text",
-              backgroundClip: "text",
-              color: "transparent",
-            }}
-          >
+          <h2 className="text-2xl md:text-3xl font-semibold text-white">
             {title}
           </h2>
-
-          {/* underline SPECCHIATO: pieno in alto a destra, sfuma in basso a sinistra */}
           <div
             className="mx-auto mt-3 h-[3px] w-40 rounded-full"
             style={{
               backgroundImage: `linear-gradient(225deg, ${WC_COLORS.PINK} 0%, rgba(255,255,255,0) 70%)`,
-              // un po' di prospettiva: 225deg = dall'angolo in alto a destra verso il basso a sinistra
             }}
           />
         </div>
