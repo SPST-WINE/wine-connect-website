@@ -55,22 +55,15 @@ const FEATURES: Feature[] = [
 
 export default function ValueGrid() {
   const { lang } = useI18n();
-  const kicker = lang === "it" ? "What we offer" : "What we offer";
+  const kicker = "WHAT WE OFFER"; // bianco
   const title = lang === "it" ? "Operatività, non promesse" : "Operational, not aspirational";
 
   return (
-    // meno spazio sopra per avvicinarlo al blocco precedente
     <section className="pt-6 pb-14">
       <div className="mx-auto max-w-[1200px] px-5">
-        {/* Header sezione: kicker specchiato (bianco→rosso), titolo rosso→bianco */}
+        {/* Header: kicker bianco, titolo invariato (teniamo gradient attuale rosso→bianco?) */}
         <div className="mb-8 text-center">
-          <div
-            className="text-[11px] uppercase tracking-[.2em] mb-2 bg-clip-text text-transparent"
-            style={{
-              backgroundImage: `linear-gradient(270deg, #ffffff, ${WC_COLORS.PINK})`, // specchiato
-              opacity: 0.8,
-            }}
-          >
+          <div className="text-[11px] uppercase tracking-[.2em] mb-2 text-white/80">
             {kicker}
           </div>
           <h2
@@ -84,9 +77,14 @@ export default function ValueGrid() {
           >
             {title}
           </h2>
+
+          {/* underline SPECCHIATO: pieno in alto a destra, sfuma in basso a sinistra */}
           <div
             className="mx-auto mt-3 h-[3px] w-40 rounded-full"
-            style={{ backgroundImage: `linear-gradient(90deg, ${WC_COLORS.PINK}, transparent)` }}
+            style={{
+              backgroundImage: `linear-gradient(225deg, ${WC_COLORS.PINK} 0%, rgba(255,255,255,0) 70%)`,
+              // un po' di prospettiva: 225deg = dall'angolo in alto a destra verso il basso a sinistra
+            }}
           />
         </div>
 
@@ -112,7 +110,7 @@ export default function ValueGrid() {
                   </div>
                   <CardTitle className="text-base text-white">{tTitle}</CardTitle>
                 </CardHeader>
-                <CardContent className="text-sm" style={{ color: "rgba(255,255,255,.75)" }}>
+                <CardContent className="text-sm text-white/75">
                   {tBody}
                 </CardContent>
               </Card>
