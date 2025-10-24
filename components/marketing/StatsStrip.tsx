@@ -18,7 +18,7 @@ export default function StatsStrip() {
 
   const kicker = lang === "it" ? "La forza della rete" : "We are wine connect";
   const titleEN = "A global B2B wine network";
-  const titleIT = "I network globale B2B del vino italino";
+  const titleIT = "Il network globale B2B del vino italino";
 
   const stats: Stat[] = [
     { key: "wineries", value: "50+", labelEN: "Wineries", labelIT: "Cantine", Icon: Building2 },
