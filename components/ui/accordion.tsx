@@ -3,6 +3,8 @@
 
 import * as React from "react";
 
+/* ----------------------------- Context & Hook ----------------------------- */
+
 type AccordionContextValue = {
   type: "single";
   collapsible?: boolean;
@@ -11,6 +13,27 @@ type AccordionContextValue = {
 };
 
 const AccordionContext = React.createContext<AccordionContextValue | null>(null);
+
+function useAccordionContext(): AccordionContextValue {
+  const ctx = React.useContext(AccordionContext);
+  if (!ctx) {
+    throw new Error("Accordion components must be used within <Accordion>.");
+  }
+  return ctx;
+}
+
+/* --------------------------------- Utils --------------------------------- */
+
+function findItemValueFrom(node: HTMLElement | null): string | null {
+  while (node) {
+    const v = node.getAttribute?.("data-accordion-item");
+    if (v) return v;
+    node = node.parentElement;
+  }
+  return null;
+}
+
+/* --------------------------------- Root ---------------------------------- */
 
 export function Accordion({
   type = "single",
@@ -32,6 +55,8 @@ export function Accordion({
   );
 }
 
+/* --------------------------------- Item ---------------------------------- */
+
 export function AccordionItem({
   value,
   className,
@@ -48,52 +73,38 @@ export function AccordionItem({
   );
 }
 
+/* -------------------------------- Trigger -------------------------------- */
+
 export function AccordionTrigger({
   children,
   className,
   ...props
 }: React.ButtonHTMLAttributes<HTMLButtonElement>) {
-  const ctx = React.useContext(AccordionContext);
-  if (!ctx) throw new Error("AccordionTrigger must be used within Accordion");
+  const ctx = useAccordionContext();
 
-  // find nearest item value
-  const itemValue =
-    (props as any)["data-item"] ||
-    (function findValue(node: HTMLElement | null): string | null {
-      while (node) {
-        const v = node.getAttribute?.("data-accordion-item");
-        if (v) return v;
-        node = node.parentElement;
-      }
-      return null;
-    })(undefined as any);
-
-  // We’ll read via ref on click instead
   const btnRef = React.useRef<HTMLButtonElement>(null);
+  const [itemValue, setItemValue] = React.useState<string | null>(null);
+
+  // On mount, discover the closest AccordionItem value
+  React.useEffect(() => {
+    const btn = btnRef.current;
+    if (!btn) return;
+    setItemValue(findItemValueFrom(btn));
+  }, []);
+
+  const isOpen = itemValue ? ctx.openItem === itemValue : false;
 
   function handleClick(e: React.MouseEvent<HTMLButtonElement>) {
-    const btn = btnRef.current!;
-    let container: HTMLElement | null = btn;
-    let value: string | null = null;
-    while (container) {
-      const v = container.getAttribute("data-accordion-item");
-      if (v) {
-        value = v;
-        break;
-      }
-      container = container.parentElement;
-    }
-    if (!value) return;
+    if (!itemValue) return;
 
-    if (ctx.openItem === value) {
+    if (ctx.openItem === itemValue) {
       if (ctx.collapsible) ctx.setOpenItem(null);
     } else {
-      ctx.setOpenItem(value);
+      ctx.setOpenItem(itemValue);
     }
     props.onClick?.(e);
   }
 
-  const isOpen = false; // aria-expanded will be set at render by reading context + nearest item below
   return (
     <button
       ref={btnRef}
@@ -104,39 +115,33 @@ export function AccordionTrigger({
       }
       aria-expanded={isOpen}
       onClick={handleClick}
+      type={props.type ?? "button"}
     >
       <span>{children}</span>
-      <span aria-hidden className="ml-3 text-white/60">▾</span>
+      <span aria-hidden className="ml-3 text-white/60" style={{ transform: isOpen ? "rotate(180deg)" : "none", transition: "transform .2s" }}>
+        ▾
+      </span>
     </button>
   );
 }
+
+/* -------------------------------- Content -------------------------------- */
 
 export function AccordionContent({
   children,
   className,
   ...props
 }: React.HTMLAttributes<HTMLDivElement>) {
-  const ctx = React.useContext(AccordionContext);
-  if (!ctx) throw new Error("AccordionContent must be used within Accordion");
+  const ctx = useAccordionContext();
 
-  // find nearest item value
-  const [value, setValue] = React.useState<string | null>(null);
   const ref = React.useRef<HTMLDivElement>(null);
+  const [itemValue, setItemValue] = React.useState<string | null>(null);
+
   React.useEffect(() => {
-    const node = ref.current;
-    if (!node) return;
-    let container: HTMLElement | null = node;
-    while (container) {
-      const v = container.getAttribute("data-accordion-item");
-      if (v) {
-        setValue(v);
-        break;
-      }
-      container = container.parentElement;
-    }
+    setItemValue(findItemValueFrom(ref.current));
   }, []);
 
-  const open = value ? ctx.openItem === value : false;
+  const open = itemValue ? ctx.openItem === itemValue : false;
 
   return (
     <div
@@ -148,6 +153,7 @@ export function AccordionContent({
         " " +
         (className || "")
       }
+      aria-hidden={!open}
     >
       <div className="min-h-0">
         <div className="py-3 text-sm text-white/80">{children}</div>
