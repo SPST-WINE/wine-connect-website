@@ -67,22 +67,39 @@ export default function LogosMarquee() {
           {lang === "it" ? "Regioni & Denominazioni curate" : "Curated Regions & Appellations"}
         </p>
 
-        {/* wrapper con mask ai lati: niente overlay = niente riga verticale */}
+        {/* glass strip con fade ai lati via mask */}
         <div
-          className="relative overflow-hidden"
+          className="relative overflow-hidden rounded-2xl"
           style={{
+            // glass: leggero gradiente + blur
+            background:
+              "linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.02))",
+            border: `1px solid ${WC_COLORS.CARD_BORDER}`,
+            backdropFilter: "blur(6px)",
+            WebkitBackdropFilter: "blur(6px)",
+            // fade pulito ai lati (niente ombre extra)
             WebkitMaskImage:
-              "linear-gradient(90deg, rgba(0,0,0,0) 0%, rgba(0,0,0,1) 6%, rgba(0,0,0,1) 94%, rgba(0,0,0,0) 100%)",
+              "linear-gradient(90deg, transparent 0%, black 8%, black 92%, transparent 100%)",
             maskImage:
-              "linear-gradient(90deg, rgba(0,0,0,0) 0%, rgba(0,0,0,1) 6%, rgba(0,0,0,1) 94%, rgba(0,0,0,0) 100%)",
+              "linear-gradient(90deg, transparent 0%, black 8%, black 92%, transparent 100%)",
           }}
         >
+          {/* sheen morbido dall’alto */}
+          <div
+            className="pointer-events-none absolute inset-0"
+            style={{
+              background:
+                "linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,0) 45%)",
+              opacity: 0.18,
+            }}
+          />
+
           <motion.div
             role="list"
             initial={{ x: 0 }}
             animate={{ x: "-50%" }}
             transition={{ duration: 28, repeat: Infinity, ease: "linear" }}
-            className="flex gap-6 whitespace-nowrap will-change-transform py-3"
+            className="flex gap-6 whitespace-nowrap will-change-transform py-3 px-2"
           >
             {items.map((label, i) => (
               <span
@@ -100,16 +117,6 @@ export default function LogosMarquee() {
               </span>
             ))}
           </motion.div>
-
-          {/* ombreggiatura laterale morbida (fuori dalla mask, quindi niente linee) */}
-          <div
-            className="pointer-events-none absolute inset-y-0 left-0 w-24"
-            style={{ boxShadow: "inset 40px 0 40px -20px rgba(0,0,0,.45)" }}
-          />
-          <div
-            className="pointer-events-none absolute inset-y-0 right-0 w-24"
-            style={{ boxShadow: "inset -40px 0 40px -20px rgba(0,0,0,.45)" }}
-          />
         </div>
       </div>
     </section>
