@@ -5,10 +5,7 @@ import { motion } from "framer-motion";
 import { useI18n } from "@/components/site/LanguageProvider";
 import { WC_COLORS } from "@/lib/theme";
 
-/**
- * Dataset: regioni + denominazioni (20+). EN mantiene nomi internazionalmente usati.
- * Se vuoi più/meno voci basta editare gli array sotto.
- */
+/* --- dataset: regioni + denominazioni --- */
 const REGIONS_IT = [
   "Abruzzo","Basilicata","Calabria","Campania","Emilia-Romagna","Friuli-Venezia Giulia","Lazio",
   "Liguria","Lombardia","Marche","Molise","Piemonte","Puglia","Sardegna","Sicilia","Toscana",
@@ -24,20 +21,20 @@ const REGIONS_EN = [
 const APPELLATIONS_IT = [
   "Barolo","Barbaresco","Barbera d’Asti","Chianti Classico","Brunello di Montalcino","Valpolicella",
   "Amarone della Valpolicella","Prosecco","Soave","Franciacorta","Etna Rosso","Etna Bianco",
-  "Nero d’Avola","Primitivo di Manduria","Aglianico del Vulture","Taurasi","Verdicchio dei Castelli di Jesi",
-  "Montepulciano d’Abruzzo","Cannonau di Sardegna","Vermentino di Gallura","Lugana","Trento DOC",
-  "Alto Adige DOC","Lambrusco di Sorbara","Sagrantino di Montefalco",
+  "Nero d’Avola","Primitivo di Manduria","Aglianico del Vulture","Taurasi",
+  "Verdicchio dei Castelli di Jesi","Montepulciano d’Abruzzo","Cannonau di Sardegna",
+  "Vermentino di Gallura","Lugana","Trento DOC","Alto Adige DOC","Lambrusco di Sorbara","Sagrantino di Montefalco",
 ] as const;
 
 const APPELLATIONS_EN = [
   "Barolo","Barbaresco","Barbera d’Asti","Chianti Classico","Brunello di Montalcino","Valpolicella",
   "Amarone della Valpolicella","Prosecco","Soave","Franciacorta","Etna Rosso","Etna Bianco",
-  "Nero d’Avola","Primitivo di Manduria","Aglianico del Vulture","Taurasi","Verdicchio dei Castelli di Jesi",
-  "Montepulciano d’Abruzzo","Cannonau di Sardegna","Vermentino di Gallura","Lugana","Trento DOC",
-  "Alto Adige / Südtirol DOC","Lambrusco di Sorbara","Sagrantino di Montefalco",
+  "Nero d’Avola","Primitivo di Manduria","Aglianico del Vulture","Taurasi",
+  "Verdicchio dei Castelli di Jesi","Montepulciano d’Abruzzo","Cannonau di Sardinia",
+  "Vermentino di Gallura","Lugana","Trento DOC","Alto Adige / Südtirol DOC","Lambrusco di Sorbara","Sagrantino di Montefalco",
 ] as const;
 
-/** Interleave: alterna regioni e denominazioni (region, denomination, region, ...) */
+/* alterna regioni e denominazioni */
 function interleave<A, B>(a: readonly A[], b: readonly B[]): (A | B)[] {
   const max = Math.max(a.length, b.length);
   const out: (A | B)[] = [];
@@ -50,17 +47,15 @@ function interleave<A, B>(a: readonly A[], b: readonly B[]): (A | B)[] {
 
 export default function LogosMarquee() {
   const { lang } = useI18n();
-
   const regions = (lang === "it" ? REGIONS_IT : REGIONS_EN) as readonly string[];
   const apps = (lang === "it" ? APPELLATIONS_IT : APPELLATIONS_EN) as readonly string[];
-  const mixed = interleave(regions, apps);
 
-  // Duplichiamo per lo scorrimento continuo
-  const items = [...mixed, ...mixed];
+  const mixed = interleave(regions, apps);
+  const items = [...mixed, ...mixed]; // loop continuo
 
   return (
     <section
-      className="py-10 border-y relative"
+      className="py-10 border-y"
       style={{ borderColor: WC_COLORS.CARD_BORDER }}
       aria-label={lang === "it" ? "Regioni e denominazioni" : "Regions and appellations"}
     >
@@ -72,25 +67,22 @@ export default function LogosMarquee() {
           {lang === "it" ? "Regioni & Denominazioni curate" : "Curated Regions & Appellations"}
         </p>
 
-        <div className="relative overflow-hidden rounded-[20px]">
-          {/* fascia sottile per stacco visivo */}
-          <div
-            className="absolute inset-0 pointer-events-none"
-            style={{
-              boxShadow:
-                "inset 0 1px 0 rgba(255,255,255,0.06), inset 0 -1px 0 rgba(0,0,0,0.35)",
-              borderRadius: 20,
-              background:
-                "linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.03))",
-            }}
-          />
-
+        {/* wrapper con mask ai lati: niente overlay = niente riga verticale */}
+        <div
+          className="relative overflow-hidden"
+          style={{
+            WebkitMaskImage:
+              "linear-gradient(90deg, rgba(0,0,0,0) 0%, rgba(0,0,0,1) 6%, rgba(0,0,0,1) 94%, rgba(0,0,0,0) 100%)",
+            maskImage:
+              "linear-gradient(90deg, rgba(0,0,0,0) 0%, rgba(0,0,0,1) 6%, rgba(0,0,0,1) 94%, rgba(0,0,0,0) 100%)",
+          }}
+        >
           <motion.div
             role="list"
             initial={{ x: 0 }}
             animate={{ x: "-50%" }}
-            transition={{ duration: 30, repeat: Infinity, ease: "linear" }}
-            className="flex gap-6 whitespace-nowrap will-change-transform py-3 px-1"
+            transition={{ duration: 28, repeat: Infinity, ease: "linear" }}
+            className="flex gap-6 whitespace-nowrap will-change-transform py-3"
           >
             {items.map((label, i) => (
               <span
@@ -109,22 +101,14 @@ export default function LogosMarquee() {
             ))}
           </motion.div>
 
-          {/* Fade + shadow ai lati per “staccare” dai bordi */}
+          {/* ombreggiatura laterale morbida (fuori dalla mask, quindi niente linee) */}
           <div
-            className="pointer-events-none absolute inset-y-0 left-0 w-16"
-            style={{
-              background:
-                "linear-gradient(90deg, rgba(10,23,34,1) 30%, rgba(10,23,34,0))",
-              boxShadow: "8px 0 24px rgba(0,0,0,0.35)",
-            }}
+            className="pointer-events-none absolute inset-y-0 left-0 w-24"
+            style={{ boxShadow: "inset 40px 0 40px -20px rgba(0,0,0,.45)" }}
           />
           <div
-            className="pointer-events-none absolute inset-y-0 right-0 w-16"
-            style={{
-              background:
-                "linear-gradient(270deg, rgba(10,23,34,1) 30%, rgba(10,23,34,0))",
-              boxShadow: "-8px 0 24px rgba(0,0,0,0.35)",
-            }}
+            className="pointer-events-none absolute inset-y-0 right-0 w-24"
+            style={{ boxShadow: "inset -40px 0 40px -20px rgba(0,0,0,.45)" }}
           />
         </div>
       </div>
