@@ -5,6 +5,14 @@ import type { Metadata } from "next";
 import { LanguageProvider } from "@/components/site/LanguageProvider";
 import Header from "@/components/site/Header";
 import MarketingHero from "@/components/marketing/MarketingHero";
+import LogosMarquee from "@/components/marketing/LogosMarquee";
+import StatsStrip from "@/components/marketing/StatsStrip";
+import ValueGrid from "@/components/marketing/ValueGrid";
+import HowItWorks from "@/components/marketing/HowItWorks";
+import CatalogPreview from "@/components/marketing/CatalogPreview";
+import TailoredBriefCTA from "@/components/marketing/TailoredBriefCTA";
+import Testimonials from "@/components/marketing/Testimonials";
+import FAQs from "@/components/marketing/FAQs";
 import Footer from "@/components/site/Footer";
 import { homepageGradient, WC_COLORS } from "@/lib/theme";
 
@@ -17,21 +25,26 @@ export const metadata: Metadata = {
 
 export default function HomePage() {
   return (
-    <LanguageProvider defaultLang="it">
+    <LanguageProvider defaultLang="en">
       <main
         className="font-sans text-slate-100 selection:bg-[color:var(--wc)]/30 min-h-screen"
         style={
           {
-            // stesso background della buyer-home
             background: homepageGradient(),
-            // usato per i badge/CTA
             ["--wc" as any]: WC_COLORS.PINK,
           } as React.CSSProperties
         }
       >
         <Header />
         <MarketingHero />
-        {/* Puoi aggiungere qui gli altri blocchi componentizzati (LogosMarquee, StatsStrip, ValueGrid, ...) */}
+        <LogosMarquee />
+        <StatsStrip />
+        <ValueGrid />
+        <HowItWorks />
+        <CatalogPreview />
+        <TailoredBriefCTA />
+        <Testimonials />
+        <FAQs />
         <Footer />
       </main>
     </LanguageProvider>
