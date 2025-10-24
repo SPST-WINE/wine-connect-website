@@ -55,21 +55,28 @@ const FEATURES: Feature[] = [
 
 export default function ValueGrid() {
   const { lang } = useI18n();
-  const kicker = lang === "it" ? "Cosa offriamo" : "What we offer";
+  const kicker = lang === "it" ? "What we offer" : "What we offer";
   const title = lang === "it" ? "Operatività, non promesse" : "Operational, not aspirational";
 
   return (
-    <section className="py-14">
+    // meno spazio sopra per avvicinarlo al blocco precedente
+    <section className="pt-6 pb-14">
       <div className="mx-auto max-w-[1200px] px-5">
-        {/* Header sezione */}
+        {/* Header sezione: kicker specchiato (bianco→rosso), titolo rosso→bianco */}
         <div className="mb-8 text-center">
-          <div className="text-[11px] uppercase tracking-[.2em] mb-2" style={{ color: "rgba(255,255,255,.6)" }}>
+          <div
+            className="text-[11px] uppercase tracking-[.2em] mb-2 bg-clip-text text-transparent"
+            style={{
+              backgroundImage: `linear-gradient(270deg, #ffffff, ${WC_COLORS.PINK})`, // specchiato
+              opacity: 0.8,
+            }}
+          >
             {kicker}
           </div>
           <h2
             className="text-2xl md:text-3xl font-semibold"
             style={{
-              backgroundImage: `linear-gradient(90deg, ${WC_COLORS.PINK}, ${WC_COLORS.BLUE_SOFT})`,
+              backgroundImage: `linear-gradient(90deg, ${WC_COLORS.PINK}, #ffffff)`,
               WebkitBackgroundClip: "text",
               backgroundClip: "text",
               color: "transparent",
@@ -105,7 +112,7 @@ export default function ValueGrid() {
                   </div>
                   <CardTitle className="text-base text-white">{tTitle}</CardTitle>
                 </CardHeader>
-                <CardContent className="text-sm" style={{ color: WC_COLORS.MUTED }}>
+                <CardContent className="text-sm" style={{ color: "rgba(255,255,255,.75)" }}>
                   {tBody}
                 </CardContent>
               </Card>
