@@ -16,9 +16,9 @@ type Stat = {
 export default function StatsStrip() {
   const { lang } = useI18n();
 
-  const kicker = lang === "it" ? "La forza della rete" : "We are wine connect";
+  const kicker = lang === "it" ? "We are Wine Connect" : "We are Wine Connect";
   const titleEN = "A global B2B wine network";
-  const titleIT = "Il network globale B2B del vino italino";
+  const titleIT = "Un network B2B del vino globale";
 
   const stats: Stat[] = [
     { key: "wineries", value: "50+", labelEN: "Wineries", labelIT: "Cantine", Icon: Building2 },
@@ -28,16 +28,22 @@ export default function StatsStrip() {
   ];
 
   return (
-    <section className="py-14">
+    // meno padding in basso per avvicinare al blocco successivo
+    <section className="pt-12 pb-8">
       <div className="mx-auto max-w-[1200px] px-5">
-        {/* Header del blocco: kicker + titolo con gradiente e halo */}
-        <div className="mb-8 text-center">
-          <div className="text-[11px] uppercase tracking-[.2em] mb-2" style={{ color: "rgba(255,255,255,.6)" }}>
+        {/* Header del blocco: kicker con gradiente rosso→bianco, titolo con gradiente rosso→bianco */}
+        <div className="mb-6 text-center">
+          <div
+            className="text-[11px] uppercase tracking-[.2em] mb-2 bg-clip-text text-transparent"
+            style={{
+              backgroundImage: `linear-gradient(90deg, ${WC_COLORS.PINK}, #ffffff)`,
+              opacity: 0.8,
+            }}
+          >
             {kicker}
           </div>
 
           <div className="relative inline-block">
-            {/* halo morbido dietro al titolo */}
             <span
               aria-hidden
               className="absolute inset-[-14%] -z-10 rounded-[32px] blur-2xl"
@@ -48,7 +54,7 @@ export default function StatsStrip() {
             <h2
               className="text-xl md:text-2xl font-semibold"
               style={{
-                backgroundImage: `linear-gradient(90deg, ${WC_COLORS.PINK}, ${WC_COLORS.BLUE_SOFT})`,
+                backgroundImage: `linear-gradient(90deg, ${WC_COLORS.PINK}, #ffffff)`,
                 WebkitBackgroundClip: "text",
                 backgroundClip: "text",
                 color: "transparent",
@@ -58,7 +64,6 @@ export default function StatsStrip() {
             </h2>
           </div>
 
-          {/* linea/underline gradient molto sottile */}
           <div
             className="mx-auto mt-3 h-[3px] w-40 rounded-full"
             style={{ backgroundImage: `linear-gradient(90deg, ${WC_COLORS.PINK}, transparent)` }}
