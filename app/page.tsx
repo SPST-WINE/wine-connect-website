@@ -8,9 +8,7 @@ import MarketingHero from "@/components/marketing/MarketingHero";
 import LogosMarquee from "@/components/marketing/LogosMarquee";
 import StatsStrip from "@/components/marketing/StatsStrip";
 import ValueGrid from "@/components/marketing/ValueGrid";
-import HowItWorks from "@/components/marketing/HowItWorks";
-import CatalogPreview from "@/components/marketing/CatalogPreview";
-import TailoredBriefCTA from "@/components/marketing/TailoredBriefCTA";
+// ⛔️ REMOVED: HowItWorks, CatalogPreview, TailoredBriefCTA
 import Testimonials from "@/components/marketing/Testimonials";
 import FAQs from "@/components/marketing/FAQs";
 import Footer from "@/components/site/Footer";
@@ -19,7 +17,7 @@ import { homepageGradient, WC_COLORS } from "@/lib/theme";
 export const metadata: Metadata = {
   title: "Wine Connect — Source Italian wines. Streamlined.",
   description:
-    "Match with export-ready Italian wineries, request samples in one click, and ship compliantly with integrated logistics.",
+    "Match with export-ready Italian wineries, request samples fast, and ship compliantly with integrated logistics.",
   alternates: { canonical: "/" },
 };
 
@@ -27,7 +25,7 @@ export default function HomePage() {
   return (
     <LanguageProvider defaultLang="en">
       <main
-        className="font-sans text-slate-100 selection:bg-[color:var(--wc)]/30 min-h-screen"
+        className="font-sans text-slate-100 selection:bg-[color:var(--wc)]/30 min-H-screen"
         style={
           {
             background: homepageGradient(),
@@ -40,9 +38,9 @@ export default function HomePage() {
         <LogosMarquee />
         <StatsStrip />
         <ValueGrid />
-        <HowItWorks />
-        <CatalogPreview />
-        <TailoredBriefCTA />
+        {/* ⛔️ REMOVED <HowItWorks /> */}
+        {/* ⛔️ REMOVED <CatalogPreview /> */}
+        {/* ⛔️ REMOVED <TailoredBriefCTA /> */}
         <Testimonials />
         <FAQs />
         <Footer />
