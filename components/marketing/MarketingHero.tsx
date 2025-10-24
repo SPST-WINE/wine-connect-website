@@ -4,73 +4,55 @@
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Sparkles } from "lucide-react";
+import { useI18n } from "@/components/site/LanguageProvider";
+import { WC_COLORS } from "@/lib/theme";
 
 export default function MarketingHero() {
+  const { t } = useI18n();
+
   return (
-    <section className="relative isolate overflow-hidden">
-      <div className="absolute inset-0 -z-10 bg-gradient-to-b from-zinc-50 to-white dark:from-zinc-900 dark:to-black" />
-      <div className="mx-auto max-w-6xl px-6 pt-24 pb-16 text-center">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className="inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs text-zinc-600 dark:text-zinc-300"
-        >
-          <Sparkles className="h-3.5 w-3.5" />
-          <span>Buyer-first · Logistics built-in</span>
-        </motion.div>
+    <section className="relative overflow-hidden py-14" id="hero">
+      {/* soft glows */}
+      <motion.div
+        aria-hidden
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 0.5, y: 0 }}
+        transition={{ duration: 0.8 }}
+        className="pointer-events-none absolute -top-24 left-1/2 -translate-x-1/2 h-[620px] w-[620px] rounded-full blur-3xl"
+        style={{ background: `radial-gradient(60% 60% at 35% 35%, ${WC_COLORS.PINK}55, transparent 60%)` }}
+      />
+      <motion.div
+        aria-hidden
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 0.35, y: 0 }}
+        transition={{ duration: 0.8, delay: 0.1 }}
+        className="pointer-events-none absolute -bottom-24 right-1/2 translate-x-1/2 h-[560px] w-[560px] rounded-full blur-3xl"
+        style={{ background: `radial-gradient(60% 60% at 70% 70%, ${WC_COLORS.BLUE_SOFT}66, transparent 60%)` }}
+      />
 
-        <motion.h1
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7, delay: 0.05 }}
-          className="mt-6 text-4xl font-semibold tracking-tight sm:text-5xl md:text-6xl"
-        >
-          Source Italian wines.{" "}
-          <span className="text-transparent bg-clip-text bg-gradient-to-r from-rose-500 to-red-600">
-            Streamlined
-          </span>
-          .
-        </motion.h1>
+      <div className="mx-auto max-w-[1200px] px-5">
+        <div className="text-center mb-8">
+          <span className="inline-block text-xs tracking-wider uppercase text-white/70">{t.hero.kicker}</span>
+          <h1 className="mt-2 text-[30px] sm:text-[40px] md:text-[56px] font-black leading-[1.05]">
+            {t.hero.titleA}
+            <span
+              className="block text-transparent bg-clip-text"
+              style={{ backgroundImage: `linear-gradient(90deg, ${WC_COLORS.PINK}, ${WC_COLORS.BLUE_SOFT})` }}
+            >
+              {t.hero.titleB}
+            </span>
+          </h1>
+          <p className="mt-3 mx-auto max-w-[70ch] text-white/80 text-[15px] sm:text-base">{t.hero.desc}</p>
+        </div>
 
-        <motion.p
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7, delay: 0.1 }}
-          className="mx-auto mt-5 max-w-2xl text-zinc-600 dark:text-zinc-300"
-        >
-          Match with export-ready wineries, request standard sample kits, and
-          handle compliance+shipping in one place.
-        </motion.p>
-
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7, delay: 0.15 }}
-          className="mt-8 flex items-center justify-center gap-3"
-        >
+        <div className="mt-8 flex items-center justify-center gap-3">
           <Button asChild size="lg" className="rounded-2xl">
-            <Link href="/catalog">Browse catalog</Link>
+            <Link href="/catalog">{t.hero.ctaCatalog}</Link>
           </Button>
           <Button asChild size="lg" variant="outline" className="rounded-2xl">
-            <Link href="/start-brief" className="inline-flex items-center gap-1">
-              Tailored brief <ArrowRight className="h-4 w-4" />
-            </Link>
+            <Link href="/start-brief">{t.hero.ctaBrief}</Link>
           </Button>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.6, delay: 0.25 }}
-          className="mt-10 grid grid-cols-2 gap-4 sm:grid-cols-4 text-xs text-zinc-500 dark:text-zinc-400"
-        >
-          <div>EU & US compliant</div>
-          <div>Samples → Orders → Logistics</div>
-          <div>Excise & customs handled</div>
-          <div>Dedicated buyer support</div>
-        </motion.div>
+        </div>
       </div>
     </section>
   );
