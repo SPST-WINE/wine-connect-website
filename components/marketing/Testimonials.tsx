@@ -5,6 +5,28 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useI18n } from "@/components/site/LanguageProvider";
 import { MessageSquareQuote } from "lucide-react";
 
+/* ===== Flag badge rotondo ===== */
+function FlagBadge({ emoji, label }: { emoji: string; label: string }) {
+  return (
+    <span
+      className="inline-flex h-7 w-7 items-center justify-center rounded-full ring-1"
+      style={{
+        ringColor: "rgba(255,255,255,.18)",
+        background:
+          "linear-gradient(180deg, rgba(255,255,255,.12), rgba(255,255,255,.04))",
+        boxShadow:
+          "inset 0 1px 1px rgba(255,255,255,.25), inset 0 -2px 6px rgba(0,0,0,.25)",
+        backdropFilter: "blur(6px)",
+        WebkitBackdropFilter: "blur(6px)",
+      }}
+      aria-label={label}
+      title={label}
+    >
+      <span className="text-[13px] leading-none">{emoji}</span>
+    </span>
+  );
+}
+
 type TItem = {
   qEN: string;
   qIT: string;
@@ -13,12 +35,20 @@ type TItem = {
   country: "US" | "KR" | "UK" | "IT" | "EU";
 };
 
-const FLAG: Record<TItem["country"], string> = {
+const FLAG_EMOJI: Record<TItem["country"], string> = {
   US: "🇺🇸",
   KR: "🇰🇷",
   UK: "🇬🇧",
   IT: "🇮🇹",
   EU: "🇪🇺",
+};
+
+const COUNTRY_LABEL: Record<TItem["country"], string> = {
+  US: "United States",
+  KR: "Korea",
+  UK: "United Kingdom",
+  IT: "Italy",
+  EU: "European Union",
 };
 
 export default function Testimonials() {
@@ -64,7 +94,8 @@ export default function Testimonials() {
           {items.map((t, idx) => {
             const quote = lang === "it" ? t.qIT : t.qEN;
             const author = lang === "it" ? t.authorIT : t.authorEN;
-            const flag = FLAG[t.country];
+            const emoji = FLAG_EMOJI[t.country];
+            const label = COUNTRY_LABEL[t.country];
 
             return (
               <Card
@@ -77,36 +108,22 @@ export default function Testimonials() {
                     "0 6px 20px rgba(0,0,0,.25), inset 0 1px 0 rgba(255,255,255,.05)",
                 }}
               >
-                {/* 🔧 più padding-top per staccare l’icona dal bordo superiore */}
                 <CardContent className="px-6 pt-7 pb-6 flex flex-col h-full">
-                  {/* header: icona + chip bandiera, con margine inferiore maggiore */}
+                  {/* header: icona + badge bandiera con margini generosi */}
                   <div className="flex items-center justify-between mb-5">
                     <div
                       className="inline-flex h-9 w-9 items-center justify-center rounded-lg"
                       style={{
                         border: "1px solid rgba(255,255,255,.12)",
-                        background: "rgba(255,255,255,.06)",
+                        background:
+                          "linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.04))",
                       }}
                       aria-hidden
                     >
                       <MessageSquareQuote className="h-4 w-4" />
                     </div>
 
-                    <span
-                      className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs leading-none"
-                      style={{
-                        border: "1px solid rgba(255,255,255,.12)",
-                        background: "rgba(0,0,0,.18)",
-                        color: "rgba(255,255,255,.85)",
-                      }}
-                      aria-label="country"
-                      title={t.country}
-                    >
-                      <span role="img" aria-hidden>
-                        {flag}
-                      </span>
-                      {t.country}
-                    </span>
+                    <FlagBadge emoji={emoji} label={label} />
                   </div>
 
                   <p className="text-[15px] md:text-base text-white/90 leading-relaxed flex-1">
