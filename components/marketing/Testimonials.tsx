@@ -5,13 +5,12 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useI18n } from "@/components/site/LanguageProvider";
 import { MessageSquareQuote } from "lucide-react";
 
-/* ===== Flag badge rotondo ===== */
+/* ===== Flag badge rotondo (FIX: usare ring-* via className, non ringColor inline) ===== */
 function FlagBadge({ emoji, label }: { emoji: string; label: string }) {
   return (
     <span
-      className="inline-flex h-7 w-7 items-center justify-center rounded-full ring-1"
+      className="inline-flex h-7 w-7 items-center justify-center rounded-full ring-1 ring-white/20"
       style={{
-        ringColor: "rgba(255,255,255,.18)",
         background:
           "linear-gradient(180deg, rgba(255,255,255,.12), rgba(255,255,255,.04))",
         boxShadow:
@@ -109,7 +108,6 @@ export default function Testimonials() {
                 }}
               >
                 <CardContent className="px-6 pt-7 pb-6 flex flex-col h-full">
-                  {/* header: icona + badge bandiera con margini generosi */}
                   <div className="flex items-center justify-between mb-5">
                     <div
                       className="inline-flex h-9 w-9 items-center justify-center rounded-lg"
