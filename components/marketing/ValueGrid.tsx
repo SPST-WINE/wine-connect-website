@@ -1,6 +1,7 @@
 // components/marketing/ValueGrid.tsx
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ShieldCheck, Plane, Handshake, FileCheck } from "lucide-react";
+import { WC_COLORS } from "@/lib/theme";
 
 const values = [
   {
@@ -31,23 +32,28 @@ const values = [
 
 export default function ValueGrid() {
   return (
-    <section className="py-16">
-      <div className="mx-auto max-w-6xl px-6">
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          {values.map((v) => (
-            <Card key={v.title} className="rounded-2xl">
-              <CardHeader>
-                <div className="mb-2 inline-flex h-10 w-10 items-center justify-center rounded-xl border">
-                  <v.icon className="h-5 w-5" />
-                </div>
-                <CardTitle className="text-lg">{v.title}</CardTitle>
-              </CardHeader>
-              <CardContent className="text-sm text-zinc-600 dark:text-zinc-300">
-                {v.body}
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+    <section className="py-14">
+      <div className="mx-auto max-w-[1200px] px-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {values.map((v) => (
+          <Card
+            key={v.title}
+            className="rounded-2xl"
+            style={{ borderColor: WC_COLORS.CARD_BORDER, background: WC_COLORS.CARD_BG }}
+          >
+            <CardHeader className="pb-2">
+              <div
+                className="mb-3 inline-flex h-10 w-10 items-center justify-center rounded-xl"
+                style={{ border: `1px solid ${WC_COLORS.CARD_BORDER}`, background: "rgba(255,255,255,0.03)" }}
+              >
+                <v.icon className="h-5 w-5" />
+              </div>
+              <CardTitle className="text-base text-white">{v.title}</CardTitle>
+            </CardHeader>
+            <CardContent className="text-sm" style={{ color: WC_COLORS.MUTED }}>
+              {v.body}
+            </CardContent>
+          </Card>
+        ))}
       </div>
     </section>
   );
