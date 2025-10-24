@@ -1,4 +1,6 @@
 // components/marketing/StatsStrip.tsx
+"use client";
+
 import { WC_COLORS } from "@/lib/theme";
 import { useI18n } from "@/components/site/LanguageProvider";
 import { Building2, Tag, Globe2, Timer } from "lucide-react";
