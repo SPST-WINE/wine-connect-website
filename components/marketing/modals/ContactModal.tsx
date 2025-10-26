@@ -41,8 +41,8 @@ export default function ContactModal({
           onSubmit={(e) => {
             e.preventDefault();
             const fd = new FormData(e.currentTarget);
-            // TODO: integra il submit (email, API, etc.)
-            console.log("Contact form:", Object.fromEntries(fd.entries()));
+            const payload = serializeFormData(fd);
+            console.log("Contact form:", payload); // integra qui (email/API/Supabase)
             setSent(true);
           }}
           className="grid gap-3"
@@ -59,29 +59,4 @@ export default function ContactModal({
             </Label>
             <Label>
               <span className="label">{t.phone}</span>
-              <input name="phone" placeholder="+39 ..." className="input" />
-            </Label>
-          </div>
-
-          <Label>
-            <span className="label">{t.notes}</span>
-            <textarea name="notes" rows={4} className="input resize-none" />
-          </Label>
-
-          <button
-            type="submit"
-            className="mt-1 h-11 rounded-xl font-semibold text-[#0f1720]"
-            style={{ background: "var(--wc, #E33955)" }}
-          >
-            {t.send}
-          </button>
-        </form>
-      )}
-    </Modal>
-  );
-}
-
-/* small styled helpers (no extra deps) */
-function Label({ children }: { children: React.ReactNode }) {
-  return <label className="grid gap-1">{children}</label>;
-}
+              <input name="phone" placeholder="+39 ..."
