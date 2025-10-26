@@ -2,56 +2,80 @@
 "use client";
 
 import { motion } from "framer-motion";
-import Link from "next/link";
-import { Button } from "@/components/ui/button";
+import { WC_COLORS, homepageGradient } from "@/lib/theme";
 import { useI18n } from "@/components/site/LanguageProvider";
-import { WC_COLORS } from "@/lib/theme";
 
 export default function MarketingHero() {
-  const { t } = useI18n();
+  const { lang } = useI18n();
+
+  const KICKER =
+    lang === "it" ? "L’hub tra chi produce e chi compra" : "The hub between producers and buyers";
+  const TITLE_A =
+    lang === "it" ? "Matchmaking su misura." : "Tailored matchmaking.";
+  const TITLE_B =
+    lang === "it" ? "Documenti e spedizioni già integrati." : "Docs and shipping built-in.";
+  const DESC =
+    lang === "it"
+      ? "Allineiamo cantine e buyer per stile, fascia prezzo e volumi. SPST gestisce accise, documenti e logistica end-to-end: meno attrito, più ordini."
+      : "We match Italian wineries and international buyers by style, price range and volumes. SPST handles excise, paperwork and end-to-end logistics: less friction, more orders.";
 
   return (
-    <section className="relative overflow-hidden py-14" id="hero">
-      {/* soft glows */}
-      <motion.div
+    <section className="relative overflow-visible">
+      {/* soft gradient bg layer (kept subtle, hero already sits on global gradient) */}
+      <div
         aria-hidden
-        initial={{ opacity: 0, y: -10 }}
-        animate={{ opacity: 0.5, y: 0 }}
-        transition={{ duration: 0.8 }}
-        className="pointer-events-none absolute -top-24 left-1/2 -translate-x-1/2 h-[620px] w-[620px] rounded-full blur-3xl"
-        style={{ background: `radial-gradient(60% 60% at 35% 35%, ${WC_COLORS.PINK}55, transparent 60%)` }}
-      />
-      <motion.div
-        aria-hidden
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 0.35, y: 0 }}
-        transition={{ duration: 0.8, delay: 0.1 }}
-        className="pointer-events-none absolute -bottom-24 right-1/2 translate-x-1/2 h-[560px] w-[560px] rounded-full blur-3xl"
-        style={{ background: `radial-gradient(60% 60% at 70% 70%, ${WC_COLORS.BLUE_SOFT}66, transparent 60%)` }}
+        className="pointer-events-none absolute inset-0"
+        style={{ background: "transparent" }}
       />
 
-      <div className="mx-auto max-w-[1200px] px-5">
-        <div className="text-center mb-8">
-          <span className="inline-block text-xs tracking-wider uppercase text-white/70">{t.hero.kicker}</span>
-          <h1 className="mt-2 text-[30px] sm:text-[40px] md:text-[56px] font-black leading-[1.05]">
-            {t.hero.titleA}
-            <span
-              className="block text-transparent bg-clip-text"
-              style={{ backgroundImage: `linear-gradient(90deg, ${WC_COLORS.PINK}, ${WC_COLORS.BLUE_SOFT})` }}
-            >
-              {t.hero.titleB}
-            </span>
-          </h1>
-          <p className="mt-3 mx-auto max-w-[70ch] text-white/80 text-[15px] sm:text-base">{t.hero.desc}</p>
+      <div className="mx-auto max-w-[1200px] px-5 py-16 md:py-20">
+        {/* kicker */}
+        <div className="text-center">
+          <span className="inline-block text-[11px] tracking-[.2em] uppercase text-white/70">
+            {KICKER}
+          </span>
         </div>
 
-        <div className="mt-8 flex items-center justify-center gap-3">
-          <Button asChild size="lg" className="rounded-2xl">
-            <Link href="/catalog">{t.hero.ctaCatalog}</Link>
-          </Button>
-          <Button asChild size="lg" variant="outline" className="rounded-2xl">
-            <Link href="/start-brief">{t.hero.ctaBrief}</Link>
-          </Button>
+        {/* title */}
+        <h1 className="mt-3 text-center font-black leading-[1.08] text-[34px] sm:text-[46px] md:text-[60px]">
+          <span className="block text-white">{TITLE_A}</span>
+
+          {/* GRADIENT LINE — ensure no clipping */}
+          <span
+            className="inline-block bg-clip-text text-transparent pb-[2px] mt-1"
+            style={{
+              backgroundImage: `linear-gradient(90deg, ${WC_COLORS.PINK}, ${WC_COLORS.BLUE_SOFT})`,
+              WebkitBackgroundClip: "text",
+            }}
+          >
+            {TITLE_B}
+          </span>
+        </h1>
+
+        {/* description */}
+        <p className="mt-4 mx-auto max-w-[70ch] text-center text-white/80 text-[15px] sm:text-base">
+          {DESC}
+        </p>
+
+        {/* CTAs */}
+        <div className="mt-7 flex items-center justify-center gap-3">
+          {/* primary (outline) */}
+          <a
+            href="#how"
+            className="inline-flex items-center justify-center rounded-full border px-5 py-2.5 text-sm font-semibold hover:bg-white/5 transition"
+            style={{ borderColor: "rgba(255,255,255,.18)" }}
+          >
+            {lang === "it" ? "Come funziona" : "How it works"}
+          </a>
+
+          {/* secondary (filled) */}
+          <a
+            href="#contact"
+            className="inline-flex items-center justify-center rounded-full bg-[color:var(--wc)] px-5 py-2.5 text-sm font-bold text-[#0f1720] shadow hover:translate-y-[-1px] transition"
+            style={{ ["--wc" as any]: WC_COLORS.PINK }}
+          >
+            {lang === "it" ? "Contattaci" : "Get in touch"}
+          </a>
         </div>
       </div>
     </section>
