@@ -50,7 +50,7 @@ export default function FAQs() {
 
   return (
     <section className="relative py-14">
-      {/* Banda full-width con effetto glass */}
+      {/* banda glass full-width */}
       <div
         aria-hidden
         className="absolute inset-0 -z-10"
@@ -59,17 +59,14 @@ export default function FAQs() {
             "linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.04))",
         }}
       />
-      {/* linee nette sopra/sotto */}
       <div className="absolute inset-x-0 top-0 h-px" style={{ background: "rgba(255,255,255,.10)" }} />
       <div className="absolute inset-x-0 bottom-0 h-px" style={{ background: "rgba(255,255,255,.10)" }} />
 
-      {/* Contenuto */}
       <div className="mx-auto w-full max-w-[1200px] px-5">
         <h2 className="text-center text-2xl md:text-3xl font-semibold mb-8">
           {title}
         </h2>
 
-        {/* Accordion largo e coerente */}
         <div
           className="rounded-2xl w-full mx-auto"
           style={{
@@ -90,13 +87,29 @@ export default function FAQs() {
                   className="border-b border-white/10 last:border-b-0"
                 >
                   <AccordionTrigger
-                    className="px-5 md:px-6 py-4 md:py-5 text-left text-[15px] md:text-base hover:no-underline"
+                    className="px-5 md:px-6 py-4 md:py-5 text-left text-[15px] md:text-base hover:no-underline transition-colors data-[state=open]:bg-white/5"
                     style={{ color: "rgba(255,255,255,.95)" }}
                   >
                     {q}
                   </AccordionTrigger>
-                  <AccordionContent className="px-5 md:px-6 pb-5 md:pb-6 text-[14px] leading-relaxed" style={{ color: "rgba(255,255,255,.75)" }}>
-                    {a}
+
+                  {/* HIDE by default; reveal on open + smooth height */}
+                  <AccordionContent
+                    className="
+                      px-5 md:px-6
+                      text-[14px] leading-relaxed
+                      overflow-hidden
+                      max-h-0
+                      hidden
+                      data-[state=open]:block
+                      data-[state=open]:max-h-[480px]
+                      transition-[max-height] duration-300 ease-out
+                    "
+                    style={{ color: "rgba(255,255,255,.75)" }}
+                  >
+                    <div className="py-4 md:py-5">
+                      {a}
+                    </div>
                   </AccordionContent>
                 </AccordionItem>
               );
