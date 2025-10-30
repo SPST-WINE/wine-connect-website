@@ -1,172 +1,80 @@
-'use client';
+"use client";
 
-import * as React from 'react';
+import * as React from "react";
+import * as AccordionPrimitive from "@radix-ui/react-accordion";
+import { ChevronDown } from "lucide-react";
+import { cn } from "@/lib/utils";
 
-// === utility interna per unire classi ===
-function cx(...parts: Array<string | false | null | undefined>) {
-  return parts.filter(Boolean).join(' ');
-}
+/** Root */
+export const Accordion = React.forwardRef<
+  React.ElementRef<typeof AccordionPrimitive.Root>,
+  React.ComponentPropsWithoutRef<typeof AccordionPrimitive.Root> & {
+    /** Radix: valido quando type="single" */
+    collapsible?: boolean;
+  }
+>(({ className, ...props }, ref) => (
+  <AccordionPrimitive.Root
+    ref={ref}
+    className={cn("w-full", className)}
+    {...props}
+  />
+));
+Accordion.displayName = "Accordion";
 
-// === tipi di base ===
-type RootProps = {
-  type?: 'single' | 'multiple';
-  defaultValue?: string | string[];
-  value?: string | string[];
-  onValueChange?: (val: string | string[]) => void;
-  className?: string;
-  children: React.ReactNode;
-};
+/** Item */
+export const AccordionItem = React.forwardRef<
+  React.ElementRef<typeof AccordionPrimitive.Item>,
+  React.ComponentPropsWithoutRef<typeof AccordionPrimitive.Item>
+>(({ className, ...props }, ref) => (
+  <AccordionPrimitive.Item
+    ref={ref}
+    className={cn("border-0", className)}
+    {...props}
+  />
+));
+AccordionItem.displayName = "AccordionItem";
 
-// === contesto interno ===
-const AccordionContext = React.createContext<{
-  type: 'single' | 'multiple';
-  value: string[];
-  setValue: (next: string[]) => void;
-} | null>(null);
-
-// === ROOT ===
-export function Accordion({
-  type = 'single',
-  defaultValue,
-  value,
-  onValueChange,
-  className,
-  children,
-}: RootProps) {
-  const controlled = value !== undefined;
-  const [internal, setInternal] = React.useState<string[]>(
-    Array.isArray(defaultValue)
-      ? defaultValue
-      : defaultValue
-      ? [defaultValue]
-      : []
-  );
-
-  const current = controlled
-    ? Array.isArray(value)
-      ? value
-      : value
-      ? [value]
-      : []
-    : internal;
-
-  const setValue = (next: string[]) => {
-    if (!controlled) setInternal(next);
-    onValueChange?.(type === 'single' ? next[0] ?? '' : next);
-  };
-
-  return (
-    <AccordionContext.Provider value={{ type, value: current, setValue }}>
-      <div className={className}>{children}</div>
-    </AccordionContext.Provider>
-  );
-}
-
-// === ITEM ===
-type ItemProps = { value: string; className?: string; children: React.ReactNode };
-export function AccordionItem({ value, className, children }: ItemProps) {
-  const ctx = React.useContext(AccordionContext)!;
-  const open = ctx.value.includes(value);
-  return (
-    <div
-      data-state={open ? 'open' : 'closed'}
-      className={cx(
-        'rounded-2xl border border-white/10 bg-white/[0.04] backdrop-blur-md',
-        'transition-colors', // niente hover
+/** Trigger */
+export const AccordionTrigger = React.forwardRef<
+  React.ElementRef<typeof AccordionPrimitive.Trigger>,
+  React.ComponentPropsWithoutRef<typeof AccordionPrimitive.Trigger>
+>(({ className, children, ...props }, ref) => (
+  <AccordionPrimitive.Header className="flex">
+    <AccordionPrimitive.Trigger
+      ref={ref}
+      className={cn(
+        "group flex w-full items-center justify-between gap-3 px-5 md:px-6 py-4 md:py-5",
+        "text-left text-white/90",
+        "transition-[background] rounded-xl",
+        // niente glow/hover bordi
+        "hover:bg-transparent focus:outline-none focus:ring-0",
         className
       )}
+      {...props}
     >
-      {React.Children.map(children, (child) =>
-        React.isValidElement(child)
-          ? React.cloneElement(child as any, { __acVal: value })
-          : child
-      )}
-    </div>
-  );
-}
+      {children}
+      <ChevronDown className="h-4 w-4 shrink-0 transition-transform duration-200 group-data-[state=open]:rotate-180" />
+    </AccordionPrimitive.Trigger>
+  </AccordionPrimitive.Header>
+));
+AccordionTrigger.displayName = "AccordionTrigger";
 
-// === TRIGGER ===
-type TriggerProps = React.ButtonHTMLAttributes<HTMLButtonElement> & { __acVal?: string };
-export function AccordionTrigger({
-  __acVal,
-  className,
-  children,
-  ...btn
-}: TriggerProps) {
-  const ctx = React.useContext(AccordionContext)!;
-  const value = __acVal!;
-  const open = ctx.value.includes(value);
-
-  return (
-    <button
-      type="button"
-      aria-expanded={open}
-      onClick={() => {
-        if (ctx.type === 'single') {
-          ctx.setValue(open ? [] : [value]);
-        } else {
-          ctx.setValue(
-            open ? ctx.value.filter((v) => v !== value) : [...ctx.value, value]
-          );
-        }
-      }}
-      className={cx(
-        'w-full px-5 py-4 rounded-2xl text-left',
-        'flex items-center justify-between gap-4',
-        'focus:outline-none focus:ring-2 focus:ring-white/20',
-        'transition-transform duration-200',
-        className
-      )}
-      {...btn}
-    >
-      <span className="text-[15px] md:text-base">{children}</span>
-      <svg
-        className={cx(
-          'h-4 w-4 shrink-0 transition-transform',
-          open && 'rotate-180'
-        )}
-        viewBox="0 0 20 20"
-        fill="currentColor"
-        aria-hidden="true"
-      >
-        <path d="M5.23 7.21a.75.75 0 0 1 1.06.02L10 10.94l3.71-3.71a.75.75 0 1 1 1.06 1.06l-4.24 4.25a.75.75 0 0 1-1.06 0L5.21 8.29a.75.75 0 0 1 .02-1.08z" />
-      </svg>
-    </button>
-  );
-}
-
-// === CONTENT ===
-type ContentProps = { __acVal?: string; className?: string; children: React.ReactNode };
-export function AccordionContent({
-  __acVal,
-  className,
-  children,
-}: ContentProps) {
-  const ctx = React.useContext(AccordionContext)!;
-  const value = __acVal!;
-  const open = ctx.value.includes(value);
-
-  // transizione fluida dell’altezza
-  const ref = React.useRef<HTMLDivElement>(null);
-  const [height, setHeight] = React.useState(0);
-
-  React.useLayoutEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    setHeight(open ? el.scrollHeight : 0);
-  }, [open, children]);
-
-  return (
-    <div
-      style={{ height }}
-      className={cx(
-        'grid overflow-hidden transition-[height] duration-300 ease-out',
-        className
-      )}
-    >
-      <div ref={ref} className="px-5 pb-5 text-sm text-white/80">
-        {children}
-      </div>
-    </div>
-  );
-}
+/** Content */
+export const AccordionContent = React.forwardRef<
+  React.ElementRef<typeof AccordionPrimitive.Content>,
+  React.ComponentPropsWithoutRef<typeof AccordionPrimitive.Content>
+>(({ className, children, ...props }, ref) => (
+  <AccordionPrimitive.Content
+    ref={ref}
+    className={cn(
+      "overflow-hidden text-white/80",
+      "data-[state=closed]:animate-accordion-up",
+      "data-[state=open]:animate-accordion-down",
+      className
+    )}
+    {...props}
+  >
+    <div className="px-5 md:px-6 pb-5 -mt-1">{children}</div>
+  </AccordionPrimitive.Content>
+));
+AccordionContent.displayName = "AccordionContent";
