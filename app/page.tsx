@@ -10,7 +10,6 @@ import StatsStrip from "@/components/marketing/StatsStrip";
 import ValueGrid from "@/components/marketing/ValueGrid";
 // ⛔️ REMOVED: HowItWorks, CatalogPreview, TailoredBriefCTA
 import Testimonials from "@/components/marketing/Testimonials";
-import FAQs from "@/components/marketing/FAQs";
 import Footer from "@/components/site/Footer";
 import { homepageGradient, WC_COLORS } from "@/lib/theme";
 
