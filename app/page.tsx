@@ -8,7 +8,7 @@ import MarketingHero from "@/components/marketing/MarketingHero";
 import LogosMarquee from "@/components/marketing/LogosMarquee";
 import StatsStrip from "@/components/marketing/StatsStrip";
 import ValueGrid from "@/components/marketing/ValueGrid";
-// ⛔️ REMOVED: HowItWorks, CatalogPreview, TailoredBriefCTA
+// ⛔️ FAQ rimosse
 import Testimonials from "@/components/marketing/Testimonials";
 import Footer from "@/components/site/Footer";
 import { homepageGradient, WC_COLORS } from "@/lib/theme";
@@ -24,7 +24,7 @@ export default function HomePage() {
   return (
     <LanguageProvider defaultLang="en">
       <main
-        className="font-sans text-slate-100 selection:bg-[color:var(--wc)]/30 min-H-screen"
+        className="font-sans text-slate-100 selection:bg-[color:var(--wc)]/30 min-h-screen"
         style={
           {
             background: homepageGradient(),
@@ -37,11 +37,7 @@ export default function HomePage() {
         <LogosMarquee />
         <StatsStrip />
         <ValueGrid />
-        {/* ⛔️ REMOVED <HowItWorks /> */}
-        {/* ⛔️ REMOVED <CatalogPreview /> */}
-        {/* ⛔️ REMOVED <TailoredBriefCTA /> */}
         <Testimonials />
-        <FAQs />
         <Footer />
       </main>
     </LanguageProvider>
