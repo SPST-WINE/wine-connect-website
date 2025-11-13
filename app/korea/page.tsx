@@ -29,7 +29,7 @@ export type CartItem = {
 };
 
 // TEMP mock → sostituire con fetch Supabase
-export const WINERIES: Winery[] = [
+const WINERIES: Winery[] = [
   {
     id: "aurilia",
     name: "Cantina Aurilia",
