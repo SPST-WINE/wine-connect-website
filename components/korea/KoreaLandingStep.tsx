@@ -1,5 +1,7 @@
 import KoreaHowItWorks from "./KoreaHowItWorks";
 
+const WC_COLOR = "#E33854";
+
 export default function KoreaLandingStep({
   onNext,
 }: {
@@ -10,7 +12,8 @@ export default function KoreaLandingStep({
       <div>
         <h1 className="mb-3 text-3xl font-semibold leading-tight">
           Italian wineries, <br />
-          one tasting box <span className="text-pink-400">in Korea</span>.
+          one tasting box{" "}
+          <span style={{ color: WC_COLOR }}>in Korea</span>.
         </h1>
 
         <p className="mb-2 text-sm text-slate-300">
@@ -24,7 +27,7 @@ export default function KoreaLandingStep({
 
       <button
         onClick={onNext}
-        className="mt-8 w-full rounded-2xl bg-gradient-to-r from-pink-500 to-orange-400 py-3 text-center text-sm font-semibold text-slate-950 shadow-lg shadow-pink-500/25"
+        className="mt-8 w-full rounded-2xl bg-gradient-to-r from-[#E33854] to-orange-400 py-3 text-center text-sm font-semibold text-slate-950 shadow-lg shadow-[rgba(227,56,84,0.35)]"
       >
         Enter Wine Connect
       </button>
