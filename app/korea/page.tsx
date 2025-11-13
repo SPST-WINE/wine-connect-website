@@ -1,7 +1,7 @@
-// app/korea/page.tsx
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { LanguageProvider } from "@/components/site/LanguageProvider";
 import { homepageGradient } from "@/lib/theme";
 
@@ -42,6 +42,101 @@ const WINERIES: Winery[] = [
   },
 ];
 
+type HeaderProps = {
+  step: Step;
+  cartCount: number;
+  totalBottles: number;
+  onCartClick: () => void;
+};
+
+function KoreaHeader({ step, cartCount, totalBottles, onCartClick }: HeaderProps) {
+  const showCartButton = step === "catalog" || step === "cart";
+
+  return (
+    <header className="mb-6 flex items-center justify-between">
+      <div className="flex items-center gap-2">
+        {/* LOGO WINE CONNECT */}
+        <div className="relative h-8 w-8 md:h-9 md:w-9">
+          <Image
+            src="public/wc-logo.png" // <-- CAMBIA QUESTO PERCORSO SE SERVE
+            alt="Wine Connect"
+            fill
+            className="rounded-full object-contain"
+          />
+        </div>
+
+        <div>
+          <p className="text-xs uppercase tracking-wide text-slate-400">
+            Wine Connect
+          </p>
+          <p className="text-sm font-medium text-slate-100">
+            Korea · 3–4 Dec 2025
+          </p>
+        </div>
+      </div>
+
+      {showCartButton && (
+        <button
+          type="button"
+          onClick={onCartClick}
+          className="rounded-full border border-slate-700 px-3 py-1 text-xs text-slate-200"
+        >
+          {cartCount === 0
+            ? "Tasting box"
+            : `${cartCount} wineries · ${totalBottles} bottles`}
+        </button>
+      )}
+    </header>
+  );
+}
+
+function HowItWorksBox() {
+  const steps = [
+    {
+      number: 1,
+      title: "Enter Wine Connect",
+      text: "Tell us who you are and share your work email.",
+    },
+    {
+      number: 2,
+      title: "Explore the wineries",
+      text: "Browse the producers attending the Korea event in Seoul.",
+    },
+    {
+      number: 3,
+      title: "Build your tasting box",
+      text: "Add 6 or 12-bottle samples from the wineries you’re interested in.",
+    },
+    {
+      number: 4,
+      title: "Send your request",
+      text: "We’ll follow up with details, logistics and compliance support.",
+    },
+  ];
+
+  return (
+    <div className="mt-6 rounded-3xl bg-slate-900/70 p-4 shadow-lg shadow-black/40">
+      <p className="mb-3 text-sm font-semibold text-slate-100">How it works</p>
+      <div className="space-y-3">
+        {steps.map((step) => (
+          <div
+            key={step.number}
+            className="flex items-start gap-3 rounded-2xl bg-slate-900/80 px-3 py-2"
+          >
+            <div className="mt-0.5 flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-pink-500 to-orange-400 text-xs font-bold text-slate-950">
+              {step.number}
+            </div>
+            <div className="text-xs text-slate-300">
+              <p className="font-semibold text-slate-100">{step.title}</p>
+              <p>{step.text}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function KoreaEventPage() {
   const [step, setStep] = useState<Step>("landing");
 
@@ -75,8 +170,7 @@ export default function KoreaEventPage() {
         body: JSON.stringify({ email, companyName, buyerType }),
       });
 
-      if (!res.ok)
-        throw new Error("Unable to save your data. Please try again.");
+      if (!res.ok) throw new Error("Unable to save your data. Please try again.");
 
       const data = await res.json();
       setLeadId(data.leadId);
@@ -108,8 +202,7 @@ export default function KoreaEventPage() {
         body: JSON.stringify({ leadId, intent, items: cart }),
       });
 
-      if (!res.ok)
-        throw new Error("Unable to submit your request. Please try again.");
+      if (!res.ok) throw new Error("Unable to submit your request. Please try again.");
 
       setStep("success");
     } catch (err: any) {
@@ -122,38 +215,19 @@ export default function KoreaEventPage() {
   return (
     <LanguageProvider defaultLang="en">
       <main
-        className="font-sans text-slate-100 selection:bg-[color:var(--wc)]/30 min-h-screen"
+        className="min-h-screen font-sans text-slate-100 selection:bg-[color:var(--wc)]/30"
         style={{ background: homepageGradient() }}
       >
         <div className="mx-auto flex min-h-screen max-w-md flex-col px-4 py-6 md:max-w-2xl">
-          {/* Header */}
-          <header className="mb-6 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="h-8 w-8 rounded-full bg-gradient-to-br from-pink-500 to-orange-400" />
-              <div>
-                <p className="text-xs uppercase tracking-wide text-slate-400">
-                  Wine Connect
-                </p>
-                <p className="text-sm font-medium text-slate-100">
-                  Korea · 3–4 Dec 2025
-                </p>
-              </div>
-            </div>
-            {(step === "catalog" || step === "cart") && (
-              <button
-                type="button"
-                onClick={() => setStep("cart")}
-                className="rounded-full border border-slate-700 px-3 py-1 text-xs text-slate-200"
-              >
-                {cart.length === 0
-                  ? "Tasting box"
-                  : `${cart.length} wineries · ${totalBottles} bottles`}
-              </button>
-            )}
-          </header>
+          <KoreaHeader
+            step={step}
+            cartCount={cart.length}
+            totalBottles={totalBottles}
+            onCartClick={() => setStep("cart")}
+          />
 
-          {/* Content */}
           <main className="flex flex-1 flex-col">
+            {/* STEP 1 – LANDING */}
             {step === "landing" && (
               <section className="flex flex-1 flex-col justify-between">
                 <div>
@@ -162,27 +236,13 @@ export default function KoreaEventPage() {
                     one tasting box{" "}
                     <span className="text-pink-400">in Korea</span>.
                   </h1>
-                  <p className="mb-6 text-sm text-slate-300">
+                  <p className="mb-2 text-sm text-slate-300">
                     Discover a curated selection of Italian producers attending
-                    the Wine Connect event in Seoul. Build your own 6 or
-                    12-bottle tasting box and we’ll take care of logistics.
+                    the Wine Connect event in Seoul. Build your own 6 or 12-bottle
+                    tasting box and we’ll take care of logistics and compliance.
                   </p>
-                  <div className="rounded-2xl bg-slate-900/60 p-4 text-xs text-slate-300">
-                    <p className="mb-1 font-medium text-slate-100">
-                      How it works
-                    </p>
-                    <ol className="list-inside list-decimal space-y-1">
-                      <li>Enter Wine Connect and tell us who you are.</li>
-                      <li>Explore the wineries attending the Korea event.</li>
-                      <li>
-                        Add 6 or 12-bottle samples to your tasting box.
-                      </li>
-                      <li>
-                        Send your request — we’ll follow up with details and
-                        access.
-                      </li>
-                    </ol>
-                  </div>
+
+                  <HowItWorksBox />
                 </div>
 
                 <button
@@ -194,6 +254,7 @@ export default function KoreaEventPage() {
               </section>
             )}
 
+            {/* STEP 2 – LEAD FORM */}
             {step === "lead" && (
               <section className="flex flex-1 flex-col justify-between">
                 <div>
@@ -263,9 +324,7 @@ export default function KoreaEventPage() {
 
                         <button
                           type="button"
-                          onClick={() =>
-                            setBuyerType("no_import_license")
-                          }
+                          onClick={() => setBuyerType("no_import_license")}
                           className={`flex items-start gap-2 rounded-xl border px-3 py-2 text-left text-xs ${
                             buyerType === "no_import_license"
                               ? "border-pink-500 bg-pink-500/10"
@@ -312,6 +371,7 @@ export default function KoreaEventPage() {
               </section>
             )}
 
+            {/* STEP 3 – CATALOGO */}
             {step === "catalog" && (
               <section className="flex flex-1 flex-col justify-between">
                 <div>
@@ -384,6 +444,7 @@ export default function KoreaEventPage() {
               </section>
             )}
 
+            {/* STEP 4 – CARRELLO */}
             {step === "cart" && (
               <section className="flex flex-1 flex-col justify-between">
                 <div>
@@ -392,7 +453,8 @@ export default function KoreaEventPage() {
                   </h2>
                   <p className="mb-4 text-sm text-slate-300">
                     This is your draft selection. We’ll contact you to confirm
-                    details, logistics and final pricing after the event.
+                    details, logistics and compliance, and final pricing after
+                    the event.
                   </p>
 
                   {cart.length === 0 ? (
@@ -405,8 +467,7 @@ export default function KoreaEventPage() {
                       {cart.map((item, idx) => (
                         <div
                           key={`${item.wineryId}-${idx}`}
-                          className="flex items-center justify-between rounded-xl border border-s
-late-800 bg-slate-900/60 px-3 py-2 text-xs"
+                          className="flex items-center justify-between rounded-xl border border-slate-800 bg-slate-900/60 px-3 py-2 text-xs"
                         >
                           <div>
                             <p className="font-semibold text-slate-100">
@@ -463,6 +524,7 @@ late-800 bg-slate-900/60 px-3 py-2 text-xs"
               </section>
             )}
 
+            {/* STEP 5 – SUCCESS */}
             {step === "success" && (
               <section className="flex flex-1 flex-col justify-between">
                 <div>
@@ -479,13 +541,9 @@ late-800 bg-slate-900/60 px-3 py-2 text-xs"
                     </p>
                     <p>In that email you’ll find:</p>
                     <ul className="list-inside list-disc space-y-1">
-                      <li>
-                        Your temporary password (you can change it anytime).
-                      </li>
+                      <li>Your temporary password (you can change it anytime).</li>
                       <li>A summary of your tasting box.</li>
-                      <li>
-                        Next steps to confirm orders after the event.
-                      </li>
+                      <li>Next steps to confirm orders after the event.</li>
                     </ul>
                   </div>
                 </div>
@@ -498,6 +556,8 @@ late-800 bg-slate-900/60 px-3 py-2 text-xs"
                     setLeadId(null);
                     setEmail("");
                     setCompanyName("");
+                    setError(null);
+                    setIsSubmitting(false);
                   }}
                   className="mt-6 w-full rounded-2xl border border-slate-700 py-2 text-center text-xs text-slate-300"
                 >
