@@ -1,3 +1,5 @@
+const WC_COLOR = "#E33854";
+
 export default function KoreaHowItWorks() {
   const steps = [
     {
@@ -30,15 +32,19 @@ export default function KoreaHowItWorks() {
         {steps.map((s) => (
           <div
             key={s.num}
-            className="flex items-start gap-3 rounded-2xl bg-slate-900/80 px-3 py-2"
+            className="flex items-center gap-3 rounded-2xl bg-slate-900/80 px-3 py-2"
           >
-            <div className="mt-0.5 flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-pink-500 to-orange-400 text-xs font-bold text-slate-950">
+            {/* Cerchio NUM perfettamente regolare */}
+            <div
+              className="flex h-7 w-7 flex-none items-center justify-center rounded-full text-xs font-bold text-slate-950"
+              style={{ backgroundColor: WC_COLOR }}
+            >
               {s.num}
             </div>
 
-            <div>
-              <p className="text-xs font-semibold text-slate-100">{s.title}</p>
-              <p className="text-xs text-slate-300">{s.text}</p>
+            <div className="text-xs text-slate-300">
+              <p className="font-semibold text-slate-100">{s.title}</p>
+              <p>{s.text}</p>
             </div>
           </div>
         ))}
