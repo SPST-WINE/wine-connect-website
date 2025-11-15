@@ -11,16 +11,16 @@ import KoreaCartStep from "@/components/korea/KoreaCartStep";
 import KoreaSuccessStep from "@/components/korea/KoreaSuccessStep";
 
 import { homepageGradient } from "@/lib/theme";
+import {
+  KOREA_WINERIES,
+  KoreaWinery,
+} from "@/components/korea/wineriesKorea";
 
 export type Step = "landing" | "lead" | "catalog" | "cart" | "success";
 export type BuyerType = "importer" | "no_import_license";
 
-export type Winery = {
-  id: string;
-  name: string;
-  region: string;
-  focus: string;
-};
+// alias del tipo cantina
+export type Winery = KoreaWinery;
 
 export type CartItem = {
   wineryId: string;
@@ -28,27 +28,8 @@ export type CartItem = {
   sampleSize: 6 | 12;
 };
 
-// TEMP mock → sostituire con fetch Supabase
-const WINERIES: Winery[] = [
-  {
-    id: "aurilia",
-    name: "Cantina Aurilia",
-    region: "Campania",
-    focus: "Elegant Aglianico-based reds with volcanic character.",
-  },
-  {
-    id: "poggio-rosso",
-    name: "Poggio Rosso",
-    region: "Tuscany",
-    focus: "Sangiovese and modern blends.",
-  },
-  {
-    id: "venti-colline",
-    name: "Venti Colline",
-    region: "Veneto",
-    focus: "Sparkling and still whites for horeca programs.",
-  },
-];
+// Cantine statiche per l'evento Korea
+const WINERIES: Winery[] = KOREA_WINERIES;
 
 export default function KoreaEventPage() {
   const [step, setStep] = useState<Step>("landing");
@@ -82,7 +63,6 @@ export default function KoreaEventPage() {
         style={{ background: homepageGradient() }}
       >
         <div className="mx-auto flex min-h-screen max-w-md flex-col px-4 py-6 md:max-w-2xl">
-
           <KoreaHeader
             step={step}
             cartCount={cart.length}
@@ -92,9 +72,7 @@ export default function KoreaEventPage() {
 
           <main className="flex flex-1 flex-col">
             {step === "landing" && (
-              <KoreaLandingStep
-                onNext={() => setStep("lead")}
-              />
+              <KoreaLandingStep onNext={() => setStep("lead")} />
             )}
 
             {step === "lead" && (
