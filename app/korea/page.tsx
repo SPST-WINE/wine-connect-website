@@ -9,6 +9,7 @@ import KoreaLeadStep from "@/components/korea/KoreaLeadStep";
 import KoreaCatalogStep from "@/components/korea/KoreaCatalogStep";
 import KoreaCartStep from "@/components/korea/KoreaCartStep";
 import KoreaSuccessStep from "@/components/korea/KoreaSuccessStep";
+import KoreaFooter from "@/components/korea/KoreaFooter";
 
 import { homepageGradient } from "@/lib/theme";
 import {
@@ -19,7 +20,6 @@ import {
 export type Step = "landing" | "lead" | "catalog" | "cart" | "success";
 export type BuyerType = "importer" | "no_import_license";
 
-// alias del tipo cantina
 export type Winery = KoreaWinery;
 
 export type CartItem = {
@@ -28,7 +28,6 @@ export type CartItem = {
   sampleSize: 6 | 12;
 };
 
-// Cantine statiche per l'evento Korea
 const WINERIES: Winery[] = KOREA_WINERIES;
 
 export default function KoreaEventPage() {
@@ -59,10 +58,10 @@ export default function KoreaEventPage() {
   return (
     <LanguageProvider defaultLang="en">
       <main
-        className="min-h-screen font-sans text-slate-100"
+        className="min-h-[100svh] font-sans text-slate-100"
         style={{ background: homepageGradient() }}
       >
-        <div className="mx-auto flex min-h-screen max-w-md flex-col px-4 py-6 md:max-w-2xl">
+        <div className="mx-auto flex min-h-[100svh] max-w-md flex-col px-4 py-6 md:max-w-2xl">
           <KoreaHeader
             step={step}
             cartCount={cart.length}
@@ -132,6 +131,8 @@ export default function KoreaEventPage() {
               />
             )}
           </main>
+
+          <KoreaFooter />
         </div>
       </main>
     </LanguageProvider>
