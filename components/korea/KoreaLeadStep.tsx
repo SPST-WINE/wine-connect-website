@@ -3,6 +3,8 @@
 import { Dispatch, SetStateAction } from "react";
 import { BuyerType } from "@/app/korea/page";
 
+const WC_COLOR = "#E33854";
+
 type Props = {
   email: string;
   setEmail: Dispatch<SetStateAction<string>>;
@@ -63,6 +65,13 @@ export default function KoreaLeadStep({
     }
   }
 
+  const baseBuyerBtn =
+    "flex items-start gap-2 rounded-xl border px-3 py-2 text-left text-xs transition-colors";
+
+  const activeBuyer =
+    "border-[#E33854] bg-[#E33854]/10 shadow-[0_0_0_1px_rgba(227,56,84,0.4)]";
+  const inactiveBuyer = "border-slate-700 bg-slate-900";
+
   return (
     <section className="flex flex-1 flex-col justify-between">
       <div>
@@ -82,7 +91,7 @@ export default function KoreaLeadStep({
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-100 outline-none focus:border-pink-500"
+              className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-100 outline-none focus:border-[#E33854]"
               placeholder="you@company.com"
             />
           </div>
@@ -96,7 +105,7 @@ export default function KoreaLeadStep({
               required
               value={companyName}
               onChange={(e) => setCompanyName(e.target.value)}
-              className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-100 outline-none focus:border-pink-500"
+              className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-100 outline-none focus:border-[#E33854]"
               placeholder="Your company"
             />
           </div>
@@ -110,13 +119,14 @@ export default function KoreaLeadStep({
               <button
                 type="button"
                 onClick={() => setBuyerType("importer")}
-                className={`flex items-start gap-2 rounded-xl border px-3 py-2 text-left text-xs ${
-                  buyerType === "importer"
-                    ? "border-pink-500 bg-pink-500/10"
-                    : "border-slate-700 bg-slate-900"
+                className={`${baseBuyerBtn} ${
+                  buyerType === "importer" ? activeBuyer : inactiveBuyer
                 }`}
               >
-                <span className="mt-0.5 h-2 w-2 rounded-full bg-pink-400" />
+                <span
+                  className="mt-1 h-2 w-2 rounded-full"
+                  style={{ backgroundColor: WC_COLOR }}
+                />
                 <span>
                   <span className="block font-semibold text-slate-100">
                     I’m an importer – I have an import license
@@ -131,13 +141,16 @@ export default function KoreaLeadStep({
               <button
                 type="button"
                 onClick={() => setBuyerType("no_import_license")}
-                className={`flex items-start gap-2 rounded-xl border px-3 py-2 text-left text-xs ${
+                className={`${baseBuyerBtn} ${
                   buyerType === "no_import_license"
-                    ? "border-pink-500 bg-pink-500/10"
-                    : "border-slate-700 bg-slate-900"
+                    ? activeBuyer
+                    : inactiveBuyer
                 }`}
               >
-                <span className="mt-0.5 h-2 w-2 rounded-full bg-orange-400" />
+                <span
+                  className="mt-1 h-2 w-2 rounded-full"
+                  style={{ backgroundColor: WC_COLOR }}
+                />
                 <span>
                   <span className="block font-semibold text-slate-100">
                     I’m a buyer without an import license
@@ -160,7 +173,7 @@ export default function KoreaLeadStep({
           <button
             type="submit"
             disabled={isSubmitting}
-            className="mt-4 w-full rounded-2xl bg-gradient-to-r from-pink-500 to-orange-400 py-3 text-center text-sm font-semibold text-slate-950 disabled:opacity-60"
+            className="mt-4 w-full rounded-2xl bg-gradient-to-r from-[#E33854] to-orange-400 py-3 text-center text-sm font-semibold text-slate-950 shadow-lg shadow-[rgba(227,56,84,0.35)] disabled:opacity-60"
           >
             {isSubmitting ? "Saving..." : "Continue to wineries"}
           </button>
