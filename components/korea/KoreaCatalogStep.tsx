@@ -45,7 +45,15 @@ export default function KoreaCatalogStep({
                   <p className="text-xs text-slate-400">{winery.region}</p>
                 </div>
               </div>
-              <p className="mb-3 text-xs text-slate-300">{winery.focus}</p>
+
+              <p className="mb-1 text-xs text-slate-300">{winery.focus}</p>
+
+              {winery.styles && winery.styles.length > 0 && (
+                <p className="mb-3 text-[11px] text-slate-400">
+                  {winery.styles.join(" · ")}
+                </p>
+              )}
+
               <div className="flex gap-2 text-xs">
                 <button
                   type="button"
