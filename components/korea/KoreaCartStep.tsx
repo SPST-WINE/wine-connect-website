@@ -3,6 +3,8 @@
 import { Dispatch, SetStateAction } from "react";
 import { CartItem } from "@/app/korea/page";
 
+const WC_COLOR = "#E33854";
+
 type Props = {
   cart: CartItem[];
   totalBottles: number;
@@ -108,7 +110,7 @@ export default function KoreaCartStep({
           type="button"
           disabled={isSubmitting}
           onClick={() => handleSubmit("check_out_later")}
-          className="w-full rounded-2xl bg-slate-900 py-3 text-center text-sm font-semibold text-slate-100 ring-1 ring-slate-700 disabled:opacity-60"
+          className="w-full rounded-2xl bg-slate-900 py-3 text-center text-sm font-semibold text-slate-100 ring-1 ring-slate-700 transition-colors hover:ring-[#E33854] disabled:opacity-60"
         >
           {isSubmitting ? "Sending..." : "Check out later"}
         </button>
@@ -116,7 +118,7 @@ export default function KoreaCartStep({
           type="button"
           disabled={isSubmitting}
           onClick={() => handleSubmit("know_more")}
-          className="w-full rounded-2xl bg-gradient-to-r from-pink-500 to-orange-400 py-3 text-center text-sm font-semibold text-slate-950 disabled:opacity-60"
+          className="w-full rounded-2xl bg-gradient-to-r from-[#E33854] to-orange-400 py-3 text-center text-sm font-semibold text-slate-950 shadow-[0_10px_25px_rgba(0,0,0,0.45)] disabled:opacity-60"
         >
           {isSubmitting ? "Sending..." : "I want to know more"}
         </button>
